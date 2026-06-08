@@ -87,6 +87,9 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
             />
+            <Link href="/(auth)/forgot-password" style={styles.forgot}>
+              Şifremi unuttum?
+            </Link>
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Button label="Giriş Yap" onPress={onSubmit} loading={loading} />
           </View>
@@ -146,6 +149,7 @@ const styles = StyleSheet.create({
   },
   demoText: { ...typography.caption, color: colors.goldSoft, flex: 1 },
   form: { gap: spacing.md },
+  forgot: { ...typography.caption, color: colors.gold, textAlign: 'right', marginTop: -spacing.xs },
   error: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
   footerText: { ...typography.body, color: colors.textMuted },
