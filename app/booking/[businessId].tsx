@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -21,7 +22,7 @@ import {
   formatDuration,
   formatPrice,
 } from '@/lib/format';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
 /** Build the next `count` calendar days starting today. */
 function nextDays(count: number): Date[] {
@@ -149,9 +150,14 @@ export default function BookingScreen() {
     return (
       <Screen edges={['top', 'bottom']}>
         <View style={styles.success}>
-          <View style={styles.successIcon}>
+          <LinearGradient
+            colors={gradients.goldButton}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.successIcon}
+          >
             <Ionicons name="checkmark" size={44} color={colors.onGold} />
-          </View>
+          </LinearGradient>
           <Text style={styles.successTitle}>Randevu Talebin Alındı!</Text>
           <Text style={styles.successText}>
             {business?.name} işletmesine randevu talebin iletildi. Onaylandığında
@@ -279,6 +285,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.lg,
+    ...elevation.soft,
   },
   summaryBiz: { ...typography.bodyStrong, color: colors.text },
   summaryService: { ...typography.caption, color: colors.gold, marginTop: 2 },
@@ -330,10 +337,10 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+    ...elevation.gold,
   },
   successTitle: { ...typography.title, color: colors.text, textAlign: 'center' },
   successText: { ...typography.body, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,7 +10,7 @@ import {
 
 import { EmptyState, Screen } from '@/components/ui';
 import { useLoyalty } from '@/hooks/queries';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Loyalty } from '@/types';
 
 const POINTS_PER_REWARD = 10;
@@ -30,19 +31,25 @@ export default function LoyaltyScreen() {
         ListHeaderComponent={
           <View style={{ gap: spacing.lg, marginBottom: spacing.md }}>
             <Text style={styles.title}>Sadakat Puanların</Text>
-            <View style={styles.summary}>
+            <LinearGradient
+              colors={gradients.goldButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.summary}
+            >
+              <Ionicons name="star" size={120} color="#00000010" style={styles.summaryGlyph} />
               <View style={styles.summaryItem}>
-                <Ionicons name="star" size={20} color={colors.gold} />
+                <Ionicons name="star" size={20} color={colors.onGold} />
                 <Text style={styles.summaryValue}>{totalPoints}</Text>
                 <Text style={styles.summaryLabel}>Toplam Puan</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Ionicons name="gift" size={20} color={colors.gold} />
+                <Ionicons name="gift" size={20} color={colors.onGold} />
                 <Text style={styles.summaryValue}>{totalFree}</Text>
                 <Text style={styles.summaryLabel}>Ücretsiz Hizmet</Text>
               </View>
-            </View>
+            </LinearGradient>
             <Text style={styles.rule}>
               Her tamamlanan randevu +1 puan. {POINTS_PER_REWARD} puan = 1 ücretsiz hizmet.
             </Text>
@@ -94,16 +101,16 @@ const styles = StyleSheet.create({
   title: { ...typography.title, color: colors.text },
   summary: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
     padding: spacing.lg,
+    overflow: 'hidden',
+    ...elevation.gold,
   },
+  summaryGlyph: { position: 'absolute', right: -10, top: -16 },
   summaryItem: { flex: 1, alignItems: 'center', gap: 4 },
-  summaryDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  summaryValue: { ...typography.display, color: colors.text },
-  summaryLabel: { ...typography.caption, color: colors.textMuted },
+  summaryDivider: { width: StyleSheet.hairlineWidth, backgroundColor: 'rgba(23,17,9,0.2)' },
+  summaryValue: { ...typography.display, color: colors.onGold },
+  summaryLabel: { ...typography.caption, color: 'rgba(23,17,9,0.75)', fontWeight: '600' },
   rule: { ...typography.caption, color: colors.textFaint, textAlign: 'center' },
   card: {
     backgroundColor: colors.surface,
@@ -112,6 +119,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
     gap: spacing.sm,
+    ...elevation.soft,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   business: { ...typography.bodyStrong, color: colors.text, flex: 1 },
