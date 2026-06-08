@@ -136,6 +136,16 @@ export default function DiscoverScreen() {
               icon="search-outline"
               title="Sonuç bulunamadı"
               subtitle="Arama veya filtre kriterlerini değiştirmeyi dene."
+              actionLabel={search || filter !== 'all' ? 'Filtreleri Temizle' : undefined}
+              actionIcon="refresh"
+              onAction={
+                search || filter !== 'all'
+                  ? () => {
+                      setSearch('');
+                      setFilter('all');
+                    }
+                  : undefined
+              }
             />
           )
         }

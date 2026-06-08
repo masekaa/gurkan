@@ -114,6 +114,9 @@ export default function ManageScreen() {
             icon="cut-outline"
             title="Henüz hizmet yok"
             subtitle="İlk hizmetini ekleyerek randevu almaya başla."
+            actionLabel="Hizmet Ekle"
+            actionIcon="add"
+            onAction={() => setServiceForm({ name: '', durationMin: '30', price: '' })}
           />
         ) : (
           <View style={{ gap: spacing.md }}>
