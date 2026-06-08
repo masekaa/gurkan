@@ -130,10 +130,19 @@ vercel.json                   Vercel build/output + SPA rewrite
 **İşletme tarafı**
 - Profil'de **Müşteri ↔ İşletme** rol değiştirici (demo). Rol `profiles` dokümanına
   yazılır; işletme moduna geçince `businessId = DEMO_BUSINESS_ID ('b1')` atanır.
-- Rol bazlı sekme menüsü (işletme: Gelen Randevular + Panel + Profil).
+- Rol bazlı sekme menüsü (işletme: Gelen Randevular + Panel + İşletmem + Profil).
 - Gelen Randevular: Bekleyen/Onaylı/Geçmiş, **onayla/reddet/iptal/tamamla**.
 - Panel (dashboard): günlük & aylık kazanç, toplam randevu, bekleyen sayısı,
   doluluk oranı %, no-show oranı % (hedef %15 üstü kırmızı).
+- **İşletmem (FR-2):** işletme profili düzenleme (ad/hakkında/telefon/çalışma
+  saatleri) + hizmet **ekle/düzenle/sil** (bottom-sheet form + silme onayı).
+  `repository`: `createService/updateService/deleteService`, `updateBusiness`.
+
+**Görsel sistem (tasarım)**
+- Gradient + elevation token sistemi (`theme`: `categoryStyle`, `elevation`,
+  `gradients`); `expo-linear-gradient`. Premium altın gradient butonlar, kategori
+  gradient kart kapakları, tam genişlik gradient hero'lar (detay/sadakat/panel),
+  durum renkli aksan şeritleri.
 
 **Altyapı**
 - Firestore güvenlik kuralları + veri modeli dokümanı.
@@ -162,19 +171,15 @@ vercel.json                   Vercel build/output + SPA rewrite
 
 Öncelik sırasıyla önerilen yol haritası:
 
-1. **İşletme hizmet & profil yönetimi** (SCOPE FR-2)
-   - İşletmenin kendi hizmetlerini eklemesi/düzenlemesi/silmesi (ad/süre/fiyat).
-   - Çalışma saatleri ve işletme profili düzenleme.
-   - Repository'ye `createService/updateService/deleteService`, `updateBusiness` ekle.
-2. **Randevu detay ekranı** + **müşteri profil düzenleme** (FR-1.4).
-3. **Admin paneli** (SCOPE Modül 8): işletme onaylama/pasife alma, kullanıcı
+1. **Randevu detay ekranı** + **müşteri profil düzenleme** (FR-1.4).
+2. **Şifre sıfırlama ekranı** (FR-1.3) — Firebase `sendPasswordResetEmail`.
+3. **Yorum/puanlama yazma** (şu an rating'ler yalnızca gösterim).
+4. **Admin paneli** (SCOPE Modül 8): işletme onaylama/pasife alma, kullanıcı
    yönetimi (ban/askıya alma), randevu listeleme/filtreleme. Rol: `admin`.
-4. **Bildirim altyapısı** (SCOPE Modül 4) — **backend gerektirir**:
+5. **Bildirim altyapısı** (SCOPE Modül 4) — **backend gerektirir**:
    - Firebase Cloud Functions: randevu durum değişiminde push, 24s/1s hatırlatma.
    - Sadakat puanı ve referans ödülünü **sunucu tarafına** taşı (şu an mock).
    - Push için native build (EAS Build) + iOS APNs / Android google-services.json.
-5. **Şifre sıfırlama ekranı** (FR-1.3).
-6. **Yorum/puanlama yazma** (şu an rating'ler yalnızca gösterim).
 
 ---
 
