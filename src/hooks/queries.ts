@@ -153,6 +153,7 @@ export function useUpdateBusiness(businessId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['business', businessId] });
       qc.invalidateQueries({ queryKey: ['businesses'] });
+      qc.invalidateQueries({ queryKey: ['allBusinesses'] });
     },
   });
 }
@@ -177,5 +178,33 @@ export function useCreateReview(businessId: string) {
       comment: string;
     }) => repo.createReview({ businessId, ...input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews', businessId] }),
+  });
+}
+
+// --- Admin ------------------------------------------------------------------
+
+export function useAllBusinesses() {
+  return useQuery({
+    queryKey: ['allBusinesses'],
+    queryFn: () => repo.listAllBusinesses(),
+  });
+}
+
+export function useAllAppointments() {
+  return useQuery({
+    queryKey: ['allAppointments'],
+    queryFn: () => repo.listAllAppointments(),
+  });
+}
+
+export function useSetBusinessApproved() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, approved }: { id: string; approved: boolean }) =>
+      repo.updateBusiness(id, { approved }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['allBusinesses'] });
+      qc.invalidateQueries({ queryKey: ['businesses'] });
+    },
   });
 }

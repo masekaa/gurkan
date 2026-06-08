@@ -45,8 +45,6 @@ export default function ProfileScreen() {
     }
   }
 
-  const isBusiness = profile?.role === 'business';
-
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Profil</Text>
@@ -80,23 +78,28 @@ export default function ProfileScreen() {
           <Text style={styles.roleTitle}>Hesap Türü</Text>
         </View>
         <Text style={styles.roleHint}>
-          Demo: müşteri ve işletme deneyimi arasında geçiş yap.
+          Demo: müşteri, işletme ve admin deneyimi arasında geçiş yap.
         </Text>
         <View style={styles.roleSegment}>
-          <Pressable
-            onPress={() => setRole('user')}
-            style={[styles.roleBtn, !isBusiness && styles.roleBtnActive]}
-          >
-            <Ionicons name="person-outline" size={16} color={!isBusiness ? colors.onGold : colors.textMuted} />
-            <Text style={[styles.roleBtnText, !isBusiness && styles.roleBtnTextActive]}>Müşteri</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setRole('business')}
-            style={[styles.roleBtn, isBusiness && styles.roleBtnActive]}
-          >
-            <Ionicons name="storefront-outline" size={16} color={isBusiness ? colors.onGold : colors.textMuted} />
-            <Text style={[styles.roleBtnText, isBusiness && styles.roleBtnTextActive]}>İşletme</Text>
-          </Pressable>
+          {(
+            [
+              { key: 'user', label: 'Müşteri', icon: 'person-outline' },
+              { key: 'business', label: 'İşletme', icon: 'storefront-outline' },
+              { key: 'admin', label: 'Admin', icon: 'shield-checkmark-outline' },
+            ] as const
+          ).map((r) => {
+            const active = (profile?.role ?? 'user') === r.key;
+            return (
+              <Pressable
+                key={r.key}
+                onPress={() => setRole(r.key)}
+                style={[styles.roleBtn, active && styles.roleBtnActive]}
+              >
+                <Ionicons name={r.icon} size={15} color={active ? colors.onGold : colors.textMuted} />
+                <Text style={[styles.roleBtnText, active && styles.roleBtnTextActive]}>{r.label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -230,7 +233,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     paddingVertical: spacing.sm,
     borderRadius: 9,
   },

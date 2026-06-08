@@ -102,6 +102,38 @@ export async function listBusinesses(search = ''): Promise<Business[]> {
     .sort((a, b) => b.rating - a.rating);
 }
 
+/** Admin-only: every business including unapproved ones. */
+export async function listAllBusinesses(): Promise<Business[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(collection(requireDb(), 'businesses'));
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Business)
+      .sort((a, b) => Number(a.approved) - Number(b.approved));
+  }
+  return [...mock.businesses].sort((a, b) => Number(a.approved) - Number(b.approved));
+}
+
+/** Admin-only: every appointment across all businesses (most recent first). */
+export async function listAllAppointments(): Promise<Appointment[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(collection(requireDb(), 'appointments'));
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment);
+    return Promise.all(
+      rows
+        .sort((a, b) => (a.datetime < b.datetime ? 1 : -1))
+        .map(async (a) => ({
+          ...a,
+          business: (await getBusiness(a.businessId)) ?? undefined,
+          service: await getService(a.serviceId),
+        })),
+    );
+  }
+  return mock.appointments
+    .slice()
+    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1))
+    .map(hydrate);
+}
+
 export async function getBusiness(id: string): Promise<Business | null> {
   if (isFirebaseEnabled) {
     const snap = await getDoc(doc(requireDb(), 'businesses', id));

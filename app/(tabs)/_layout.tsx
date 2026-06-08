@@ -8,7 +8,10 @@ export default function TabsLayout() {
   const { profile, loading } = useAuth();
   if (!loading && !profile) return <Redirect href="/(auth)/login" />;
 
-  const isBusiness = profile?.role === 'business';
+  const role = profile?.role;
+  const isBusiness = role === 'business';
+  const isAdmin = role === 'admin';
+  const isUser = !isBusiness && !isAdmin;
   // Hidden tabs use `href: null` so the screen stays routable but the button
   // is removed for the irrelevant role.
   const hide = { href: null } as const;
@@ -31,7 +34,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Keşfet',
-          ...(isBusiness ? hide : {}),
+          ...(isUser ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="compass-outline" size={size} color={color} />
           ),
@@ -41,7 +44,7 @@ export default function TabsLayout() {
         name="appointments"
         options={{
           title: 'Randevular',
-          ...(isBusiness ? hide : {}),
+          ...(isUser ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -51,7 +54,7 @@ export default function TabsLayout() {
         name="loyalty"
         options={{
           title: 'Sadakat',
-          ...(isBusiness ? hide : {}),
+          ...(isUser ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="gift-outline" size={size} color={color} />
           ),
@@ -86,6 +89,18 @@ export default function TabsLayout() {
           ...(isBusiness ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="briefcase-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* Admin */}
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Yönetim',
+          ...(isAdmin ? {} : hide),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark-outline" size={size} color={color} />
           ),
         }}
       />
