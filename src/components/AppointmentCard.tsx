@@ -9,7 +9,7 @@ import {
   formatTime,
   statusMeta,
 } from '@/lib/format';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Appointment } from '@/types';
 
 export function AppointmentCard({
@@ -22,40 +22,43 @@ export function AppointmentCard({
   const { business, service, status, datetime } = appointment;
   const meta = statusMeta[status];
   const canCancel = status === 'pending' || status === 'approved';
+  const parts = formatDate(datetime).split(' '); // ["Pzt", "9", "Haziran"]
 
   return (
-    <View style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={styles.dateBox}>
-          <Text style={styles.day}>{formatDate(datetime).split(' ')[1]}</Text>
-          <Text style={styles.month}>{formatTime(datetime)}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.business} numberOfLines={1}>
-            {business?.name ?? 'İşletme'}
-          </Text>
-          <Text style={styles.service} numberOfLines={1}>
-            {service?.name ?? 'Hizmet'}
-          </Text>
-          <View style={styles.metaRow}>
-            <Ionicons name="time-outline" size={13} color={colors.textFaint} />
-            <Text style={styles.meta}>
-              {formatDate(datetime)} · {service ? formatDuration(service.durationMin) : ''}
+    <View style={[styles.card, elevation.soft]}>
+      <View style={[styles.accent, { backgroundColor: meta.color }]} />
+      <View style={styles.inner}>
+        <View style={styles.topRow}>
+          <View style={styles.dateBox}>
+            <Text style={styles.day}>{parts[1]}</Text>
+            <Text style={styles.month}>{(parts[2] ?? '').slice(0, 3)}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.business} numberOfLines={1}>
+              {business?.name ?? 'İşletme'}
             </Text>
+            <Text style={styles.service} numberOfLines={1}>
+              {service?.name ?? 'Hizmet'}
+            </Text>
+            <View style={styles.metaRow}>
+              <Ionicons name="time-outline" size={13} color={colors.textFaint} />
+              <Text style={styles.meta}>
+                {formatTime(datetime)}
+                {service ? ` · ${formatDuration(service.durationMin)}` : ''}
+              </Text>
+            </View>
           </View>
+          <Badge label={meta.label} color={meta.color} />
         </View>
-        <Badge label={meta.label} color={meta.color} />
-      </View>
 
-      <View style={styles.bottomRow}>
-        <Text style={styles.price}>
-          {service ? formatPrice(service.price) : ''}
-        </Text>
-        {canCancel && onCancel ? (
-          <View style={{ width: 130 }}>
-            <Button label="İptal Et" variant="secondary" onPress={onCancel} />
-          </View>
-        ) : null}
+        <View style={styles.bottomRow}>
+          <Text style={styles.price}>{service ? formatPrice(service.price) : ''}</Text>
+          {canCancel && onCancel ? (
+            <View style={{ width: 130 }}>
+              <Button label="İptal Et" variant="secondary" onPress={onCancel} />
+            </View>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -63,23 +66,25 @@ export function AppointmentCard({
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: 'row',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.md,
+    overflow: 'hidden',
   },
+  accent: { width: 4 },
+  inner: { flex: 1, padding: spacing.lg, gap: spacing.md },
   topRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
   dateBox: {
-    width: 58,
+    width: 56,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
   },
-  day: { ...typography.heading, color: colors.gold },
-  month: { ...typography.micro, color: colors.textMuted },
+  day: { ...typography.title, color: colors.gold, lineHeight: 26 },
+  month: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase' },
   business: { ...typography.bodyStrong, color: colors.text },
   service: { ...typography.caption, color: colors.gold, marginTop: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
