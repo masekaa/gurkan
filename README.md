@@ -14,7 +14,7 @@ platformu. **Tek kod tabanı** ile web, iOS ve Android'de çalışır.
 | Web | react-native-web (aynı kod tabanı) |
 | Dil | TypeScript (strict) |
 | Veri/Durum | TanStack Query |
-| Backend | Firebase — Auth · Firestore · Cloud Messaging |
+| Backend | Firebase — Auth · Firestore (JS SDK) |
 
 ## Mimari (kısaca)
 
@@ -29,11 +29,14 @@ doğrudan tanımazlar. Bu sayede backend değişimi yalnızca birkaç dosyayı e
 ```
 app/                 Ekranlar & yönlendirme (Expo Router)
   (auth)/            Giriş / kayıt
+  (auth)/            Giriş · Kayıt · Şifre sıfırlama
   (tabs)/            Rol bazlı sekmeler:
                        • Müşteri: Keşfet · Randevular · Sadakat · Profil
-                       • İşletme: Gelen Randevular · Panel · Profil
-  business/[id]      İşletme detayı
+                       • İşletme: Gelen Randevular · Panel · İşletmem · Profil
+                       • Admin: Yönetim · Profil
+  business/[id]      İşletme detayı + değerlendirmeler
   booking/[...]      Randevu oluşturma akışı
+  appointment/[id]   Randevu detayı
 src/
   components/        Yeniden kullanılabilir UI
   context/           AuthContext (oturum)
@@ -46,6 +49,30 @@ firebase/            firestore.rules, DATA_MODEL.md
 docs/                SCOPE.md (ürün kapsam dokümanı)
 ```
 
+## Özellikler
+
+**Müşteri**
+- İşletme keşfi (arama + kategori filtresi), işletme detayı, çalışma saatleri
+- Randevu oluşturma: hizmet → tarih → saat; **dolu/geçmiş saatler kapalı**
+- **Çift rezervasyon engeli** (Firestore transaction'lı slot kilidi)
+- Randevularım (yaklaşan/geçmiş, iptal) + randevu detay ekranı
+- Sadakat puanı (10 puan = 1 ücretsiz hizmet), referans kodu
+- Yorum & 1–5 yıldız puanlama; profil düzenleme
+
+**İşletme**
+- Gelen randevular (onayla/reddet/iptal/tamamla)
+- Panel: günlük/aylık kazanç, doluluk, no-show metrikleri
+- İşletmem: profil + hizmet ekle/düzenle/sil
+
+**Admin**
+- İşletme onaylama/pasife alma, tüm randevu & özet listesi
+
+**Genel**
+- E-posta/şifre kimlik doğrulama + **şifre sıfırlama**
+- Koyu + altın tasarım dili, skeleton yükleme, hata/“tekrar dene” durumları
+- Web responsive, temel erişilebilirlik (ekran okuyucu etiketleri)
+- **Demo modu:** env boşken yerleşik mock veriyle sıfır kurulumla çalışır
+
 ## Kurulum
 
 ```bash
@@ -57,7 +84,7 @@ npm run android  # Android emülatör/cihaz
 
 ### Demo modu (sıfır kurulum)
 Hiçbir ortam değişkeni tanımlamazsanız uygulama **yerleşik mock veriyle**
-çalışır — herhangi bir e-posta/şifre ile giriş yapab, işletme keşfedebilir ve
+çalışır — herhangi bir e-posta/şifre ile giriş yapıp, işletme keşfedebilir ve
 randevu oluşturabilirsiniz. Backend'i bağlamadan denemek için idealdir.
 
 ### Firebase'i bağlama
