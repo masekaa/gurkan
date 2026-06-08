@@ -1,0 +1,82 @@
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+
+import { useAuth } from '@/context/AuthContext';
+import * as repo from '@/data/repository';
+import { MOCK_USER_ID } from '@/data/mock';
+import type { AppointmentStatus } from '@/types';
+
+/** Falls back to the mock user id so screens work before sign-in too. */
+function useUserId() {
+  const { profile } = useAuth();
+  return profile?.id ?? MOCK_USER_ID;
+}
+
+export function useBusinesses(search = '') {
+  return useQuery({
+    queryKey: ['businesses', search],
+    queryFn: () => repo.listBusinesses(search),
+  });
+}
+
+export function useBusiness(id: string) {
+  return useQuery({
+    queryKey: ['business', id],
+    queryFn: () => repo.getBusiness(id),
+    enabled: Boolean(id),
+  });
+}
+
+export function useServices(businessId: string) {
+  return useQuery({
+    queryKey: ['services', businessId],
+    queryFn: () => repo.listServices(businessId),
+    enabled: Boolean(businessId),
+  });
+}
+
+export function useAppointments() {
+  const userId = useUserId();
+  return useQuery({
+    queryKey: ['appointments', userId],
+    queryFn: () => repo.listAppointments(userId),
+  });
+}
+
+export function useLoyalty() {
+  const userId = useUserId();
+  return useQuery({
+    queryKey: ['loyalty', userId],
+    queryFn: () => repo.listLoyalty(userId),
+  });
+}
+
+export function useCreateAppointment() {
+  const userId = useUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      businessId: string;
+      serviceId: string;
+      datetime: string;
+    }) => repo.createAppointment({ customerId: userId, ...input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['appointments', userId] });
+    },
+  });
+}
+
+export function useUpdateAppointmentStatus() {
+  const userId = useUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: AppointmentStatus }) =>
+      repo.updateAppointmentStatus(id, status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['appointments', userId] });
+    },
+  });
+}

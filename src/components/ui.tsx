@@ -1,0 +1,257 @@
+import { Ionicons } from '@expo/vector-icons';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { colors, radius, spacing, typography } from '@/theme';
+
+/** Full-screen container that respects safe areas and the brand background. */
+export function Screen({
+  children,
+  edges = ['top'],
+  style,
+}: {
+  children: React.ReactNode;
+  edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <SafeAreaView edges={edges} style={[styles.screen, style]}>
+      {children}
+    </SafeAreaView>
+  );
+}
+
+export function Card({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[styles.card, style]}>{children}</View>;
+}
+
+export function Button({
+  label,
+  onPress,
+  variant = 'primary',
+  loading,
+  disabled,
+  icon,
+}: {
+  label: string;
+  onPress?: () => void;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  loading?: boolean;
+  disabled?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+}) {
+  const isDisabled = disabled || loading;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={isDisabled}
+      style={({ pressed }) => [
+        styles.btn,
+        variant === 'primary' && styles.btnPrimary,
+        variant === 'secondary' && styles.btnSecondary,
+        variant === 'ghost' && styles.btnGhost,
+        variant === 'danger' && styles.btnDanger,
+        pressed && !isDisabled && styles.btnPressed,
+        isDisabled && styles.btnDisabled,
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator color={variant === 'primary' ? colors.onGold : colors.text} />
+      ) : (
+        <View style={styles.btnInner}>
+          {icon ? (
+            <Ionicons
+              name={icon}
+              size={18}
+              color={variant === 'primary' ? colors.onGold : colors.text}
+            />
+          ) : null}
+          <Text
+            style={[
+              styles.btnLabel,
+              variant === 'primary' && { color: colors.onGold },
+              variant === 'danger' && { color: '#fff' },
+            ]}
+          >
+            {label}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+export function Field({
+  label,
+  icon,
+  ...props
+}: TextInputProps & { label?: string; icon?: keyof typeof Ionicons.glyphMap }) {
+  return (
+    <View style={styles.fieldWrap}>
+      {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
+      <View style={styles.fieldBox}>
+        {icon ? (
+          <Ionicons name={icon} size={18} color={colors.textFaint} style={{ marginRight: spacing.sm }} />
+        ) : null}
+        <TextInput
+          placeholderTextColor={colors.textFaint}
+          style={styles.fieldInput}
+          {...props}
+        />
+      </View>
+    </View>
+  );
+}
+
+export function Badge({
+  label,
+  color = colors.gold,
+}: {
+  label: string;
+  color?: string;
+}) {
+  return (
+    <View style={[styles.badge, { backgroundColor: color + '22', borderColor: color + '55' }]}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <Text style={[styles.badgeText, { color }]}>{label}</Text>
+    </View>
+  );
+}
+
+export function SectionTitle({
+  title,
+  action,
+}: {
+  title: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <View style={styles.sectionTitleRow}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {action}
+    </View>
+  );
+}
+
+export function EmptyState({
+  icon = 'sparkles-outline',
+  title,
+  subtitle,
+}: {
+  icon?: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <View style={styles.empty}>
+      <Ionicons name={icon} size={42} color={colors.textFaint} />
+      <Text style={styles.emptyTitle}>{title}</Text>
+      {subtitle ? <Text style={styles.emptySub}>{subtitle}</Text> : null}
+    </View>
+  );
+}
+
+/** Decorative round logo/avatar with initials fallback. */
+export function Avatar({ name, size = 52 }: { name: string; size?: number }) {
+  const initials = name
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  return (
+    <View
+      style={[
+        styles.avatar,
+        { width: size, height: size, borderRadius: size / 2 },
+      ]}
+    >
+      <Text style={[styles.avatarText, { fontSize: size * 0.34 }]}>{initials}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  btn: {
+    height: 52,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  btnInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  btnPrimary: { backgroundColor: colors.gold },
+  btnSecondary: { backgroundColor: colors.surfaceAlt, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  btnGhost: { backgroundColor: 'transparent' },
+  btnDanger: { backgroundColor: colors.danger },
+  btnPressed: { opacity: 0.85 },
+  btnDisabled: { opacity: 0.45 },
+  btnLabel: { ...typography.bodyStrong, color: colors.text },
+  fieldWrap: { gap: spacing.xs },
+  fieldLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs },
+  fieldBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    height: 50,
+  },
+  fieldInput: { flex: 1, color: colors.text, ...typography.body, height: '100%' },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  badgeText: { ...typography.micro },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  sectionTitle: { ...typography.heading, color: colors.text },
+  empty: { alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, gap: spacing.sm },
+  emptyTitle: { ...typography.heading, color: colors.text, marginTop: spacing.sm },
+  emptySub: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
+  avatar: {
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.gold + '66',
+  },
+  avatarText: { color: colors.gold, fontWeight: '700' },
+});

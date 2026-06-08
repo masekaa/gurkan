@@ -1,0 +1,122 @@
+import { Ionicons } from '@expo/vector-icons';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+
+import { EmptyState, Screen } from '@/components/ui';
+import { useLoyalty } from '@/hooks/queries';
+import { colors, radius, spacing, typography } from '@/theme';
+import type { Loyalty } from '@/types';
+
+const POINTS_PER_REWARD = 10;
+
+export default function LoyaltyScreen() {
+  const { data, isLoading } = useLoyalty();
+  const items = data ?? [];
+
+  const totalPoints = items.reduce((s, l) => s + l.points, 0);
+  const totalFree = items.reduce((s, l) => s + l.freeServices, 0);
+
+  return (
+    <Screen>
+      <FlatList
+        data={items}
+        keyExtractor={(l) => l.businessId}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={{ gap: spacing.lg, marginBottom: spacing.md }}>
+            <Text style={styles.title}>Sadakat Puanların</Text>
+            <View style={styles.summary}>
+              <View style={styles.summaryItem}>
+                <Ionicons name="star" size={20} color={colors.gold} />
+                <Text style={styles.summaryValue}>{totalPoints}</Text>
+                <Text style={styles.summaryLabel}>Toplam Puan</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Ionicons name="gift" size={20} color={colors.gold} />
+                <Text style={styles.summaryValue}>{totalFree}</Text>
+                <Text style={styles.summaryLabel}>Ücretsiz Hizmet</Text>
+              </View>
+            </View>
+            <Text style={styles.rule}>
+              Her tamamlanan randevu +1 puan. {POINTS_PER_REWARD} puan = 1 ücretsiz hizmet.
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => <LoyaltyRow item={item} />}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+        ListEmptyComponent={
+          isLoading ? (
+            <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+          ) : (
+            <EmptyState
+              icon="gift-outline"
+              title="Henüz puanın yok"
+              subtitle="İlk randevunu tamamla, puan kazanmaya başla."
+            />
+          )
+        }
+      />
+    </Screen>
+  );
+}
+
+function LoyaltyRow({ item }: { item: Loyalty }) {
+  const progress = (item.points % POINTS_PER_REWARD) / POINTS_PER_REWARD;
+  const remaining = POINTS_PER_REWARD - (item.points % POINTS_PER_REWARD);
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.business} numberOfLines={1}>
+          {item.business?.name ?? 'İşletme'}
+        </Text>
+        <Text style={styles.points}>{item.points} puan</Text>
+      </View>
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+      </View>
+      <Text style={styles.hint}>
+        {item.freeServices > 0
+          ? `🎉 ${item.freeServices} ücretsiz hizmet hakkın var!`
+          : `Ücretsiz hizmet için ${remaining} puan kaldı.`}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  list: { padding: spacing.lg, flexGrow: 1 },
+  title: { ...typography.title, color: colors.text },
+  summary: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  summaryItem: { flex: 1, alignItems: 'center', gap: 4 },
+  summaryDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  summaryValue: { ...typography.display, color: colors.text },
+  summaryLabel: { ...typography.caption, color: colors.textMuted },
+  rule: { ...typography.caption, color: colors.textFaint, textAlign: 'center' },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  business: { ...typography.bodyStrong, color: colors.text, flex: 1 },
+  points: { ...typography.bodyStrong, color: colors.gold },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },
+  fill: { height: '100%', backgroundColor: colors.gold, borderRadius: 4 },
+  hint: { ...typography.caption, color: colors.textMuted },
+});

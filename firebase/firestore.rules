@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Altın100 — Firestore security rules (MVP).
+// Deploy with:  firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // A user can read/write only their own profile; admins can read all.
+    match /profiles/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Approved businesses are publicly readable; only the owner/admin writes.
+    match /businesses/{businessId} {
+      allow read: if resource.data.approved == true || isAdmin()
+        || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin()
+        || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    // Services are public for reading; managed by the business owner/admin.
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Customers manage their own appointments; the related business can update status.
+    match /appointments/{appointmentId} {
+      allow read: if isSignedIn() &&
+        (resource.data.customerId == request.auth.uid || isAdmin());
+      allow create: if isOwner(request.resource.data.customerId);
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // Loyalty records are read by their owner; written by Cloud Functions/admin.
+    match /loyalty/{loyaltyId} {
+      allow read: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
