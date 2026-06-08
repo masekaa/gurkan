@@ -74,6 +74,40 @@ firebase deploy --only firestore:rules   # firebase/firestore.rules
 moduna döner. (`EXPO_PUBLIC_` ön eki Expo'nun değerleri her platformda derleme
 sırasında gömmesi için zorunludur.)
 
+## Vercel ile Web Deploy
+
+Web sürümü Expo'nun statik çıktısı (`expo export --platform web` → `dist/`) ile
+Vercel'de yayınlanır. Yapılandırma `vercel.json` dosyasındadır:
+
+| Ayar | Değer |
+|---|---|
+| Build Command | `npm run export:web` |
+| Output Directory | `dist` |
+| Rewrite | `/(.*) → /index.html` (SPA derin bağlantıları için) |
+
+### Adımlar
+1. [vercel.com](https://vercel.com) → **Add New → Project** → bu Git reposunu içe aktarın.
+   Vercel `vercel.json`'u otomatik okur; build/output ayarlarını elle girmenize gerek yok.
+2. **Settings → Environment Variables** altında Firebase değerlerini ekleyin
+   (Production + Preview). Aynı isimler `.env.example`'daki gibi olmalı:
+   ```
+   EXPO_PUBLIC_FIREBASE_API_KEY
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+   EXPO_PUBLIC_FIREBASE_APP_ID
+   ```
+   > Bu değişkenler **build sırasında** koda gömülür. Eklemezseniz site demo
+   > modunda (mock veri) yayınlanır. Değişkenleri değiştirdikten sonra yeniden
+   > deploy edin.
+3. **Deploy.** Sonraki her `git push` otomatik deploy tetikler.
+4. Firebase Console → **Authentication → Settings → Authorized domains** altına
+   Vercel alan adınızı (`*.vercel.app` ve özel domain) ekleyin; aksi halde
+   Firebase girişleri çalışmaz.
+
+> CLI ile: `npm i -g vercel && vercel` (önizleme) / `vercel --prod` (canlı).
+
 ## Komutlar
 
 | Komut | Açıklama |
