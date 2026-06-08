@@ -29,6 +29,7 @@ import type {
   AppointmentStatus,
   Business,
   Loyalty,
+  Review,
   Service,
 } from '@/types';
 import * as mock from './mock';
@@ -358,6 +359,41 @@ export async function listLoyalty(userId: string): Promise<Loyalty[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+export async function listReviews(businessId: string): Promise<Review[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(
+      query(collection(requireDb(), 'reviews'), where('businessId', '==', businessId)),
+    );
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Review)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+  return mock.reviews
+    .filter((r) => r.businessId === businessId)
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+export async function createReview(input: {
+  businessId: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+}): Promise<Review> {
+  const base = { ...input, createdAt: new Date().toISOString() };
+  if (isFirebaseEnabled) {
+    const ref = await addDoc(collection(requireDb(), 'reviews'), base);
+    return { id: ref.id, ...base };
+  }
+  const review: Review = { id: uid('r'), ...base };
+  mock.reviews.unshift(review);
+  return review;
+}
+
+// ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
@@ -387,6 +423,9 @@ export async function seedSampleData(): Promise<void> {
   }
   for (const { id, ...data } of mock.services) {
     batch.set(doc(database, 'services', id), data, { merge: true });
+  }
+  for (const { id, ...data } of mock.reviews) {
+    batch.set(doc(database, 'reviews', id), data, { merge: true });
   }
   await batch.commit();
 }

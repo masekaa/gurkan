@@ -1,13 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, ListSkeleton, Screen, Skeleton } from '@/components/ui';
-import { useBusiness, useServices } from '@/hooks/queries';
-import { categoryLabels, formatDuration, formatPrice } from '@/lib/format';
+import { Badge, Button, Field, ListSkeleton, Screen, Skeleton } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
+import { useBusiness, useCreateReview, useReviews, useServices } from '@/hooks/queries';
+import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
 import { categoryStyle, colors, elevation, radius, spacing, typography } from '@/theme';
+import type { Review } from '@/types';
 
 function isOpenNow(open: string, close: string): boolean {
   const now = new Date();
@@ -21,8 +24,15 @@ export default function BusinessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { profile } = useAuth();
   const { data: business, isLoading } = useBusiness(id);
   const { data: services } = useServices(id);
+  const { data: reviews } = useReviews(id);
+  const createReview = useCreateReview(id);
+
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [stars, setStars] = useState(5);
+  const [comment, setComment] = useState('');
 
   if (isLoading || !business) {
     return (
@@ -141,8 +151,98 @@ export default function BusinessDetailScreen() {
               </Pressable>
             ))}
           </View>
+
+          {/* Reviews */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Değerlendirmeler</Text>
+            <Pressable
+              onPress={() => {
+                setStars(5);
+                setComment('');
+                setReviewOpen(true);
+              }}
+              style={styles.reviewAdd}
+              hitSlop={8}
+            >
+              <Ionicons name="create-outline" size={15} color={colors.gold} />
+              <Text style={styles.reviewAddText}>Yorum Yap</Text>
+            </Pressable>
+          </View>
+
+          {reviews && reviews.length > 0 ? (
+            <View style={[styles.ratingSummary, elevation.soft]}>
+              <Text style={styles.avgValue}>
+                {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+              </Text>
+              <View style={{ gap: 2 }}>
+                <Stars
+                  value={Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)}
+                  size={16}
+                />
+                <Text style={styles.avgCount}>{reviews.length} değerlendirme</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={{ gap: spacing.md }}>
+            {(reviews ?? []).length === 0 ? (
+              <Text style={styles.noReviews}>Henüz yorum yok. İlk yorumu sen yap!</Text>
+            ) : (
+              (reviews ?? []).map((r) => <ReviewRow key={r.id} review={r} />)
+            )}
+          </View>
         </View>
       </ScrollView>
+
+      {/* Write review bottom sheet */}
+      <Modal visible={reviewOpen} transparent animationType="slide" onRequestClose={() => setReviewOpen(false)}>
+        <View style={styles.overlay}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>{business.name} için yorum</Text>
+            <View style={styles.starPicker}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Pressable key={n} onPress={() => setStars(n)} hitSlop={6}>
+                  <Ionicons
+                    name={n <= stars ? 'star' : 'star-outline'}
+                    size={34}
+                    color={colors.gold}
+                  />
+                </Pressable>
+              ))}
+            </View>
+            <Field
+              placeholder="Deneyimini birkaç cümleyle anlat…"
+              value={comment}
+              onChangeText={setComment}
+              multiline
+            />
+            <View style={styles.sheetActions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Vazgeç" variant="secondary" onPress={() => setReviewOpen(false)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Gönder"
+                  loading={createReview.isPending}
+                  disabled={comment.trim().length === 0}
+                  onPress={() =>
+                    createReview.mutate(
+                      {
+                        userId: profile?.id ?? 'anon',
+                        userName: profile?.name ?? 'Misafir',
+                        rating: stars,
+                        comment: comment.trim(),
+                      },
+                      { onSuccess: () => setReviewOpen(false) },
+                    )
+                  }
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -158,6 +258,45 @@ function InfoRow({
     <View style={styles.infoRow}>
       <Ionicons name={icon} size={18} color={colors.gold} />
       <Text style={styles.infoText}>{text}</Text>
+    </View>
+  );
+}
+
+function Stars({ value, size = 14 }: { value: number; size?: number }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Ionicons
+          key={n}
+          name={n <= value ? 'star' : 'star-outline'}
+          size={size}
+          color={colors.gold}
+        />
+      ))}
+    </View>
+  );
+}
+
+function ReviewRow({ review }: { review: Review }) {
+  const initials = review.userName
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  return (
+    <View style={[styles.reviewRow, elevation.soft]}>
+      <View style={styles.reviewHead}>
+        <View style={styles.reviewAvatar}>
+          <Text style={styles.reviewInitials}>{initials}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.reviewName}>{review.userName}</Text>
+          <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
+        </View>
+        <Stars value={review.rating} />
+      </View>
+      {review.comment ? <Text style={styles.reviewComment}>{review.comment}</Text> : null}
     </View>
   );
 }
@@ -248,4 +387,62 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   bookBtnText: { ...typography.micro, color: colors.onGold },
+  reviewAdd: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  reviewAddText: { ...typography.caption, color: colors.gold, fontWeight: '600' },
+  ratingSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  avgValue: { fontSize: 36, fontWeight: '800', color: colors.gold },
+  avgCount: { ...typography.caption, color: colors.textMuted },
+  noReviews: { ...typography.caption, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.md },
+  reviewRow: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  reviewAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.gold + '55',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewInitials: { ...typography.caption, color: colors.gold, fontWeight: '700' },
+  reviewName: { ...typography.bodyStrong, color: colors.text },
+  reviewDate: { ...typography.micro, color: colors.textFaint },
+  reviewComment: { ...typography.body, color: colors.textMuted, lineHeight: 21 },
+  overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+    gap: spacing.md,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: spacing.sm,
+  },
+  sheetTitle: { ...typography.heading, color: colors.text, textAlign: 'center' },
+  starPicker: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
+  sheetActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
 });

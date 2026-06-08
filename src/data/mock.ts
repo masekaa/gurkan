@@ -2,6 +2,7 @@ import type {
   Appointment,
   Business,
   Loyalty,
+  Review,
   Service,
 } from '@/types';
 
@@ -179,4 +180,34 @@ export const appointments: Appointment[] = [
 export const loyalty: Loyalty[] = [
   { userId: MOCK_USER_ID, businessId: 'b1', points: 7, freeServices: 0 },
   { userId: MOCK_USER_ID, businessId: 'b2', points: 12, freeServices: 1 },
+];
+
+export const reviews: Review[] = [
+  {
+    id: 'r1',
+    businessId: 'b1',
+    userId: 'cust-2',
+    userName: 'Ahmet Yıldız',
+    rating: 5,
+    comment: 'Usta işini biliyor, çok memnun kaldım. Randevu tam saatinde başladı.',
+    createdAt: new Date(now - 3 * 24 * HOUR).toISOString(),
+  },
+  {
+    id: 'r2',
+    businessId: 'b1',
+    userId: 'cust-3',
+    userName: 'Mehmet Demir',
+    rating: 4,
+    comment: 'Temiz ve hızlı. Fiyatlar gayet uygun.',
+    createdAt: new Date(now - 8 * 24 * HOUR).toISOString(),
+  },
+  {
+    id: 'r3',
+    businessId: 'b2',
+    userId: 'cust-4',
+    userName: 'Zeynep Kaya',
+    rating: 5,
+    comment: 'Saç boyama harika oldu, kesinlikle tavsiye ederim.',
+    createdAt: new Date(now - 5 * 24 * HOUR).toISOString(),
+  },
 ];

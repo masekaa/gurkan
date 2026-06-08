@@ -156,3 +156,26 @@ export function useUpdateBusiness(businessId: string) {
     },
   });
 }
+
+// --- Reviews ----------------------------------------------------------------
+
+export function useReviews(businessId: string) {
+  return useQuery({
+    queryKey: ['reviews', businessId],
+    queryFn: () => repo.listReviews(businessId),
+    enabled: Boolean(businessId),
+  });
+}
+
+export function useCreateReview(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      userId: string;
+      userName: string;
+      rating: number;
+      comment: string;
+    }) => repo.createReview({ businessId, ...input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews', businessId] }),
+  });
+}
