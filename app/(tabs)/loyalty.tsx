@@ -1,14 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { EmptyState, Screen } from '@/components/ui';
+import { EmptyState, ListSkeleton, Screen } from '@/components/ui';
 import { useLoyalty } from '@/hooks/queries';
 import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Loyalty } from '@/types';
@@ -59,7 +53,7 @@ export default function LoyaltyScreen() {
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         ListEmptyComponent={
           isLoading ? (
-            <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+            <ListSkeleton kind="card" count={3} />
           ) : (
             <EmptyState
               icon="gift-outline"

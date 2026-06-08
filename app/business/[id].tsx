@@ -1,17 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, Screen } from '@/components/ui';
+import { Badge, ListSkeleton, Screen, Skeleton } from '@/components/ui';
 import { useBusiness, useServices } from '@/hooks/queries';
 import { categoryLabels, formatDuration, formatPrice } from '@/lib/format';
 import { categoryStyle, colors, elevation, radius, spacing, typography } from '@/theme';
@@ -33,9 +26,10 @@ export default function BusinessDetailScreen() {
 
   if (isLoading || !business) {
     return (
-      <Screen>
+      <Screen edges={[]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+        <Skeleton width="100%" height={200} radius={0} />
+        <ListSkeleton kind="card" count={3} />
       </Screen>
     );
   }

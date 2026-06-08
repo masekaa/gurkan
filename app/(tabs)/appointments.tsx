@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   SectionList,
   StyleSheet,
@@ -10,7 +9,7 @@ import {
 } from 'react-native';
 
 import { AppointmentCard } from '@/components/AppointmentCard';
-import { EmptyState, Screen } from '@/components/ui';
+import { EmptyState, ListSkeleton, Screen } from '@/components/ui';
 import { useAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
 import { colors, spacing, typography } from '@/theme';
 import type { Appointment } from '@/types';
@@ -56,7 +55,7 @@ export default function AppointmentsScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+        <ListSkeleton kind="card" count={4} />
       ) : (
         <SectionList
           sections={sections}

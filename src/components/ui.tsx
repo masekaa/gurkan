@@ -1,12 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
+  type DimensionValue,
   type StyleProp,
   type TextInputProps,
   type ViewStyle,
@@ -203,8 +207,112 @@ export function Avatar({ name, size = 52 }: { name: string; size?: number }) {
   );
 }
 
+/** Pulsing placeholder block shown while data loads. */
+export function Skeleton({
+  width = '100%',
+  height = 16,
+  radius: r = radius.sm,
+  style,
+}: {
+  width?: DimensionValue;
+  height?: number;
+  radius?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const opacity = useRef(new Animated.Value(0.5)).current;
+  useEffect(() => {
+    const useNative = Platform.OS !== 'web';
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: useNative }),
+        Animated.timing(opacity, { toValue: 0.5, duration: 700, useNativeDriver: useNative }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <Animated.View
+      style={[
+        { width, height, borderRadius: r, backgroundColor: colors.surfaceAlt, opacity },
+        style,
+      ]}
+    />
+  );
+}
+
+/** Skeleton matching BusinessCard (cover band + body). */
+export function BusinessCardSkeleton() {
+  return (
+    <View style={styles.skelCard}>
+      <Skeleton width="100%" height={92} radius={0} />
+      <View style={styles.skelBody}>
+        <Skeleton width={48} height={48} radius={radius.md} style={{ marginTop: -34 }} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <Skeleton width="60%" height={14} />
+          <Skeleton width="40%" height={11} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Generic card-row skeleton for appointment / loyalty lists. */
+export function CardSkeleton({ lines = 2 }: { lines?: number }) {
+  return (
+    <View style={styles.skelRow}>
+      <Skeleton width={48} height={48} radius={radius.md} />
+      <View style={{ flex: 1, gap: 8 }}>
+        <Skeleton width="55%" height={14} />
+        {Array.from({ length: lines }).map((_, i) => (
+          <Skeleton key={i} width={i === lines - 1 ? '35%' : '70%'} height={11} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** Renders `count` placeholder cards while a list loads. */
+export function ListSkeleton({
+  count = 4,
+  kind = 'card',
+}: {
+  count?: number;
+  kind?: 'business' | 'card';
+}) {
+  return (
+    <View style={{ gap: spacing.md, padding: spacing.lg }}>
+      {Array.from({ length: count }).map((_, i) =>
+        kind === 'business' ? (
+          <BusinessCardSkeleton key={i} />
+        ) : (
+          <CardSkeleton key={i} />
+        ),
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  skelCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  skelBody: { flexDirection: 'row', gap: spacing.md, padding: spacing.md, alignItems: 'center' },
+  skelRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

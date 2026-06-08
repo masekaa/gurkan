@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -11,7 +10,14 @@ import {
 } from 'react-native';
 
 import { BusinessCard } from '@/components/BusinessCard';
-import { Avatar, Button, EmptyState, Field, Screen } from '@/components/ui';
+import {
+  Avatar,
+  Button,
+  EmptyState,
+  Field,
+  ListSkeleton,
+  Screen,
+} from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
@@ -102,7 +108,7 @@ export default function DiscoverScreen() {
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         ListEmptyComponent={
           isLoading ? (
-            <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+            <ListSkeleton kind="business" count={5} />
           ) : showSeed ? (
             <View style={{ gap: spacing.lg, marginTop: spacing.xl }}>
               <EmptyState

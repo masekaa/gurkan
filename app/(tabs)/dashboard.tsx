@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Screen } from '@/components/ui';
+import { ListSkeleton, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusiness, useBusinessAppointments } from '@/hooks/queries';
 import { formatPrice } from '@/lib/format';
@@ -58,7 +58,7 @@ export default function DashboardScreen() {
   if (isLoading) {
     return (
       <Screen>
-        <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+        <ListSkeleton kind="card" count={4} />
       </Screen>
     );
   }
