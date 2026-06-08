@@ -271,9 +271,12 @@ export async function createAppointment(input: {
   businessId: string;
   serviceId: string;
   datetime: string;
+  /** Service length in minutes; stored on the lock for overlap-aware availability. */
+  durationMin?: number;
 }): Promise<Appointment> {
+  const { durationMin = 30, ...appointmentFields } = input;
   const base = {
-    ...input,
+    ...appointmentFields,
     status: 'pending' as AppointmentStatus,
     createdAt: new Date().toISOString(),
   };
@@ -291,6 +294,7 @@ export async function createAppointment(input: {
         datetime: input.datetime,
         customerId: input.customerId,
         appointmentId: apptRef.id,
+        durationMin,
       });
       tx.set(apptRef, base);
     });
@@ -310,16 +314,24 @@ export async function createAppointment(input: {
 }
 
 /** Booked slot datetimes (ISO) for a business, used to disable taken times. */
-export async function listTakenSlots(businessId: string): Promise<string[]> {
+export type TakenSlot = { datetime: string; durationMin: number };
+
+export async function listTakenSlots(businessId: string): Promise<TakenSlot[]> {
   if (isFirebaseEnabled) {
     const snap = await getDocs(
       query(collection(requireDb(), 'slots'), where('businessId', '==', businessId)),
     );
-    return snap.docs.map((d) => (d.data() as { datetime: string }).datetime);
+    return snap.docs.map((d) => {
+      const data = d.data() as { datetime: string; durationMin?: number };
+      return { datetime: data.datetime, durationMin: data.durationMin ?? 30 };
+    });
   }
   return mock.appointments
     .filter((a) => a.businessId === businessId && isActiveStatus(a.status))
-    .map((a) => a.datetime);
+    .map((a) => ({
+      datetime: a.datetime,
+      durationMin: mock.services.find((s) => s.id === a.serviceId)?.durationMin ?? 30,
+    }));
 }
 
 export async function updateAppointmentStatus(

@@ -75,6 +75,7 @@ export function useCreateAppointment() {
       businessId: string;
       serviceId: string;
       datetime: string;
+      durationMin?: number;
     }) => repo.createAppointment({ customerId: userId, ...input }),
     onSuccess: (appt) => {
       qc.invalidateQueries({ queryKey: ['appointments'] });

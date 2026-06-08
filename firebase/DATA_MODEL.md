@@ -82,9 +82,10 @@ appointment in a transaction; deleted when an appointment is cancelled/rejected.
 | Field | Type | Notes |
 |---|---|---|
 | `businessId` | string | FK → businesses |
-| `datetime` | string (ISO) | The reserved slot |
+| `datetime` | string (ISO) | The reserved slot start |
 | `customerId` | string | FK → profiles |
 | `appointmentId` | string | FK → appointments |
+| `durationMin` | number | Service length; used for overlap-aware availability |
 
 ## Cloud Functions (recommended for v1)
 - **onAppointmentCompleted** → increment `loyalty.points`; every 10th point grants a free service.

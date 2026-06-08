@@ -84,6 +84,9 @@ export default function BookingScreen() {
   );
 
   // Times that cannot be picked on the selected day: already booked, or past.
+  // A start time is unavailable when it is in the past, when the chosen service
+  // would run past closing, or when [start, start+duration) overlaps any booked
+  // interval — accounting for BOTH services' durations, not just the start time.
   const unavailable = useMemo(() => {
     const day = days[selectedDay];
     const now = new Date();
@@ -91,30 +94,36 @@ export default function BookingScreen() {
       day.getFullYear() === now.getFullYear() &&
       day.getMonth() === now.getMonth() &&
       day.getDate() === now.getDate();
-    const set = new Set<string>();
-    for (const iso of takenSlots ?? []) {
-      const d = new Date(iso);
+    const dur = service?.durationMin ?? 30;
+    const [ch, cm] = (business?.closingTime ?? '23:59').split(':').map(Number);
+    const closeMin = ch * 60 + cm;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+
+    const taken: [number, number][] = [];
+    for (const slot of takenSlots ?? []) {
+      const d = new Date(slot.datetime);
       if (
         d.getFullYear() === day.getFullYear() &&
         d.getMonth() === day.getMonth() &&
         d.getDate() === day.getDate()
       ) {
-        set.add(
-          `${String(d.getHours()).padStart(2, '0')}:${String(
-            d.getMinutes(),
-          ).padStart(2, '0')}`,
-        );
+        const start = d.getHours() * 60 + d.getMinutes();
+        taken.push([start, start + slot.durationMin]);
       }
     }
-    if (isToday) {
-      const nowMins = now.getHours() * 60 + now.getMinutes();
-      for (const t of slots) {
-        const [h, m] = t.split(':').map(Number);
-        if (h * 60 + m <= nowMins) set.add(t);
-      }
+
+    const set = new Set<string>();
+    for (const t of slots) {
+      const [h, m] = t.split(':').map(Number);
+      const s = h * 60 + m;
+      const e = s + dur;
+      const past = isToday && s <= nowMin;
+      const overflow = e > closeMin;
+      const overlaps = taken.some(([ts, te]) => s < te && e > ts);
+      if (past || overflow || overlaps) set.add(t);
     }
     return set;
-  }, [takenSlots, days, selectedDay, slots]);
+  }, [takenSlots, days, selectedDay, slots, service, business]);
 
   function pickDay(i: number) {
     setSelectedDay(i);
@@ -133,6 +142,7 @@ export default function BookingScreen() {
         businessId,
         serviceId: service.id,
         datetime: date.toISOString(),
+        durationMin: service.durationMin,
       });
       setDone(true);
     } catch (e) {
