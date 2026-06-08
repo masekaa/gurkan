@@ -79,7 +79,14 @@ sırasında gömmesi için zorunludur.)
 
 ### Örnek veri yükleme (seed)
 Firebase'e bağlandığınızda Firestore **boştur**, dolayısıyla Keşfet ekranı boş
-görünür. Örnek işletme/hizmetleri yüklemek için:
+görünür. İki yöntem var:
+
+**Yöntem 1 — Uygulama içinden (terminal gerekmez, bulut/Vercel için ideal):**
+Siteye girip üye olun; Keşfet ekranı boşsa çıkan **"Örnek Verileri Yükle"**
+butonuna dokunun. Örnek işletme ve hizmetler Firestore'a yazılır.
+(Önce Firestore kurallarının yayınlanmış olması gerekir — bkz. yukarıdaki adım.)
+
+**Yöntem 2 — Yerel script (Admin SDK):**
 
 1. Firebase Console → **Project settings → Service accounts → Generate new
    private key** → indirilen dosyayı proje köküne `serviceAccountKey.json`

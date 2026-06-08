@@ -11,9 +11,10 @@ import {
 } from 'react-native';
 
 import { BusinessCard } from '@/components/BusinessCard';
-import { EmptyState, Field, Screen } from '@/components/ui';
+import { Button, EmptyState, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
-import { useBusinesses } from '@/hooks/queries';
+import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
+import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { BusinessCategory } from '@/types';
@@ -32,6 +33,11 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | BusinessCategory>('all');
   const { data, isLoading } = useBusinesses(search);
+  const seed = useSeedSampleData();
+
+  // Show a one-tap seed action when a freshly connected Firestore is empty.
+  const showSeed =
+    isFirebaseEnabled && !isLoading && !search && (data?.length ?? 0) === 0;
 
   const businesses = useMemo(
     () => (data ?? []).filter((b) => filter === 'all' || b.category === filter),
@@ -90,6 +96,25 @@ export default function DiscoverScreen() {
         ListEmptyComponent={
           isLoading ? (
             <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+          ) : showSeed ? (
+            <View style={{ gap: spacing.lg, marginTop: spacing.xl }}>
+              <EmptyState
+                icon="cloud-upload-outline"
+                title="Henüz işletme yok"
+                subtitle="Firebase'e bağlandın! Başlamak için örnek işletme ve hizmetleri tek dokunuşla yükleyebilirsin."
+              />
+              <Button
+                label="Örnek Verileri Yükle"
+                icon="sparkles-outline"
+                loading={seed.isPending}
+                onPress={() => seed.mutate()}
+              />
+              {seed.isError ? (
+                <Text style={styles.seedError}>
+                  Yüklenemedi. Firestore kurallarının yayınlandığından emin ol.
+                </Text>
+              ) : null}
+            </View>
           ) : (
             <EmptyState
               icon="search-outline"
@@ -121,4 +146,5 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
   chipText: { ...typography.caption, color: colors.textMuted },
   chipTextActive: { color: colors.onGold, fontWeight: '700' },
+  seedError: { ...typography.caption, color: colors.danger, textAlign: 'center' },
 });

@@ -18,6 +18,7 @@ import {
   query,
   updateDoc,
   where,
+  writeBatch,
   type Firestore,
 } from 'firebase/firestore';
 
@@ -206,6 +207,28 @@ async function getService(id: string): Promise<Service | undefined> {
     return snap.exists() ? ({ id: snap.id, ...snap.data() } as Service) : undefined;
   }
   return mock.services.find((s) => s.id === id);
+}
+
+// ---------------------------------------------------------------------------
+// Seeding (bootstrap an empty Firestore from inside the app)
+// ---------------------------------------------------------------------------
+
+/**
+ * Writes the sample businesses & services into Firestore. Used by the "örnek
+ * veri yükle" button on the empty Keşfet state so a fresh project can be
+ * populated without any local tooling. No-op in mock mode (data already exists).
+ */
+export async function seedSampleData(): Promise<void> {
+  if (!isFirebaseEnabled) return;
+  const database = requireDb();
+  const batch = writeBatch(database);
+  for (const { id, ...data } of mock.businesses) {
+    batch.set(doc(database, 'businesses', id), data, { merge: true });
+  }
+  for (const { id, ...data } of mock.services) {
+    batch.set(doc(database, 'services', id), data, { merge: true });
+  }
+  await batch.commit();
 }
 
 function hydrate(a: Appointment): Appointment {

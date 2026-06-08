@@ -69,6 +69,14 @@ export function useCreateAppointment() {
   });
 }
 
+export function useSeedSampleData() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => repo.seedSampleData(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['businesses'] }),
+  });
+}
+
 export function useUpdateAppointmentStatus() {
   const userId = useUserId();
   const qc = useQueryClient();
