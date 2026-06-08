@@ -96,8 +96,6 @@ export const elevation = {
 /** Brand gradient ramps (start → end), consumed by expo-linear-gradient. */
 export const gradients = {
   goldButton: ['#EBD49B', '#D9B25A', '#C49A45'],
-  hero: ['#21212B', '#14141A', '#0E0E12'],
-  goldHalo: ['#D9B25A33', '#D9B25A00'],
 } as const;
 
 /** Per-category cover gradient + glyph, used on cards and detail heroes. */

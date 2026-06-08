@@ -200,8 +200,6 @@ vercel.json                   Vercel build/output + SPA rewrite
   sırasında atanmalı (`profiles.businessId` veya `businesses.ownerId`).
 - **Slot kilidi `delete` kuralı geniş** — şu an giriş yapan herkes silebilir
   (işletmenin red akışı için). İleride işletme sahibi/sahip kontrolüyle daraltılmalı.
-- `react-native-url-polyfill` bağımlılığı artık kullanılmıyor (Supabase'den kalma);
-  temizlenebilir.
 - Mock kullanıcı tek (`MOCK_USER_ID`); işletme görünümündeki diğer müşteriler
   yalnızca isimden ibaret (`customerName`), profilleri yok.
 
