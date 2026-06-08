@@ -143,6 +143,12 @@ vercel.json                   Vercel build/output + SPA rewrite
   saatleri) + hizmet **ekle/düzenle/sil** (bottom-sheet form + silme onayı).
   `repository`: `createService/updateService/deleteService`, `updateBusiness`.
 
+**Admin tarafı**
+- Rol değiştiricide **Admin** seçeneği (demo); admin-özel **Yönetim** sekmesi.
+- İşletme listesi: onayla/pasife al (`approved` toggle), onay-bekleyen sayısı.
+- Tüm randevular listesi + özet sayılar. `repository.listAllBusinesses/
+  listAllAppointments`, `useSetBusinessApproved`.
+
 **Görsel sistem (tasarım)**
 - Gradient + elevation token sistemi (`theme`: `categoryStyle`, `elevation`,
   `gradients`); `expo-linear-gradient`. Premium altın gradient butonlar, kategori
@@ -176,9 +182,7 @@ vercel.json                   Vercel build/output + SPA rewrite
 
 Öncelik sırasıyla önerilen yol haritası:
 
-1. **Admin paneli** (SCOPE Modül 8): işletme onaylama/pasife alma, kullanıcı
-   yönetimi (ban/askıya alma), randevu listeleme/filtreleme. Rol: `admin`.
-2. **Bildirim altyapısı** (SCOPE Modül 4) — **backend gerektirir**:
+1. **Bildirim altyapısı** (SCOPE Modül 4) — **backend gerektirir**:
    - Firebase Cloud Functions: randevu durum değişiminde push, 24s/1s hatırlatma.
    - Sadakat puanı ve referans ödülünü **sunucu tarafına** taşı (şu an mock).
    - Push için native build (EAS Build) + iOS APNs / Android google-services.json.
