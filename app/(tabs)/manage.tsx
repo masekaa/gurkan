@@ -20,7 +20,7 @@ import {
   useUpdateService,
 } from '@/hooks/queries';
 import { formatDuration, formatPrice } from '@/lib/format';
-import { colors, elevation, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 
 type ServiceForm = {
   id?: string;
@@ -340,7 +340,7 @@ function ServiceFormModal({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
+  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl, ...centeredContent },
   title: { ...typography.title, color: colors.text, marginTop: spacing.md },
   card: {
     backgroundColor: colors.surface,

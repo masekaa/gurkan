@@ -11,7 +11,7 @@ import {
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { EmptyState, ListSkeleton, Screen } from '@/components/ui';
 import { useAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
-import { colors, spacing, typography } from '@/theme';
+import { centeredContent, colors, spacing, typography } from '@/theme';
 import type { Appointment } from '@/types';
 
 type Tab = 'upcoming' | 'past';
@@ -87,7 +87,7 @@ export default function AppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md, ...centeredContent },
   title: { ...typography.title, color: colors.text },
   segment: {
     flexDirection: 'row',
@@ -101,5 +101,5 @@ const styles = StyleSheet.create({
   segActive: { backgroundColor: colors.surfaceAlt },
   segText: { ...typography.caption, color: colors.textMuted },
   segTextActive: { color: colors.text, fontWeight: '700' },
-  list: { padding: spacing.lg, gap: spacing.md, flexGrow: 1 },
+  list: { padding: spacing.lg, gap: spacing.md, flexGrow: 1, ...centeredContent },
 });

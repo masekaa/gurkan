@@ -22,7 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
-import { colors, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, radius, spacing, typography } from '@/theme';
 import type { BusinessCategory } from '@/types';
 
 const FILTERS: ('all' | BusinessCategory)[] = [
@@ -142,7 +142,7 @@ export default function DiscoverScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { padding: spacing.lg, gap: spacing.md },
+  list: { padding: spacing.lg, gap: spacing.md, ...centeredContent },
   header: { gap: spacing.lg, marginBottom: spacing.md },
   greetingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
   eyebrow: { ...typography.micro, color: colors.gold, letterSpacing: 2, marginBottom: 2 },

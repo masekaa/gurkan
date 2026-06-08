@@ -14,7 +14,7 @@ import {
   formatTime,
   statusMeta,
 } from '@/lib/format';
-import { colors, elevation, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 
 const STATUS_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   pending: 'hourglass-outline',
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   topTitle: { ...typography.heading, color: colors.text },
-  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
+  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl, ...centeredContent },
   statusHero: {
     alignItems: 'center',
     gap: spacing.sm,

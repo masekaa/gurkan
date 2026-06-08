@@ -10,7 +10,7 @@ import {
   useSetBusinessApproved,
 } from '@/hooks/queries';
 import { categoryLabels, formatDateTime, statusMeta } from '@/lib/format';
-import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Appointment, Business } from '@/types';
 
 type Tab = 'businesses' | 'appointments';
@@ -159,10 +159,10 @@ function AdminAppointmentRow({ appointment }: { appointment: Appointment }) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, ...centeredContent },
   eyebrow: { ...typography.micro, color: colors.gold, letterSpacing: 2, marginBottom: 2 },
   title: { ...typography.title, color: colors.text },
-  summaryRow: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg },
+  summaryRow: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, ...centeredContent },
   summaryHero: {
     flex: 1,
     borderRadius: radius.lg,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   segActive: { backgroundColor: colors.surfaceAlt },
   segText: { ...typography.caption, color: colors.textMuted },
   segTextActive: { color: colors.text, fontWeight: '700' },
-  list: { padding: spacing.lg, flexGrow: 1 },
+  list: { padding: spacing.lg, flexGrow: 1, ...centeredContent },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

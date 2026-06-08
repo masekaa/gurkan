@@ -111,5 +111,18 @@ export const categoryStyle: Record<
   barber_shop: { gradient: ['#1F5A52', '#0F2A26'], icon: 'cut' },
 };
 
-export const theme = { colors, spacing, radius, typography, elevation, gradients };
+/** Layout constraints — keeps content readable on wide (web) viewports. */
+export const layout = {
+  /** Max content column width; centered on large screens. */
+  maxWidth: 640,
+} as const;
+
+/** Spread into a content/list container to center + cap width on web. */
+export const centeredContent = {
+  width: '100%',
+  maxWidth: layout.maxWidth,
+  alignSelf: 'center',
+} as const;
+
+export const theme = { colors, spacing, radius, typography, elevation, gradients, layout };
 export type Theme = typeof theme;

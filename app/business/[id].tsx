@@ -9,7 +9,7 @@ import { Badge, Button, Field, ListSkeleton, Screen, Skeleton } from '@/componen
 import { useAuth } from '@/context/AuthContext';
 import { useBusiness, useCreateReview, useReviews, useServices } from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
-import { categoryStyle, colors, elevation, radius, spacing, typography } from '@/theme';
+import { categoryStyle, centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Review } from '@/types';
 
 function isOpenNow(open: string, close: string): boolean {
@@ -302,7 +302,7 @@ function ReviewRow({ review }: { review: Review }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: spacing.xxl },
+  content: { paddingBottom: spacing.xxl, ...centeredContent },
   hero: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,

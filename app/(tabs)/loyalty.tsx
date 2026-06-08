@@ -4,7 +4,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState, ListSkeleton, Screen } from '@/components/ui';
 import { useLoyalty } from '@/hooks/queries';
-import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Loyalty } from '@/types';
 
 const POINTS_PER_REWARD = 10;
@@ -91,7 +91,7 @@ function LoyaltyRow({ item }: { item: Loyalty }) {
 }
 
 const styles = StyleSheet.create({
-  list: { padding: spacing.lg, flexGrow: 1 },
+  list: { padding: spacing.lg, flexGrow: 1, ...centeredContent },
   title: { ...typography.title, color: colors.text },
   summary: {
     flexDirection: 'row',

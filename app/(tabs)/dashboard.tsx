@@ -7,7 +7,7 @@ import { ListSkeleton, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusiness, useBusinessAppointments } from '@/hooks/queries';
 import { formatPrice } from '@/lib/format';
-import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Business } from '@/types';
 
 /** Number of 30-minute slots a business offers per day. */
@@ -163,7 +163,7 @@ function RateCard({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.lg },
+  content: { padding: spacing.lg, gap: spacing.lg, ...centeredContent },
   eyebrow: { ...typography.micro, color: colors.gold, letterSpacing: 2, marginBottom: 2 },
   hello: { ...typography.title, color: colors.text },
   subtitle: { ...typography.body, color: colors.textMuted, marginTop: 2 },

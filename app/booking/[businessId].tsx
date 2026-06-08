@@ -22,7 +22,7 @@ import {
   formatDuration,
   formatPrice,
 } from '@/lib/format';
-import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
 /** Build the next `count` calendar days starting today. */
 function nextDays(count: number): Date[] {
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   topTitle: { ...typography.heading, color: colors.text },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
+  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl, ...centeredContent },
   summary: {
     flexDirection: 'row',
     alignItems: 'center',

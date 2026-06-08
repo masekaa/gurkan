@@ -13,7 +13,7 @@ import {
 import { Avatar, Button, Card, Field } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { isFirebaseEnabled } from '@/lib/firebase';
-import { colors, radius, spacing, typography } from '@/theme';
+import { centeredContent, colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
   const { profile, signOut, setRole, updateProfile } = useAuth();
@@ -169,7 +169,7 @@ function MenuRow({
 }
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
+  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl, ...centeredContent },
   title: { ...typography.title, color: colors.text, marginTop: spacing.md },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   editIcon: {
