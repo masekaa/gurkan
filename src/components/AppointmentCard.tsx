@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge, Button } from './ui';
 import {
@@ -15,9 +15,11 @@ import type { Appointment } from '@/types';
 export function AppointmentCard({
   appointment,
   onCancel,
+  onPress,
 }: {
   appointment: Appointment;
   onCancel?: () => void;
+  onPress?: () => void;
 }) {
   const { business, service, status, datetime } = appointment;
   const meta = statusMeta[status];
@@ -25,7 +27,15 @@ export function AppointmentCard({
   const parts = formatDate(datetime).split(' '); // ["Pzt", "9", "Haziran"]
 
   return (
-    <View style={[styles.card, elevation.soft]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [
+        styles.card,
+        elevation.soft,
+        pressed && onPress && { opacity: 0.9 },
+      ]}
+    >
       <View style={[styles.accent, { backgroundColor: meta.color }]} />
       <View style={styles.inner}>
         <View style={styles.topRow}>
@@ -60,7 +70,7 @@ export function AppointmentCard({
           ) : null}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

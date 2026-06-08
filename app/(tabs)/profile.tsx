@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,18 +10,39 @@ import {
   View,
 } from 'react-native';
 
-import { Avatar, Button, Card } from '@/components/ui';
+import { Avatar, Button, Card, Field } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
-  const { profile, signOut, setRole } = useAuth();
+  const { profile, signOut, setRole, updateProfile } = useAuth();
   const router = useRouter();
+
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
 
   async function onSignOut() {
     await signOut();
     router.replace('/(auth)/login');
+  }
+
+  function openEdit() {
+    setName(profile?.name ?? '');
+    setPhone(profile?.phone ?? '');
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      await updateProfile({ name: name.trim(), phone: phone.trim() || null });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const isBusiness = profile?.role === 'business';
@@ -35,6 +58,9 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{profile?.email}</Text>
           {profile?.phone ? <Text style={styles.email}>{profile.phone}</Text> : null}
         </View>
+        <Pressable onPress={openEdit} hitSlop={8} style={styles.editIcon}>
+          <Ionicons name="create-outline" size={20} color={colors.gold} />
+        </Pressable>
       </Card>
 
       <Card style={styles.referral}>
@@ -93,6 +119,32 @@ export default function ProfileScreen() {
       </View>
 
       <Button label="Çıkış Yap" variant="danger" icon="log-out-outline" onPress={onSignOut} />
+
+      <Modal visible={editing} transparent animationType="slide" onRequestClose={() => setEditing(false)}>
+        <View style={styles.overlay}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Profili Düzenle</Text>
+            <Field label="Ad Soyad" value={name} onChangeText={setName} icon="person-outline" />
+            <Field
+              label="Telefon"
+              value={phone}
+              onChangeText={setPhone}
+              icon="call-outline"
+              keyboardType="phone-pad"
+              placeholder="05xx xxx xx xx"
+            />
+            <View style={styles.sheetActions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Vazgeç" variant="secondary" onPress={() => setEditing(false)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Kaydet" loading={saving} disabled={!name.trim()} onPress={saveEdit} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -117,6 +169,33 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
   title: { ...typography.title, color: colors.text, marginTop: spacing.md },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  editIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.gold + '1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+    gap: spacing.md,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: spacing.sm,
+  },
+  sheetTitle: { ...typography.heading, color: colors.text, textAlign: 'center' },
+  sheetActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   name: { ...typography.heading, color: colors.text },
   email: { ...typography.caption, color: colors.textMuted, marginTop: 1 },
   referral: { gap: spacing.sm },

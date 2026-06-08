@@ -33,6 +33,8 @@ interface AuthState {
   signOut: () => Promise<void>;
   /** Switch the current account between customer and business mode. */
   setRole: (role: UserRole) => Promise<void>;
+  /** Update editable profile fields (name / phone). */
+  updateProfile: (patch: { name?: string; phone?: string | null }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -124,6 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const next: Profile = { ...profile, role, businessId };
         if (isFirebaseEnabled && db) {
           await updateDoc(doc(db, 'profiles', profile.id), { role, businessId });
+          setProfile(next);
+          return;
+        }
+        await persistMock(next);
+      },
+      async updateProfile(patch) {
+        if (!profile) return;
+        const next: Profile = { ...profile, ...patch };
+        if (isFirebaseEnabled && db) {
+          await updateDoc(doc(db, 'profiles', profile.id), patch);
           setProfile(next);
           return;
         }

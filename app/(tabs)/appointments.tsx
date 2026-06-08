@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +18,7 @@ import type { Appointment } from '@/types';
 type Tab = 'upcoming' | 'past';
 
 export default function AppointmentsScreen() {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('upcoming');
   const { data, isLoading } = useAppointments();
   const updateStatus = useUpdateAppointmentStatus();
@@ -63,6 +65,9 @@ export default function AppointmentsScreen() {
           renderItem={({ item }) => (
             <AppointmentCard
               appointment={item}
+              onPress={() =>
+                router.push({ pathname: '/appointment/[id]', params: { id: item.id } })
+              }
               onCancel={() =>
                 updateStatus.mutate({ id: item.id, status: 'cancelled' })
               }
