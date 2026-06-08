@@ -13,7 +13,7 @@ import { Badge, Button, EmptyState, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusinessAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
 import { formatDate, formatTime, statusMeta } from '@/lib/format';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Appointment, AppointmentStatus } from '@/types';
 
 type Tab = 'pending' | 'approved' | 'history';
@@ -101,23 +101,29 @@ function OrderCard({
 }) {
   const { customerName, service, status, datetime } = appointment;
   const meta = statusMeta[status];
+  const initial = (customerName ?? 'M').trim().charAt(0).toUpperCase();
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.customer}>{customerName ?? 'Müşteri'}</Text>
-          <Text style={styles.service}>{service?.name ?? 'Hizmet'}</Text>
+    <View style={[styles.card, elevation.soft]}>
+      <View style={[styles.accent, { backgroundColor: meta.color }]} />
+      <View style={styles.inner}>
+        <View style={styles.cardTop}>
+          <View style={styles.customerAvatar}>
+            <Text style={styles.customerInitial}>{initial}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.customer}>{customerName ?? 'Müşteri'}</Text>
+            <Text style={styles.service}>{service?.name ?? 'Hizmet'}</Text>
+          </View>
+          <Badge label={meta.label} color={meta.color} />
         </View>
-        <Badge label={meta.label} color={meta.color} />
-      </View>
 
-      <View style={styles.timeRow}>
-        <Ionicons name="calendar-outline" size={14} color={colors.textFaint} />
-        <Text style={styles.time}>
-          {formatDate(datetime)} · {formatTime(datetime)}
-        </Text>
-      </View>
+        <View style={styles.timeRow}>
+          <Ionicons name="calendar-outline" size={14} color={colors.textFaint} />
+          <Text style={styles.time}>
+            {formatDate(datetime)} · {formatTime(datetime)}
+          </Text>
+        </View>
 
       {status === 'pending' ? (
         <View style={styles.actions}>
@@ -130,16 +136,17 @@ function OrderCard({
         </View>
       ) : null}
 
-      {status === 'approved' ? (
-        <View style={styles.actions}>
-          <View style={{ flex: 1 }}>
-            <Button label="İptal" variant="secondary" onPress={() => onAction('cancelled')} disabled={busy} />
+        {status === 'approved' ? (
+          <View style={styles.actions}>
+            <View style={{ flex: 1 }}>
+              <Button label="İptal" variant="secondary" onPress={() => onAction('cancelled')} disabled={busy} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Tamamlandı" icon="checkmark" onPress={() => onAction('completed')} disabled={busy} />
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Button label="Tamamlandı" icon="checkmark" onPress={() => onAction('completed')} disabled={busy} />
-          </View>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -179,14 +186,27 @@ const styles = StyleSheet.create({
   countText: { ...typography.micro, color: colors.onGold },
   list: { padding: spacing.lg, flexGrow: 1 },
   card: {
+    flexDirection: 'row',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.md,
+    overflow: 'hidden',
   },
-  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  accent: { width: 4 },
+  inner: { flex: 1, padding: spacing.lg, gap: spacing.md },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  customerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.gold + '55',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customerInitial: { ...typography.bodyStrong, color: colors.gold },
   customer: { ...typography.bodyStrong, color: colors.text },
   service: { ...typography.caption, color: colors.gold, marginTop: 2 },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

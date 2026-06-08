@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -6,7 +7,7 @@ import { Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusiness, useBusinessAppointments } from '@/hooks/queries';
 import { formatPrice } from '@/lib/format';
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Business } from '@/types';
 
 /** Number of 30-minute slots a business offers per day. */
@@ -66,13 +67,27 @@ export default function DashboardScreen() {
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <View>
+          <Text style={styles.eyebrow}>PANEL</Text>
           <Text style={styles.hello}>{business?.name ?? 'İşletmem'}</Text>
           <Text style={styles.subtitle}>Bugünün özeti</Text>
         </View>
 
+        <LinearGradient
+          colors={gradients.goldButton}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.earnHero}
+        >
+          <Ionicons name="wallet" size={130} color="#00000010" style={styles.earnGlyph} />
+          <Text style={styles.earnLabel}>Aylık Kazanç</Text>
+          <Text style={styles.earnValue}>{formatPrice(stats.monthly)}</Text>
+          <View style={styles.earnSub}>
+            <Ionicons name="cash-outline" size={15} color="rgba(23,17,9,0.75)" />
+            <Text style={styles.earnSubText}>Bugün {formatPrice(stats.daily)}</Text>
+          </View>
+        </LinearGradient>
+
         <View style={styles.grid}>
-          <StatCard icon="cash-outline" label="Günlük Kazanç" value={formatPrice(stats.daily)} />
-          <StatCard icon="wallet-outline" label="Aylık Kazanç" value={formatPrice(stats.monthly)} />
           <StatCard icon="calendar-outline" label="Toplam Randevu" value={String(stats.total)} />
           <StatCard icon="hourglass-outline" label="Bekleyen" value={String(stats.pending)} highlight={stats.pending > 0} />
         </View>
@@ -108,7 +123,9 @@ function StatCard({
 }) {
   return (
     <View style={[styles.stat, highlight && styles.statHighlight]}>
-      <Ionicons name={icon} size={20} color={colors.gold} />
+      <View style={styles.statIcon}>
+        <Ionicons name={icon} size={18} color={colors.gold} />
+      </View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -147,8 +164,21 @@ function RateCard({
 
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.lg },
+  eyebrow: { ...typography.micro, color: colors.gold, letterSpacing: 2, marginBottom: 2 },
   hello: { ...typography.title, color: colors.text },
   subtitle: { ...typography.body, color: colors.textMuted, marginTop: 2 },
+  earnHero: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.xs,
+    overflow: 'hidden',
+    ...elevation.gold,
+  },
+  earnGlyph: { position: 'absolute', right: -8, top: -6 },
+  earnLabel: { ...typography.caption, color: 'rgba(23,17,9,0.75)', fontWeight: '600' },
+  earnValue: { fontSize: 34, fontWeight: '800', color: colors.onGold, letterSpacing: 0.3 },
+  earnSub: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  earnSubText: { ...typography.bodyStrong, color: 'rgba(23,17,9,0.85)' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   stat: {
     flexGrow: 1,
@@ -158,7 +188,16 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.lg,
-    gap: 6,
+    gap: 8,
+    ...elevation.soft,
+  },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.gold + '1A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statHighlight: { borderColor: colors.gold + '88' },
   statValue: { ...typography.title, color: colors.text },
@@ -170,6 +209,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
     gap: spacing.sm,
+    ...elevation.soft,
   },
   rateHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rateLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
