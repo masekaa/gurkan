@@ -109,6 +109,19 @@ export async function getBusiness(id: string): Promise<Business | null> {
   return mock.businesses.find((b) => b.id === id) ?? null;
 }
 
+/** Update editable business profile fields (owner-managed). */
+export async function updateBusiness(
+  id: string,
+  patch: Partial<Omit<Business, 'id'>>,
+): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'businesses', id), patch);
+    return;
+  }
+  const b = mock.businesses.find((x) => x.id === id);
+  if (b) Object.assign(b, patch);
+}
+
 // ---------------------------------------------------------------------------
 // Services
 // ---------------------------------------------------------------------------
@@ -126,6 +139,42 @@ export async function listServices(businessId: string): Promise<Service[]> {
       .sort((a, b) => a.price - b.price);
   }
   return mock.services.filter((s) => s.businessId === businessId);
+}
+
+export async function createService(input: {
+  businessId: string;
+  name: string;
+  durationMin: number;
+  price: number;
+}): Promise<Service> {
+  if (isFirebaseEnabled) {
+    const ref = await addDoc(collection(requireDb(), 'services'), input);
+    return { id: ref.id, ...input };
+  }
+  const service: Service = { id: uid('s'), ...input };
+  mock.services.push(service);
+  return service;
+}
+
+export async function updateService(
+  id: string,
+  patch: Partial<Omit<Service, 'id' | 'businessId'>>,
+): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'services', id), patch);
+    return;
+  }
+  const s = mock.services.find((x) => x.id === id);
+  if (s) Object.assign(s, patch);
+}
+
+export async function deleteService(id: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    await deleteDoc(doc(requireDb(), 'services', id));
+    return;
+  }
+  const i = mock.services.findIndex((x) => x.id === id);
+  if (i >= 0) mock.services.splice(i, 1);
 }
 
 // ---------------------------------------------------------------------------

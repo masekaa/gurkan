@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import * as repo from '@/data/repository';
 import { SlotTakenError } from '@/data/repository';
 import { MOCK_USER_ID } from '@/data/mock';
-import type { AppointmentStatus } from '@/types';
+import type { AppointmentStatus, Business } from '@/types';
 
 // Re-exported so screens can detect double-booking without importing the data
 // layer directly (screens depend on the hooks/repository boundary only).
@@ -111,6 +111,48 @@ export function useUpdateAppointmentStatus() {
       qc.invalidateQueries({ queryKey: ['businessAppointments'] });
       qc.invalidateQueries({ queryKey: ['loyalty'] });
       qc.invalidateQueries({ queryKey: ['takenSlots'] });
+    },
+  });
+}
+
+// --- Business-side management (FR-2) ----------------------------------------
+
+type ServiceInput = { name: string; durationMin: number; price: number };
+
+export function useCreateService(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ServiceInput) =>
+      repo.createService({ businessId, ...input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['services', businessId] }),
+  });
+}
+
+export function useUpdateService(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...patch }: { id: string } & Partial<ServiceInput>) =>
+      repo.updateService(id, patch),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['services', businessId] }),
+  });
+}
+
+export function useDeleteService(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.deleteService(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['services', businessId] }),
+  });
+}
+
+export function useUpdateBusiness(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: Partial<Omit<Business, 'id'>>) =>
+      repo.updateBusiness(businessId, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business', businessId] });
+      qc.invalidateQueries({ queryKey: ['businesses'] });
     },
   });
 }
