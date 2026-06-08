@@ -124,7 +124,7 @@ export function humanizeAuthError(code?: string): string | null {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.xl },
+  content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.xl, width: '100%', maxWidth: 480, alignSelf: 'center' },
   brand: { alignItems: 'center', gap: spacing.sm },
   logo: {
     width: 64,

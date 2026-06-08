@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -11,6 +12,7 @@ import {
 
 import { Button, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
+import { isFirebaseEnabled } from '@/lib/firebase';
 import { colors, spacing, typography } from '@/theme';
 import { humanizeAuthError } from './login';
 
@@ -51,12 +53,22 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View>
+          <View style={styles.brand}>
+            <View style={styles.logo}>
+              <Ionicons name="person-add" size={26} color={colors.onGold} />
+            </View>
             <Text style={styles.title}>Hesap Oluştur</Text>
-            <Text style={styles.subtitle}>
-              Birkaç adımda Altın100 ailesine katıl.
-            </Text>
+            <Text style={styles.subtitle}>Birkaç adımda Altın100 ailesine katıl.</Text>
           </View>
+
+          {!isFirebaseEnabled ? (
+            <View style={styles.demo}>
+              <Ionicons name="flask-outline" size={15} color={colors.gold} />
+              <Text style={styles.demoText}>
+                Demo modu: bilgiler cihazda saklanır, gerçek hesap oluşturulmaz.
+              </Text>
+            </View>
+          ) : null}
 
           <View style={styles.form}>
             <Field
@@ -108,9 +120,38 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.xl },
-  title: { ...typography.display, color: colors.text },
-  subtitle: { ...typography.body, color: colors.textMuted, marginTop: spacing.xs },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+    gap: spacing.xl,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+  },
+  brand: { alignItems: 'center', gap: spacing.sm },
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  title: { ...typography.display, color: colors.text, textAlign: 'center' },
+  subtitle: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
+  demo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.gold + '14',
+    borderColor: colors.gold + '40',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    padding: spacing.md,
+  },
+  demoText: { ...typography.caption, color: colors.goldSoft, flex: 1 },
   form: { gap: spacing.md },
   error: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },

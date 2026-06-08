@@ -114,7 +114,7 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.xl },
+  content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.xl, width: '100%', maxWidth: 480, alignSelf: 'center' },
   back: { position: 'absolute', top: spacing.md, left: spacing.lg, width: 40, height: 40, justifyContent: 'center' },
   brand: { alignItems: 'center', gap: spacing.sm },
   logo: {
