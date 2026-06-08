@@ -10,6 +10,8 @@ export interface Profile {
   role: UserRole;
   referralCode: string;
   createdAt: string;
+  /** For business accounts: the business this account manages. */
+  businessId?: string | null;
 }
 
 export type BusinessCategory =
@@ -58,6 +60,8 @@ export interface Appointment {
   datetime: string; // ISO 8601
   status: AppointmentStatus;
   createdAt: string;
+  /** Denormalised customer name for the business-side list. */
+  customerName?: string;
   // Convenience joins (populated by the repository for display).
   business?: Business;
   service?: Service;

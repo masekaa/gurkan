@@ -6,7 +6,7 @@ import {
   signOut as fbSignOut,
   updateProfile as fbUpdateProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import {
   createContext,
   useContext,
@@ -17,8 +17,8 @@ import {
 } from 'react';
 
 import { auth, db, isFirebaseEnabled } from '@/lib/firebase';
-import { MOCK_USER_ID } from '@/data/mock';
-import type { Profile } from '@/types';
+import { DEMO_BUSINESS_ID, MOCK_USER_ID } from '@/data/mock';
+import type { Profile, UserRole } from '@/types';
 
 interface AuthState {
   loading: boolean;
@@ -31,6 +31,8 @@ interface AuthState {
     password: string;
   }) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Switch the current account between customer and business mode. */
+  setRole: (role: UserRole) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -115,6 +117,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         await persistMock(null);
+      },
+      async setRole(role) {
+        if (!profile) return;
+        const businessId = role === 'business' ? DEMO_BUSINESS_ID : null;
+        const next: Profile = { ...profile, role, businessId };
+        if (isFirebaseEnabled && db) {
+          await updateDoc(doc(db, 'profiles', profile.id), { role, businessId });
+          setProfile(next);
+          return;
+        }
+        await persistMock(next);
       },
     }),
     [loading, profile],

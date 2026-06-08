@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -43,6 +43,9 @@ export default function DiscoverScreen() {
     () => (data ?? []).filter((b) => filter === 'all' || b.category === filter),
     [data, filter],
   );
+
+  // Business accounts use the order inbox instead of the customer discover feed.
+  if (profile?.role === 'business') return <Redirect href="/(tabs)/orders" />;
 
   return (
     <Screen>

@@ -14,6 +14,12 @@ import type {
 
 export const MOCK_USER_ID = 'mock-user';
 
+/** The business that a demo "İşletme" account manages. */
+export const DEMO_BUSINESS_ID = 'b1';
+
+const HOUR = 1000 * 60 * 60;
+const now = Date.now();
+
 export const businesses: Business[] = [
   {
     id: 'b1',
@@ -96,23 +102,77 @@ export const services: Service[] = [
 
 /** Mutable session stores. */
 export const appointments: Appointment[] = [
+  // The demo customer's own appointments (seen on the customer side).
   {
     id: 'a1',
     customerId: MOCK_USER_ID,
+    customerName: 'Sen',
     businessId: 'b1',
     serviceId: 's3',
-    datetime: new Date(Date.now() + 1000 * 60 * 60 * 26).toISOString(),
+    datetime: new Date(now + 26 * HOUR).toISOString(),
     status: 'approved',
     createdAt: new Date().toISOString(),
   },
   {
     id: 'a0',
     customerId: MOCK_USER_ID,
+    customerName: 'Sen',
     businessId: 'b2',
     serviceId: 's4',
-    datetime: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
+    datetime: new Date(now - 72 * HOUR).toISOString(),
     status: 'completed',
     createdAt: new Date().toISOString(),
+  },
+  // Other customers' appointments at the demo business (seen on the business side).
+  {
+    id: 'a2',
+    customerId: 'cust-2',
+    customerName: 'Mehmet Yılmaz',
+    businessId: DEMO_BUSINESS_ID,
+    serviceId: 's1',
+    datetime: new Date(now + 3 * HOUR).toISOString(),
+    status: 'pending',
+    createdAt: new Date(now - HOUR).toISOString(),
+  },
+  {
+    id: 'a3',
+    customerId: 'cust-3',
+    customerName: 'Ali Vural',
+    businessId: DEMO_BUSINESS_ID,
+    serviceId: 's2',
+    datetime: new Date(now + 5 * HOUR).toISOString(),
+    status: 'pending',
+    createdAt: new Date(now - 2 * HOUR).toISOString(),
+  },
+  {
+    id: 'a4',
+    customerId: 'cust-4',
+    customerName: 'Caner Demir',
+    businessId: DEMO_BUSINESS_ID,
+    serviceId: 's3',
+    datetime: new Date(now + 28 * HOUR).toISOString(),
+    status: 'approved',
+    createdAt: new Date(now - 5 * HOUR).toISOString(),
+  },
+  {
+    id: 'a5',
+    customerId: 'cust-5',
+    customerName: 'Burak Şahin',
+    businessId: DEMO_BUSINESS_ID,
+    serviceId: 's1',
+    datetime: new Date(now - 24 * HOUR).toISOString(),
+    status: 'completed',
+    createdAt: new Date(now - 48 * HOUR).toISOString(),
+  },
+  {
+    id: 'a6',
+    customerId: 'cust-6',
+    customerName: 'Emre Koç',
+    businessId: DEMO_BUSINESS_ID,
+    serviceId: 's2',
+    datetime: new Date(now - 30 * HOUR).toISOString(),
+    status: 'cancelled',
+    createdAt: new Date(now - 50 * HOUR).toISOString(),
   },
 ];
 

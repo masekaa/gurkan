@@ -46,6 +46,14 @@ export function useAppointments() {
   });
 }
 
+export function useBusinessAppointments(businessId?: string | null) {
+  return useQuery({
+    queryKey: ['businessAppointments', businessId],
+    queryFn: () => repo.listBusinessAppointments(businessId as string),
+    enabled: Boolean(businessId),
+  });
+}
+
 export function useLoyalty() {
   const userId = useUserId();
   return useQuery({
@@ -64,7 +72,8 @@ export function useCreateAppointment() {
       datetime: string;
     }) => repo.createAppointment({ customerId: userId, ...input }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['appointments', userId] });
+      qc.invalidateQueries({ queryKey: ['appointments'] });
+      qc.invalidateQueries({ queryKey: ['businessAppointments'] });
     },
   });
 }
@@ -78,13 +87,14 @@ export function useSeedSampleData() {
 }
 
 export function useUpdateAppointmentStatus() {
-  const userId = useUserId();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: AppointmentStatus }) =>
       repo.updateAppointmentStatus(id, status),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['appointments', userId] });
+      qc.invalidateQueries({ queryKey: ['appointments'] });
+      qc.invalidateQueries({ queryKey: ['businessAppointments'] });
+      qc.invalidateQueries({ queryKey: ['loyalty'] });
     },
   });
 }

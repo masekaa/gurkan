@@ -137,6 +137,31 @@ export async function listAppointments(
     .map(hydrate);
 }
 
+/** Appointments belonging to a business (the business-owner inbox). */
+export async function listBusinessAppointments(
+  businessId: string,
+): Promise<Appointment[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(
+      query(
+        collection(requireDb(), 'appointments'),
+        where('businessId', '==', businessId),
+        orderBy('datetime', 'desc'),
+      ),
+    );
+    const rows = snap.docs.map(
+      (d) => ({ id: d.id, ...d.data() }) as Appointment,
+    );
+    return Promise.all(
+      rows.map(async (a) => ({ ...a, service: await getService(a.serviceId) })),
+    );
+  }
+  return mock.appointments
+    .filter((a) => a.businessId === businessId)
+    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1))
+    .map(hydrate);
+}
+
 export async function createAppointment(input: {
   customerId: string;
   businessId: string;
@@ -166,7 +191,24 @@ export async function updateAppointmentStatus(
     return;
   }
   const appt = mock.appointments.find((a) => a.id === id);
-  if (appt) appt.status = status;
+  if (!appt) return;
+  appt.status = status;
+  // In mock mode, completing an appointment grants a loyalty point (in
+  // production this is a Cloud Function so clients cannot forge points).
+  if (status === 'completed') grantLoyaltyPoint(appt.customerId, appt.businessId);
+}
+
+/** Mock-only: +1 point per completed visit; every 10 points → 1 free service. */
+function grantLoyaltyPoint(userId: string, businessId: string) {
+  let record = mock.loyalty.find(
+    (l) => l.userId === userId && l.businessId === businessId,
+  );
+  if (!record) {
+    record = { userId, businessId, points: 0, freeServices: 0 };
+    mock.loyalty.push(record);
+  }
+  record.points += 1;
+  if (record.points > 0 && record.points % 10 === 0) record.freeServices += 1;
 }
 
 // ---------------------------------------------------------------------------

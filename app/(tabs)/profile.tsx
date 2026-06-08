@@ -14,13 +14,15 @@ import { isFirebaseEnabled } from '@/lib/firebase';
 import { colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, setRole } = useAuth();
   const router = useRouter();
 
   async function onSignOut() {
     await signOut();
     router.replace('/(auth)/login');
   }
+
+  const isBusiness = profile?.role === 'business';
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={styles.content}>
@@ -45,6 +47,32 @@ export default function ProfileScreen() {
           Arkadaşın bu kodla kayıt olduğunda sen +2, o +1 puan kazanır.
         </Text>
       </Card>
+
+      <View style={styles.roleCard}>
+        <View style={styles.roleHeader}>
+          <Ionicons name="swap-horizontal-outline" size={18} color={colors.gold} />
+          <Text style={styles.roleTitle}>Hesap Türü</Text>
+        </View>
+        <Text style={styles.roleHint}>
+          Demo: müşteri ve işletme deneyimi arasında geçiş yap.
+        </Text>
+        <View style={styles.roleSegment}>
+          <Pressable
+            onPress={() => setRole('user')}
+            style={[styles.roleBtn, !isBusiness && styles.roleBtnActive]}
+          >
+            <Ionicons name="person-outline" size={16} color={!isBusiness ? colors.onGold : colors.textMuted} />
+            <Text style={[styles.roleBtnText, !isBusiness && styles.roleBtnTextActive]}>Müşteri</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setRole('business')}
+            style={[styles.roleBtn, isBusiness && styles.roleBtnActive]}
+          >
+            <Ionicons name="storefront-outline" size={16} color={isBusiness ? colors.onGold : colors.textMuted} />
+            <Text style={[styles.roleBtnText, isBusiness && styles.roleBtnTextActive]}>İşletme</Text>
+          </Pressable>
+        </View>
+      </View>
 
       <View style={styles.menu}>
         <MenuRow icon="notifications-outline" label="Bildirim Tercihleri" />
@@ -100,6 +128,36 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   referralHint: { ...typography.caption, color: colors.textMuted },
+  roleCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  roleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  roleTitle: { ...typography.bodyStrong, color: colors.text },
+  roleHint: { ...typography.caption, color: colors.textMuted },
+  roleSegment: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 12,
+    padding: 4,
+    marginTop: spacing.xs,
+  },
+  roleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
+    borderRadius: 9,
+  },
+  roleBtnActive: { backgroundColor: colors.gold },
+  roleBtnText: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  roleBtnTextActive: { color: colors.onGold },
   menu: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

@@ -21,10 +21,17 @@ platformu. **Tek kod tabanı** ile web, iOS ve Android'de çalışır.
 Tüm ekranlar veriye yalnızca **repository katmanı** üzerinden erişir; backend'i
 doğrudan tanımazlar. Bu sayede backend değişimi yalnızca birkaç dosyayı etkiler.
 
+> **Rol değiştirme (demo):** Profil ekranındaki **Müşteri ↔ İşletme** anahtarı
+> ile iki deneyim arasında geçebilirsiniz. İşletme modunda gelen randevuları
+> onaylayıp reddedebilir ve Panel'de kazanç/doluluk/no-show metriklerini
+> görebilirsiniz.
+
 ```
 app/                 Ekranlar & yönlendirme (Expo Router)
   (auth)/            Giriş / kayıt
-  (tabs)/            Keşfet · Randevular · Sadakat · Profil
+  (tabs)/            Rol bazlı sekmeler:
+                       • Müşteri: Keşfet · Randevular · Sadakat · Profil
+                       • İşletme: Gelen Randevular · Panel · Profil
   business/[id]      İşletme detayı
   booking/[...]      Randevu oluşturma akışı
 src/
