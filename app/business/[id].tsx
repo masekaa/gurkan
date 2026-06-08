@@ -78,7 +78,13 @@ export default function BusinessDetailScreen() {
             color="#ffffff12"
             style={styles.heroGlyph}
           />
-          <Pressable onPress={() => router.back()} style={styles.back} hitSlop={10}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.back}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Geri"
+          >
             <Ionicons name="chevron-back" size={22} color="#fff" />
           </Pressable>
 

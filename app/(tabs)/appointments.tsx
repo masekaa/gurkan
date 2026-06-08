@@ -80,6 +80,9 @@ export default function AppointmentsScreen() {
               icon="calendar-outline"
               title={tab === 'upcoming' ? 'Yaklaşan randevun yok' : 'Geçmiş randevu yok'}
               subtitle="Keşfet sekmesinden yeni bir randevu oluşturabilirsin."
+              actionLabel={tab === 'upcoming' ? "Keşfet'e Git" : undefined}
+              actionIcon="compass-outline"
+              onAction={tab === 'upcoming' ? () => router.push('/(tabs)') : undefined}
             />
           }
         />

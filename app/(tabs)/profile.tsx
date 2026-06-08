@@ -56,7 +56,13 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{profile?.email}</Text>
           {profile?.phone ? <Text style={styles.email}>{profile.phone}</Text> : null}
         </View>
-        <Pressable onPress={openEdit} hitSlop={8} style={styles.editIcon}>
+        <Pressable
+          onPress={openEdit}
+          hitSlop={8}
+          style={styles.editIcon}
+          accessibilityRole="button"
+          accessibilityLabel="Profili düzenle"
+        >
           <Ionicons name="create-outline" size={20} color={colors.gold} />
         </Pressable>
       </Card>

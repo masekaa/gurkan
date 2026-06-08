@@ -41,6 +41,8 @@ export function BusinessCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${business.name}, ${categoryLabels[business.category]}, ${business.rating.toFixed(1)} yıldız, ${business.district}`}
       style={({ pressed }) => [
         styles.card,
         elevation.card,

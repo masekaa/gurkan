@@ -80,6 +80,9 @@ export function Button({
       <Pressable
         onPress={onPress}
         disabled={isDisabled}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled: isDisabled, busy: !!loading }}
         style={({ pressed }) => [
           styles.btnGoldWrap,
           !isDisabled && elevation.gold,
@@ -103,6 +106,9 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: !!loading }}
       style={({ pressed }) => [
         styles.btn,
         variant === 'secondary' && styles.btnSecondary,
@@ -173,16 +179,27 @@ export function EmptyState({
   icon = 'sparkles-outline',
   title,
   subtitle,
+  actionLabel,
+  onAction,
+  actionIcon,
 }: {
   icon?: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  actionIcon?: keyof typeof Ionicons.glyphMap;
 }) {
   return (
     <View style={styles.empty}>
       <Ionicons name={icon} size={42} color={colors.textFaint} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {subtitle ? <Text style={styles.emptySub}>{subtitle}</Text> : null}
+      {actionLabel && onAction ? (
+        <View style={{ marginTop: spacing.md }}>
+          <Button label={actionLabel} icon={actionIcon} variant="secondary" onPress={onAction} />
+        </View>
+      ) : null}
     </View>
   );
 }

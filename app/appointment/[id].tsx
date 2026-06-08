@@ -142,7 +142,7 @@ export default function AppointmentDetailScreen() {
 function TopBar({ onBack }: { onBack: () => void }) {
   return (
     <View style={styles.topbar}>
-      <Pressable onPress={onBack} hitSlop={10}>
+      <Pressable onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="Geri">
         <Ionicons name="chevron-back" size={22} color={colors.text} />
       </Pressable>
       <Text style={styles.topTitle}>Randevu Detayı</Text>

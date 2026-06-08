@@ -30,6 +30,8 @@ export function AppointmentCard({
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${business?.name ?? 'İşletme'}, ${service?.name ?? 'Hizmet'}, ${meta.label}, ${formatDate(datetime)} ${formatTime(datetime)}`}
       style={({ pressed }) => [
         styles.card,
         elevation.soft,

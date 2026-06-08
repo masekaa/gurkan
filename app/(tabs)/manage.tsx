@@ -75,7 +75,13 @@ export default function ManageScreen() {
           <View style={[styles.card, elevation.soft]}>
             <View style={styles.cardHead}>
               <Text style={styles.cardTitle}>{business?.name ?? 'İşletme'}</Text>
-              <Pressable onPress={() => setEditProfile(true)} hitSlop={8} style={styles.editBtn}>
+              <Pressable
+                onPress={() => setEditProfile(true)}
+                hitSlop={8}
+                style={styles.editBtn}
+                accessibilityRole="button"
+                accessibilityLabel="İşletme bilgilerini düzenle"
+              >
                 <Ionicons name="create-outline" size={16} color={colors.gold} />
                 <Text style={styles.editText}>Düzenle</Text>
               </Pressable>
@@ -130,10 +136,18 @@ export default function ManageScreen() {
                   }
                   hitSlop={8}
                   style={styles.iconBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${s.name} hizmetini düzenle`}
                 >
                   <Ionicons name="create-outline" size={20} color={colors.textMuted} />
                 </Pressable>
-                <Pressable onPress={() => setDeleteId(s.id)} hitSlop={8} style={styles.iconBtn}>
+                <Pressable
+                  onPress={() => setDeleteId(s.id)}
+                  hitSlop={8}
+                  style={styles.iconBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${s.name} hizmetini sil`}
+                >
                   <Ionicons name="trash-outline" size={20} color={colors.danger} />
                 </Pressable>
               </View>

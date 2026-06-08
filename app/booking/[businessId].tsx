@@ -182,7 +182,7 @@ export default function BookingScreen() {
   return (
     <Screen edges={['top']}>
       <View style={styles.topbar}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Geri">
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={styles.topTitle}>Randevu Oluştur</Text>
