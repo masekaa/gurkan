@@ -74,6 +74,25 @@ firebase deploy --only firestore:rules   # firebase/firestore.rules
 moduna döner. (`EXPO_PUBLIC_` ön eki Expo'nun değerleri her platformda derleme
 sırasında gömmesi için zorunludur.)
 
+> **Not:** Web app ekledikten sonra sadece **Web** (`</>`) seçmeniz yeterli —
+> kod Firebase JS SDK kullandığından aynı config web + iOS + Android'de çalışır.
+
+### Örnek veri yükleme (seed)
+Firebase'e bağlandığınızda Firestore **boştur**, dolayısıyla Keşfet ekranı boş
+görünür. Örnek işletme/hizmetleri yüklemek için:
+
+1. Firebase Console → **Project settings → Service accounts → Generate new
+   private key** → indirilen dosyayı proje köküne `serviceAccountKey.json`
+   adıyla kaydedin (git'e gitmez, `.gitignore`'da).
+2. Çalıştırın:
+
+```bash
+node scripts/seed.mjs
+```
+
+Bu, 4 işletme ve 9 hizmeti Firestore'a ekler. (`serviceAccountKey.json` yalnızca
+yerelde kullanılır; Vercel veya uygulama derlemesi için gerekmez.)
+
 ## Vercel ile Web Deploy
 
 Web sürümü Expo'nun statik çıktısı (`expo export --platform web` → `dist/`) ile
