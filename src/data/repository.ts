@@ -14,7 +14,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   updateDoc,
   where,
@@ -51,15 +50,18 @@ function requireDb(): Firestore {
 export async function listBusinesses(search = ''): Promise<Business[]> {
   const term = search.trim().toLowerCase();
   if (isFirebaseEnabled) {
+    // No orderBy in the query: equality + orderBy on a different field would
+    // require a Firestore composite index. We sort client-side instead so the
+    // app works against a freshly created database with zero index setup.
     const snap = await getDocs(
       query(
         collection(requireDb(), 'businesses'),
         where('approved', '==', true),
-        orderBy('rating', 'desc'),
       ),
     );
     return snap.docs
       .map((d) => ({ id: d.id, ...d.data() }) as Business)
+      .sort((a, b) => b.rating - a.rating)
       .filter((b) =>
         term
           ? b.name.toLowerCase().includes(term) ||
@@ -96,10 +98,11 @@ export async function listServices(businessId: string): Promise<Service[]> {
       query(
         collection(requireDb(), 'services'),
         where('businessId', '==', businessId),
-        orderBy('price'),
       ),
     );
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Service);
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Service)
+      .sort((a, b) => a.price - b.price);
   }
   return mock.services.filter((s) => s.businessId === businessId);
 }
@@ -116,12 +119,11 @@ export async function listAppointments(
       query(
         collection(requireDb(), 'appointments'),
         where('customerId', '==', customerId),
-        orderBy('datetime', 'desc'),
       ),
     );
-    const rows = snap.docs.map(
-      (d) => ({ id: d.id, ...d.data() }) as Appointment,
-    );
+    const rows = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Appointment)
+      .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
     // Hydrate joins (Firestore has no server-side joins).
     return Promise.all(
       rows.map(async (a) => ({
@@ -146,12 +148,11 @@ export async function listBusinessAppointments(
       query(
         collection(requireDb(), 'appointments'),
         where('businessId', '==', businessId),
-        orderBy('datetime', 'desc'),
       ),
     );
-    const rows = snap.docs.map(
-      (d) => ({ id: d.id, ...d.data() }) as Appointment,
-    );
+    const rows = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Appointment)
+      .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
     return Promise.all(
       rows.map(async (a) => ({ ...a, service: await getService(a.serviceId) })),
     );
