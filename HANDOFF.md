@@ -120,6 +120,9 @@ vercel.json                   Vercel build/output + SPA rewrite
 - İşletme detayı: bilgiler, çalışma saatleri, hizmet listesi.
 - Randevu oluşturma akışı: hizmet → tarih (14 gün) → saat (çalışma saatlerinden
   30 dk slotlar) → onay → başarı ekranı.
+- **Çift rezervasyon engeli (FR-3.5):** dolu ve geçmiş saatler devre dışı; alımda
+  Firestore transaction'lı **slot kilidi** (`slots/{businessId}__{ISO}`) yarış
+  koşulunu da engeller; çakışmada Türkçe uyarı. İptal/red slotu serbest bırakır.
 - Randevularım: yaklaşan/geçmiş sekmeleri, iptal etme.
 - Sadakat: işletme bazında puan, ilerleme çubuğu, 10 puan = 1 ücretsiz hizmet.
 - Referans kodu gösterimi (profil).
@@ -171,8 +174,7 @@ vercel.json                   Vercel build/output + SPA rewrite
    - Sadakat puanı ve referans ödülünü **sunucu tarafına** taşı (şu an mock).
    - Push için native build (EAS Build) + iOS APNs / Android google-services.json.
 5. **Şifre sıfırlama ekranı** (FR-1.3).
-6. **Çift rezervasyon/çakışma engeli** (FR-3.5) — şu an YOK.
-7. **Yorum/puanlama yazma** (şu an rating'ler yalnızca gösterim).
+6. **Yorum/puanlama yazma** (şu an rating'ler yalnızca gösterim).
 
 ---
 
@@ -185,7 +187,8 @@ vercel.json                   Vercel build/output + SPA rewrite
   diye daraltılmalı (ör. `businesses/{id}.ownerId == auth.uid` kontrolü).
 - **businessId demo'da sabit** `'b1'` (`DEMO_BUSINESS_ID`). Gerçekte işletme kaydı
   sırasında atanmalı (`profiles.businessId` veya `businesses.ownerId`).
-- **Çakışma kontrolü yok** — aynı slot birden çok kez alınabilir.
+- **Slot kilidi `delete` kuralı geniş** — şu an giriş yapan herkes silebilir
+  (işletmenin red akışı için). İleride işletme sahibi/sahip kontrolüyle daraltılmalı.
 - `react-native-url-polyfill` bağımlılığı artık kullanılmıyor (Supabase'den kalma);
   temizlenebilir.
 - Mock kullanıcı tek (`MOCK_USER_ID`); işletme görünümündeki diğer müşteriler

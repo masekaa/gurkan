@@ -11,10 +11,12 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   query,
+  runTransaction,
   updateDoc,
   where,
   writeBatch,
@@ -36,6 +38,25 @@ function uid(prefix: string) {
     .toString(36)
     .slice(2, 7)}`;
 }
+
+/** Thrown when a slot is already booked (double-booking prevention, FR-3.5). */
+export class SlotTakenError extends Error {
+  constructor() {
+    super('Bu saat dolu.');
+    this.name = 'SlotTakenError';
+  }
+}
+
+/** Appointment statuses that occupy a slot (others free it for re-booking). */
+const ACTIVE_STATUSES: AppointmentStatus[] = ['pending', 'approved', 'completed'];
+const isActiveStatus = (s: AppointmentStatus) => ACTIVE_STATUSES.includes(s);
+
+/**
+ * Deterministic id for a slot lock so a booking can atomically claim a
+ * (business, datetime) pair via a transaction — no Cloud Function required.
+ */
+const slotId = (businessId: string, datetime: string) =>
+  `${businessId}__${datetime}`;
 
 /** Narrowing helper so TypeScript trusts `db` inside the Firebase branches. */
 function requireDb(): Firestore {
@@ -175,12 +196,48 @@ export async function createAppointment(input: {
     createdAt: new Date().toISOString(),
   };
   if (isFirebaseEnabled) {
-    const ref = await addDoc(collection(requireDb(), 'appointments'), base);
-    return { id: ref.id, ...base };
+    const database = requireDb();
+    const lockRef = doc(database, 'slots', slotId(input.businessId, input.datetime));
+    const apptRef = doc(collection(database, 'appointments'));
+    // Atomically claim the slot and create the appointment. If the lock already
+    // exists the transaction aborts, so two clients cannot take the same time.
+    await runTransaction(database, async (tx) => {
+      const existing = await tx.get(lockRef);
+      if (existing.exists()) throw new SlotTakenError();
+      tx.set(lockRef, {
+        businessId: input.businessId,
+        datetime: input.datetime,
+        customerId: input.customerId,
+        appointmentId: apptRef.id,
+      });
+      tx.set(apptRef, base);
+    });
+    return { id: apptRef.id, ...base };
   }
+  // Mock mode: reject if an active appointment already occupies the slot.
+  const taken = mock.appointments.some(
+    (a) =>
+      a.businessId === input.businessId &&
+      a.datetime === input.datetime &&
+      isActiveStatus(a.status),
+  );
+  if (taken) throw new SlotTakenError();
   const appt: Appointment = { id: uid('a'), ...base };
   mock.appointments.unshift(appt);
   return hydrate(appt);
+}
+
+/** Booked slot datetimes (ISO) for a business, used to disable taken times. */
+export async function listTakenSlots(businessId: string): Promise<string[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(
+      query(collection(requireDb(), 'slots'), where('businessId', '==', businessId)),
+    );
+    return snap.docs.map((d) => (d.data() as { datetime: string }).datetime);
+  }
+  return mock.appointments
+    .filter((a) => a.businessId === businessId && isActiveStatus(a.status))
+    .map((a) => a.datetime);
 }
 
 export async function updateAppointmentStatus(
@@ -188,7 +245,18 @@ export async function updateAppointmentStatus(
   status: AppointmentStatus,
 ): Promise<void> {
   if (isFirebaseEnabled) {
-    await updateDoc(doc(requireDb(), 'appointments', id), { status });
+    const database = requireDb();
+    await updateDoc(doc(database, 'appointments', id), { status });
+    // Free the slot lock so a cancelled/rejected time becomes bookable again.
+    if (status === 'cancelled' || status === 'rejected') {
+      const snap = await getDoc(doc(database, 'appointments', id));
+      const a = snap.data() as { businessId?: string; datetime?: string } | undefined;
+      if (a?.businessId && a.datetime) {
+        await deleteDoc(doc(database, 'slots', slotId(a.businessId, a.datetime))).catch(
+          () => undefined,
+        );
+      }
+    }
     return;
   }
   const appt = mock.appointments.find((a) => a.id === id);

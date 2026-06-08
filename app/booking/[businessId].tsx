@@ -10,7 +10,13 @@ import {
 } from 'react-native';
 
 import { Button, Screen } from '@/components/ui';
-import { useBusiness, useCreateAppointment, useServices } from '@/hooks/queries';
+import {
+  SlotTakenError,
+  useBusiness,
+  useCreateAppointment,
+  useServices,
+  useTakenSlots,
+} from '@/hooks/queries';
 import {
   formatDuration,
   formatPrice,
@@ -55,6 +61,7 @@ export default function BookingScreen() {
 
   const { data: business } = useBusiness(businessId);
   const { data: services } = useServices(businessId);
+  const { data: takenSlots, refetch: refetchTaken } = useTakenSlots(businessId);
   const createAppointment = useCreateAppointment();
 
   const service = useMemo(
@@ -67,23 +74,75 @@ export default function BookingScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  const [slotError, setSlotError] = useState<string | null>(null);
+
   const slots = useMemo(
     () =>
       business ? slotsBetween(business.openingTime, business.closingTime) : [],
     [business],
   );
 
+  // Times that cannot be picked on the selected day: already booked, or past.
+  const unavailable = useMemo(() => {
+    const day = days[selectedDay];
+    const now = new Date();
+    const isToday =
+      day.getFullYear() === now.getFullYear() &&
+      day.getMonth() === now.getMonth() &&
+      day.getDate() === now.getDate();
+    const set = new Set<string>();
+    for (const iso of takenSlots ?? []) {
+      const d = new Date(iso);
+      if (
+        d.getFullYear() === day.getFullYear() &&
+        d.getMonth() === day.getMonth() &&
+        d.getDate() === day.getDate()
+      ) {
+        set.add(
+          `${String(d.getHours()).padStart(2, '0')}:${String(
+            d.getMinutes(),
+          ).padStart(2, '0')}`,
+        );
+      }
+    }
+    if (isToday) {
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      for (const t of slots) {
+        const [h, m] = t.split(':').map(Number);
+        if (h * 60 + m <= nowMins) set.add(t);
+      }
+    }
+    return set;
+  }, [takenSlots, days, selectedDay, slots]);
+
+  function pickDay(i: number) {
+    setSelectedDay(i);
+    setSelectedTime(null);
+    setSlotError(null);
+  }
+
   async function confirm() {
     if (!service || selectedTime == null) return;
+    setSlotError(null);
     const date = new Date(days[selectedDay]);
     const [h, m] = selectedTime.split(':').map(Number);
     date.setHours(h, m, 0, 0);
-    await createAppointment.mutateAsync({
-      businessId,
-      serviceId: service.id,
-      datetime: date.toISOString(),
-    });
-    setDone(true);
+    try {
+      await createAppointment.mutateAsync({
+        businessId,
+        serviceId: service.id,
+        datetime: date.toISOString(),
+      });
+      setDone(true);
+    } catch (e) {
+      if (e instanceof SlotTakenError) {
+        setSlotError('Bu saat az önce doldu. Lütfen başka bir saat seç.');
+        setSelectedTime(null);
+        refetchTaken();
+      } else {
+        setSlotError('Randevu oluşturulamadı. Lütfen tekrar dene.');
+      }
+    }
   }
 
   if (done) {
@@ -144,7 +203,7 @@ export default function BookingScreen() {
             return (
               <Pressable
                 key={i}
-                onPress={() => setSelectedDay(i)}
+                onPress={() => pickDay(i)}
                 style={[styles.dayChip, active && styles.dayChipActive]}
               >
                 <Text style={[styles.dayName, active && styles.dayActiveText]}>
@@ -162,13 +221,27 @@ export default function BookingScreen() {
         <View style={styles.slotGrid}>
           {slots.map((t) => {
             const active = t === selectedTime;
+            const disabled = unavailable.has(t);
             return (
               <Pressable
                 key={t}
+                disabled={disabled}
                 onPress={() => setSelectedTime(t)}
-                style={[styles.slot, active && styles.slotActive]}
+                style={[
+                  styles.slot,
+                  active && styles.slotActive,
+                  disabled && styles.slotDisabled,
+                ]}
               >
-                <Text style={[styles.slotText, active && styles.slotActiveText]}>{t}</Text>
+                <Text
+                  style={[
+                    styles.slotText,
+                    active && styles.slotActiveText,
+                    disabled && styles.slotDisabledText,
+                  ]}
+                >
+                  {t}
+                </Text>
               </Pressable>
             );
           })}
@@ -176,6 +249,7 @@ export default function BookingScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {slotError ? <Text style={styles.slotError}>{slotError}</Text> : null}
         <Button
           label="Randevuyu Onayla"
           onPress={confirm}
@@ -235,13 +309,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   slotActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  slotDisabled: { backgroundColor: colors.background, opacity: 0.4 },
   slotText: { ...typography.body, color: colors.text },
   slotActiveText: { color: colors.onGold, fontWeight: '700' },
+  slotDisabledText: { color: colors.textMuted, textDecorationLine: 'line-through' },
   footer: {
     padding: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     backgroundColor: colors.background,
+    gap: spacing.sm,
+  },
+  slotError: {
+    ...typography.caption,
+    color: colors.danger,
+    textAlign: 'center',
   },
   success: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md },
   successIcon: {

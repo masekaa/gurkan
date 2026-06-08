@@ -6,8 +6,13 @@ import {
 
 import { useAuth } from '@/context/AuthContext';
 import * as repo from '@/data/repository';
+import { SlotTakenError } from '@/data/repository';
 import { MOCK_USER_ID } from '@/data/mock';
 import type { AppointmentStatus } from '@/types';
+
+// Re-exported so screens can detect double-booking without importing the data
+// layer directly (screens depend on the hooks/repository boundary only).
+export { SlotTakenError };
 
 /** Falls back to the mock user id so screens work before sign-in too. */
 function useUserId() {
@@ -71,10 +76,20 @@ export function useCreateAppointment() {
       serviceId: string;
       datetime: string;
     }) => repo.createAppointment({ customerId: userId, ...input }),
-    onSuccess: () => {
+    onSuccess: (appt) => {
       qc.invalidateQueries({ queryKey: ['appointments'] });
       qc.invalidateQueries({ queryKey: ['businessAppointments'] });
+      qc.invalidateQueries({ queryKey: ['takenSlots', appt.businessId] });
     },
+  });
+}
+
+/** Booked slot datetimes (ISO) for a business, to disable taken times. */
+export function useTakenSlots(businessId: string) {
+  return useQuery({
+    queryKey: ['takenSlots', businessId],
+    queryFn: () => repo.listTakenSlots(businessId),
+    enabled: Boolean(businessId),
   });
 }
 
@@ -95,6 +110,7 @@ export function useUpdateAppointmentStatus() {
       qc.invalidateQueries({ queryKey: ['appointments'] });
       qc.invalidateQueries({ queryKey: ['businessAppointments'] });
       qc.invalidateQueries({ queryKey: ['loyalty'] });
+      qc.invalidateQueries({ queryKey: ['takenSlots'] });
     },
   });
 }

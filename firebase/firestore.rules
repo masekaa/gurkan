@@ -54,5 +54,14 @@ service cloud.firestore {
         (resource.data.userId == request.auth.uid || isAdmin());
       allow write: if isAdmin();
     }
+
+    // Slot locks prevent double-booking. Id = "<businessId>__<datetimeISO>".
+    // Any signed-in user can read availability; a customer claims a slot only
+    // for themselves; the slot is freed (deleted) on cancel/reject.
+    match /slots/{slotId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(request.resource.data.customerId);
+      allow delete: if isSignedIn();
+    }
   }
 }
