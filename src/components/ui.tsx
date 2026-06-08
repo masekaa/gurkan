@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing, typography } from '@/theme';
+import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
 /** Full-screen container that respects safe areas and the brand background. */
 export function Screen({
@@ -57,42 +58,57 @@ export function Button({
   icon?: keyof typeof Ionicons.glyphMap;
 }) {
   const isDisabled = disabled || loading;
+  const fg =
+    variant === 'primary' ? colors.onGold : variant === 'danger' ? '#fff' : colors.text;
+
+  const inner = loading ? (
+    <ActivityIndicator color={fg} />
+  ) : (
+    <View style={styles.btnInner}>
+      {icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
+      <Text style={[styles.btnLabel, { color: fg }]}>{label}</Text>
+    </View>
+  );
+
+  // Primary uses a gold gradient fill with a soft gold glow; others stay flat.
+  if (variant === 'primary') {
+    return (
+      <Pressable
+        onPress={onPress}
+        disabled={isDisabled}
+        style={({ pressed }) => [
+          styles.btnGoldWrap,
+          !isDisabled && elevation.gold,
+          pressed && !isDisabled && styles.btnScaled,
+          isDisabled && styles.btnDisabled,
+        ]}
+      >
+        <LinearGradient
+          colors={gradients.goldButton}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.btn}
+        >
+          {inner}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.btn,
-        variant === 'primary' && styles.btnPrimary,
         variant === 'secondary' && styles.btnSecondary,
         variant === 'ghost' && styles.btnGhost,
-        variant === 'danger' && styles.btnDanger,
-        pressed && !isDisabled && styles.btnPressed,
+        variant === 'danger' && [styles.btnDanger, !isDisabled && elevation.soft],
+        pressed && !isDisabled && styles.btnScaled,
         isDisabled && styles.btnDisabled,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.onGold : colors.text} />
-      ) : (
-        <View style={styles.btnInner}>
-          {icon ? (
-            <Ionicons
-              name={icon}
-              size={18}
-              color={variant === 'primary' ? colors.onGold : colors.text}
-            />
-          ) : null}
-          <Text
-            style={[
-              styles.btnLabel,
-              variant === 'primary' && { color: colors.onGold },
-              variant === 'danger' && { color: '#fff' },
-            ]}
-          >
-            {label}
-          </Text>
-        </View>
-      )}
+      {inner}
     </Pressable>
   );
 }
@@ -195,6 +211,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.lg,
+    ...elevation.soft,
   },
   btn: {
     height: 52,
@@ -203,12 +220,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
+  btnGoldWrap: { borderRadius: radius.md },
   btnInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  btnPrimary: { backgroundColor: colors.gold },
   btnSecondary: { backgroundColor: colors.surfaceAlt, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   btnGhost: { backgroundColor: 'transparent' },
   btnDanger: { backgroundColor: colors.danger },
-  btnPressed: { opacity: 0.85 },
+  btnScaled: { transform: [{ scale: 0.97 }], opacity: 0.95 },
   btnDisabled: { opacity: 0.45 },
   btnLabel: { ...typography.bodyStrong, color: colors.text },
   fieldWrap: { gap: spacing.xs },

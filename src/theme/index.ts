@@ -65,5 +65,51 @@ export const typography = {
   micro: { fontSize: 11, fontWeight: '600' as const, letterSpacing: 0.6 },
 } as const;
 
-export const theme = { colors, spacing, radius, typography };
+/**
+ * Soft elevation presets. iOS reads shadow*; Android reads elevation;
+ * react-native-web maps shadow* to box-shadow — so one object covers all three.
+ */
+export const elevation = {
+  soft: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    elevation: 7,
+  },
+  gold: {
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+} as const;
+
+/** Brand gradient ramps (start → end), consumed by expo-linear-gradient. */
+export const gradients = {
+  goldButton: ['#EBD49B', '#D9B25A', '#C49A45'],
+  hero: ['#21212B', '#14141A', '#0E0E12'],
+  goldHalo: ['#D9B25A33', '#D9B25A00'],
+} as const;
+
+/** Per-category cover gradient + glyph, used on cards and detail heroes. */
+export const categoryStyle: Record<
+  string,
+  { gradient: readonly [string, string]; icon: string }
+> = {
+  erkek_berberi: { gradient: ['#2C3A8E', '#161E45'], icon: 'cut' },
+  kadin_kuaforu: { gradient: ['#7E2E6E', '#3A1633'], icon: 'sparkles' },
+  guzellik_merkezi: { gradient: ['#A8527A', '#46203A'], icon: 'flower' },
+  barber_shop: { gradient: ['#1F5A52', '#0F2A26'], icon: 'cut' },
+};
+
+export const theme = { colors, spacing, radius, typography, elevation, gradients };
 export type Theme = typeof theme;

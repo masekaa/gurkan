@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { BusinessCard } from '@/components/BusinessCard';
-import { Button, EmptyState, Field, Screen } from '@/components/ui';
+import { Avatar, Button, EmptyState, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
@@ -56,10 +56,14 @@ export default function DiscoverScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.greetingRow}>
-              <View>
-                <Text style={styles.hello}>Merhaba{profile ? `, ${profile.name.split(' ')[0]}` : ''} 👋</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.eyebrow}>ALTIN100</Text>
+                <Text style={styles.hello}>
+                  Merhaba{profile ? `, ${profile.name.split(' ')[0]}` : ''} 👋
+                </Text>
                 <Text style={styles.subtitle}>Bugün hangi hizmete ihtiyacın var?</Text>
               </View>
+              {profile ? <Avatar name={profile.name} size={46} /> : null}
             </View>
 
             <Field
@@ -134,7 +138,8 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   list: { padding: spacing.lg, gap: spacing.md },
   header: { gap: spacing.lg, marginBottom: spacing.md },
-  greetingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  greetingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
+  eyebrow: { ...typography.micro, color: colors.gold, letterSpacing: 2, marginBottom: 2 },
   hello: { ...typography.title, color: colors.text },
   subtitle: { ...typography.body, color: colors.textMuted, marginTop: 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
