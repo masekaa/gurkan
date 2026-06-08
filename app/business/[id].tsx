@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, Button, Field, ListSkeleton, Screen, Skeleton } from '@/components/ui';
+import { Badge, Button, ErrorState, Field, ListSkeleton, Screen, Skeleton } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusiness, useCreateReview, useReviews, useServices } from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
@@ -25,7 +25,7 @@ export default function BusinessDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
-  const { data: business, isLoading } = useBusiness(id);
+  const { data: business, isLoading, isError, refetch } = useBusiness(id);
   const { data: services } = useServices(id);
   const { data: reviews } = useReviews(id);
   const createReview = useCreateReview(id);
@@ -33,6 +33,15 @@ export default function BusinessDetailScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState('');
+
+  if (isError) {
+    return (
+      <Screen>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ErrorState onRetry={() => refetch()} />
+      </Screen>
+    );
+  }
 
   if (isLoading || !business) {
     return (

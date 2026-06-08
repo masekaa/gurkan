@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { EmptyState, ListSkeleton, Screen } from '@/components/ui';
+import { EmptyState, ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import { useLoyalty } from '@/hooks/queries';
 import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Loyalty } from '@/types';
@@ -10,7 +10,7 @@ import type { Loyalty } from '@/types';
 const POINTS_PER_REWARD = 10;
 
 export default function LoyaltyScreen() {
-  const { data, isLoading } = useLoyalty();
+  const { data, isLoading, isError, refetch } = useLoyalty();
   const items = data ?? [];
 
   const totalPoints = items.reduce((s, l) => s + l.points, 0);
@@ -54,6 +54,8 @@ export default function LoyaltyScreen() {
         ListEmptyComponent={
           isLoading ? (
             <ListSkeleton kind="card" count={3} />
+          ) : isError ? (
+            <ErrorState onRetry={() => refetch()} />
           ) : (
             <EmptyState
               icon="gift-outline"

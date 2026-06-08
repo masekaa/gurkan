@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 import { AppointmentCard } from '@/components/AppointmentCard';
-import { EmptyState, ListSkeleton, Screen } from '@/components/ui';
+import { EmptyState, ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import { useAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
 import { centeredContent, colors, spacing, typography } from '@/theme';
 import type { Appointment } from '@/types';
@@ -19,7 +19,7 @@ type Tab = 'upcoming' | 'past';
 export default function AppointmentsScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('upcoming');
-  const { data, isLoading } = useAppointments();
+  const { data, isLoading, isError, refetch } = useAppointments();
   const updateStatus = useUpdateAppointmentStatus();
 
   const sections = useMemo(() => {
@@ -56,6 +56,8 @@ export default function AppointmentsScreen() {
 
       {isLoading ? (
         <ListSkeleton kind="card" count={4} />
+      ) : isError ? (
+        <ErrorState onRetry={() => refetch()} />
       ) : (
         <SectionList
           sections={sections}

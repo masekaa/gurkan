@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-import { Badge, Button, EmptyState, Screen } from '@/components/ui';
+import { Badge, Button, EmptyState, ErrorState, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusinessAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
 import { formatDate, formatTime, statusMeta } from '@/lib/format';
@@ -28,7 +28,7 @@ export default function OrdersScreen() {
   const { profile } = useAuth();
   const businessId = profile?.businessId;
   const [tab, setTab] = useState<Tab>('pending');
-  const { data, isLoading } = useBusinessAppointments(businessId);
+  const { data, isLoading, isError, refetch } = useBusinessAppointments(businessId);
   const update = useUpdateAppointmentStatus();
 
   const items = useMemo(
@@ -64,6 +64,8 @@ export default function OrdersScreen() {
 
       {isLoading ? (
         <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+      ) : isError ? (
+        <ErrorState onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={items}

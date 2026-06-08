@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Button, ListSkeleton, Screen } from '@/components/ui';
+import { Badge, Button, ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import {
   useAllAppointments,
   useAllBusinesses,
@@ -17,8 +17,8 @@ type Tab = 'businesses' | 'appointments';
 
 export default function AdminScreen() {
   const [tab, setTab] = useState<Tab>('businesses');
-  const { data: businesses, isLoading: loadingB } = useAllBusinesses();
-  const { data: appointments, isLoading: loadingA } = useAllAppointments();
+  const { data: businesses, isLoading: loadingB, isError: errorB, refetch: refetchB } = useAllBusinesses();
+  const { data: appointments, isLoading: loadingA, isError: errorA, refetch: refetchA } = useAllAppointments();
   const setApproved = useSetBusinessApproved();
 
   const pendingCount = useMemo(
@@ -72,6 +72,8 @@ export default function AdminScreen() {
       {tab === 'businesses' ? (
         loadingB ? (
           <ListSkeleton kind="card" count={4} />
+        ) : errorB ? (
+          <ErrorState onRetry={() => refetchB()} />
         ) : (
           <FlatList
             data={businesses ?? []}
@@ -89,6 +91,8 @@ export default function AdminScreen() {
         )
       ) : loadingA ? (
         <ListSkeleton kind="card" count={4} />
+      ) : errorA ? (
+        <ErrorState onRetry={() => refetchA()} />
       ) : (
         <FlatList
           data={appointments ?? []}

@@ -187,6 +187,30 @@ export function EmptyState({
   );
 }
 
+/** Error placeholder with an optional retry action (for failed queries). */
+export function ErrorState({
+  title = 'Bir şeyler ters gitti',
+  subtitle = 'İçerik yüklenemedi. Lütfen tekrar dene.',
+  onRetry,
+}: {
+  title?: string;
+  subtitle?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <View style={styles.empty}>
+      <Ionicons name="cloud-offline-outline" size={42} color={colors.danger} />
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptySub}>{subtitle}</Text>
+      {onRetry ? (
+        <View style={{ marginTop: spacing.md }}>
+          <Button label="Tekrar Dene" icon="refresh" variant="secondary" onPress={onRetry} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 /** Decorative round logo/avatar with initials fallback. */
 export function Avatar({ name, size = 52 }: { name: string; size?: number }) {
   const initials = name

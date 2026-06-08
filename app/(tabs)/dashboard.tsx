@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { ListSkeleton, Screen } from '@/components/ui';
+import { ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useBusiness, useBusinessAppointments } from '@/hooks/queries';
 import { formatPrice } from '@/lib/format';
@@ -22,7 +22,7 @@ export default function DashboardScreen() {
   const { profile } = useAuth();
   const businessId = profile?.businessId;
   const { data: business } = useBusiness(businessId ?? '');
-  const { data, isLoading } = useBusinessAppointments(businessId);
+  const { data, isLoading, isError, refetch } = useBusinessAppointments(businessId);
 
   const stats = useMemo(() => {
     const appts = data ?? [];
@@ -59,6 +59,14 @@ export default function DashboardScreen() {
     return (
       <Screen>
         <ListSkeleton kind="card" count={4} />
+      </Screen>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Screen>
+        <ErrorState onRetry={() => refetch()} />
       </Screen>
     );
   }

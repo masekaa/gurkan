@@ -14,6 +14,7 @@ import {
   Avatar,
   Button,
   EmptyState,
+  ErrorState,
   Field,
   ListSkeleton,
   Screen,
@@ -38,7 +39,7 @@ export default function DiscoverScreen() {
   const { profile } = useAuth();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | BusinessCategory>('all');
-  const { data, isLoading } = useBusinesses(search);
+  const { data, isLoading, isError, refetch } = useBusinesses(search);
   const seed = useSeedSampleData();
 
   // Show a one-tap seed action when a freshly connected Firestore is empty.
@@ -109,6 +110,8 @@ export default function DiscoverScreen() {
         ListEmptyComponent={
           isLoading ? (
             <ListSkeleton kind="business" count={5} />
+          ) : isError ? (
+            <ErrorState onRetry={() => refetch()} />
           ) : showSeed ? (
             <View style={{ gap: spacing.lg, marginTop: spacing.xl }}>
               <EmptyState
