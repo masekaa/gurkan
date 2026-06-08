@@ -125,6 +125,11 @@ vercel.json                   Vercel build/output + SPA rewrite
   koşulunu da engeller; çakışmada Türkçe uyarı. İptal/red slotu serbest bırakır.
 - Randevularım: yaklaşan/geçmiş sekmeleri, iptal etme.
 - Sadakat: işletme bazında puan, ilerleme çubuğu, 10 puan = 1 ücretsiz hizmet.
+- Randevu detay ekranı + müşteri profil düzenleme (ad/telefon).
+- Şifre sıfırlama ekranı (Firebase `sendPasswordResetEmail`).
+- **Yorum/puanlama:** işletme detayında ortalama + yıldızlı yorum listesi +
+  "Yorum Yap" (1-5 yıldız + metin). `repository.listReviews/createReview`,
+  `reviews` koleksiyonu (kurallar yayınlanmalı).
 - Referans kodu gösterimi (profil).
 
 **İşletme tarafı**
@@ -171,12 +176,9 @@ vercel.json                   Vercel build/output + SPA rewrite
 
 Öncelik sırasıyla önerilen yol haritası:
 
-1. **Randevu detay ekranı** + **müşteri profil düzenleme** (FR-1.4).
-2. **Şifre sıfırlama ekranı** (FR-1.3) — Firebase `sendPasswordResetEmail`.
-3. **Yorum/puanlama yazma** (şu an rating'ler yalnızca gösterim).
-4. **Admin paneli** (SCOPE Modül 8): işletme onaylama/pasife alma, kullanıcı
+1. **Admin paneli** (SCOPE Modül 8): işletme onaylama/pasife alma, kullanıcı
    yönetimi (ban/askıya alma), randevu listeleme/filtreleme. Rol: `admin`.
-5. **Bildirim altyapısı** (SCOPE Modül 4) — **backend gerektirir**:
+2. **Bildirim altyapısı** (SCOPE Modül 4) — **backend gerektirir**:
    - Firebase Cloud Functions: randevu durum değişiminde push, 24s/1s hatırlatma.
    - Sadakat puanı ve referans ödülünü **sunucu tarafına** taşı (şu an mock).
    - Push için native build (EAS Build) + iOS APNs / Android google-services.json.

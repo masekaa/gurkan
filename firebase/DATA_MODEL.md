@@ -61,6 +61,31 @@ The document id is the Firebase Auth UID.
 | `points` | number | +1 per completed appointment |
 | `freeServices` | number | Granted every 10 points |
 
+## `reviews/{id}`
+
+| Field | Type | Notes |
+|---|---|---|
+| `businessId` | string | FK → businesses |
+| `userId` | string | FK → profiles (review author) |
+| `userName` | string | Denormalised for display |
+| `rating` | number | 1–5 |
+| `comment` | string | |
+| `createdAt` | string (ISO) | |
+
+Public read; a user creates/edits only their own review (see `firestore.rules`).
+
+## `slots/{businessId__datetimeISO}`
+
+Deterministic-id lock that prevents double-booking. Created atomically with the
+appointment in a transaction; deleted when an appointment is cancelled/rejected.
+
+| Field | Type | Notes |
+|---|---|---|
+| `businessId` | string | FK → businesses |
+| `datetime` | string (ISO) | The reserved slot |
+| `customerId` | string | FK → profiles |
+| `appointmentId` | string | FK → appointments |
+
 ## Cloud Functions (recommended for v1)
 - **onAppointmentCompleted** → increment `loyalty.points`; every 10th point grants a free service.
 - **onAppointmentCreated / onStatusChanged** → send FCM push notifications.
