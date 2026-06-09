@@ -28,6 +28,7 @@ import type {
   Appointment,
   AppointmentStatus,
   Business,
+  BusinessCategory,
   Loyalty,
   Review,
   Service,
@@ -140,6 +141,42 @@ export async function getBusiness(id: string): Promise<Business | null> {
     return snap.exists() ? ({ id: snap.id, ...snap.data() } as Business) : null;
   }
   return mock.businesses.find((b) => b.id === id) ?? null;
+}
+
+/**
+ * Create a business owned by `ownerId`. Starts unapproved so it stays hidden
+ * from the public Keşfet feed until an admin approves it.
+ */
+export async function createBusiness(input: {
+  ownerId: string;
+  name: string;
+  category: BusinessCategory;
+  district?: string;
+  phone?: string;
+}): Promise<string> {
+  const data: Omit<Business, 'id'> = {
+    ownerId: input.ownerId,
+    name: input.name,
+    category: input.category,
+    about: '',
+    address: '',
+    district: input.district ?? '',
+    phone: input.phone ?? '',
+    logoUrl: null,
+    coverUrl: null,
+    rating: 0,
+    reviewCount: 0,
+    approved: false,
+    openingTime: '09:00',
+    closingTime: '20:00',
+  };
+  if (isFirebaseEnabled) {
+    const ref = await addDoc(collection(requireDb(), 'businesses'), data);
+    return ref.id;
+  }
+  const id = uid('b');
+  mock.businesses.push({ id, ...data });
+  return id;
 }
 
 /** Update editable business profile fields (owner-managed). */

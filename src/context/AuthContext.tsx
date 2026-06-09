@@ -17,8 +17,9 @@ import {
 } from 'react';
 
 import { auth, db, isFirebaseEnabled } from '@/lib/firebase';
+import { createBusiness } from '@/data/repository';
 import { DEMO_BUSINESS_ID, MOCK_USER_ID } from '@/data/mock';
-import type { Profile, UserRole } from '@/types';
+import type { BusinessCategory, Profile, UserRole } from '@/types';
 
 interface AuthState {
   loading: boolean;
@@ -29,6 +30,9 @@ interface AuthState {
     email: string;
     phone: string;
     password: string;
+    accountType?: UserRole;
+    businessName?: string;
+    businessCategory?: BusinessCategory;
   }) => Promise<void>;
   signOut: () => Promise<void>;
   /** Switch the current account between customer and business mode. */
@@ -99,18 +103,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         await persistMock(mockProfile({ email, name: email.split('@')[0] }));
       },
-      async signUp({ name, email, phone, password }) {
-        if (isFirebaseEnabled && auth) {
-          const cred = await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password,
-          );
+      async signUp({ name, email, phone, password, accountType, businessName, businessCategory }) {
+        const isBiz = accountType === 'business' && !!businessName?.trim();
+        if (isFirebaseEnabled && auth && db) {
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
           await fbUpdateProfile(cred.user, { displayName: name });
-          await loadOrCreateProfile(cred.user.uid, { name, email, phone });
+          const uid = cred.user.uid;
+          const businessId = isBiz
+            ? await createBusiness({
+                ownerId: uid,
+                name: businessName!.trim(),
+                category: businessCategory ?? 'erkek_berberi',
+                phone,
+              })
+            : null;
+          // Write the full profile explicitly (overrides the default 'user'
+          // doc the auth listener may create mid-signup) so the role sticks.
+          const profile: Profile = {
+            id: uid,
+            name,
+            email,
+            phone: phone || null,
+            role: isBiz ? 'business' : 'user',
+            referralCode: makeReferralCode(),
+            createdAt: new Date().toISOString(),
+            businessId,
+          };
+          const { id, ...data } = profile;
+          await setDoc(doc(db, 'profiles', uid), data);
+          setProfile(profile);
           return;
         }
-        await persistMock(mockProfile({ name, email, phone }));
+        // Mock mode
+        const businessId = isBiz
+          ? await createBusiness({
+              ownerId: MOCK_USER_ID,
+              name: businessName!.trim(),
+              category: businessCategory ?? 'erkek_berberi',
+              phone,
+            })
+          : null;
+        await persistMock(
+          mockProfile({
+            name,
+            email,
+            phone,
+            role: isBiz ? 'business' : 'user',
+            businessId,
+          }),
+        );
       },
       async signOut() {
         if (isFirebaseEnabled && auth) {
@@ -122,7 +163,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async setRole(role) {
         if (!profile) return;
-        const businessId = role === 'business' ? DEMO_BUSINESS_ID : null;
+        // Preserve an existing business link (a real owner keeps their own
+        // business); a pure demo user gets the sample business the first time
+        // they enter business mode.
+        const businessId =
+          profile.businessId ?? (role === 'business' ? DEMO_BUSINESS_ID : null);
         const next: Profile = { ...profile, role, businessId };
         if (isFirebaseEnabled && db) {
           await updateDoc(doc(db, 'profiles', profile.id), { role, businessId });
@@ -177,15 +222,18 @@ function mockProfile(seed: {
   name?: string;
   email: string;
   phone?: string | null;
+  role?: UserRole;
+  businessId?: string | null;
 }): Profile {
   return {
     id: MOCK_USER_ID,
     name: seed.name || 'Misafir',
     email: seed.email,
     phone: seed.phone ?? null,
-    role: 'user',
+    role: seed.role ?? 'user',
     referralCode: makeReferralCode(),
     createdAt: new Date().toISOString(),
+    businessId: seed.businessId ?? null,
   };
 }
 

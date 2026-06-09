@@ -22,6 +22,8 @@ export type BusinessCategory =
 
 export interface Business {
   id: string;
+  /** Owner account (profiles.id). Set when a business registers. */
+  ownerId?: string | null;
   name: string;
   category: BusinessCategory;
   about: string;

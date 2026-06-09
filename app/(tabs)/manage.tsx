@@ -228,6 +228,7 @@ function ProfileEditor({
     name: string;
     about: string;
     phone: string;
+    district: string;
     openingTime: string;
     closingTime: string;
   };
@@ -236,6 +237,7 @@ function ProfileEditor({
     name: string;
     about: string;
     phone: string;
+    district: string;
     openingTime: string;
     closingTime: string;
   }) => void;
@@ -244,6 +246,7 @@ function ProfileEditor({
   const [name, setName] = useState(initial.name);
   const [about, setAbout] = useState(initial.about);
   const [phone, setPhone] = useState(initial.phone);
+  const [district, setDistrict] = useState(initial.district);
   const [open, setOpen] = useState(initial.openingTime);
   const [close, setClose] = useState(initial.closingTime);
 
@@ -253,6 +256,7 @@ function ProfileEditor({
       <Field label="İşletme adı" value={name} onChangeText={setName} icon="storefront-outline" />
       <Field label="Hakkında" value={about} onChangeText={setAbout} multiline />
       <Field label="Telefon" value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />
+      <Field label="İlçe / Bölge" value={district} onChangeText={setDistrict} icon="location-outline" placeholder="Nilüfer" />
       <View style={styles.hourRow}>
         <View style={{ flex: 1 }}>
           <Field label="Açılış" value={open} onChangeText={setOpen} icon="time-outline" placeholder="09:00" />
@@ -275,6 +279,7 @@ function ProfileEditor({
                 name: name.trim(),
                 about: about.trim(),
                 phone: phone.trim(),
+                district: district.trim(),
                 openingTime: open.trim(),
                 closingTime: close.trim(),
               })
