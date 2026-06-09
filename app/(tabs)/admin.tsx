@@ -60,6 +60,9 @@ export default function AdminScreen() {
           <Pressable
             key={t}
             onPress={() => setTab(t)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === t }}
+            accessibilityLabel={t === 'businesses' ? 'İşletmeler' : 'Randevular'}
             style={[styles.segBtn, tab === t && styles.segActive]}
           >
             <Text style={[styles.segText, tab === t && styles.segTextActive]}>

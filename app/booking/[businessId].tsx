@@ -220,6 +220,9 @@ export default function BookingScreen() {
               <Pressable
                 key={i}
                 onPress={() => pickDay(i)}
+                accessibilityRole="button"
+                accessibilityLabel={`${dayFmt.format(d)} ${dateFmt.format(d)}`}
+                accessibilityState={{ selected: active }}
                 style={[styles.dayChip, active && styles.dayChipActive]}
               >
                 <Text style={[styles.dayName, active && styles.dayActiveText]}>
@@ -243,6 +246,9 @@ export default function BookingScreen() {
                 key={t}
                 disabled={disabled}
                 onPress={() => setSelectedTime(t)}
+                accessibilityRole="button"
+                accessibilityLabel={`Saat ${t}${disabled ? ', uygun değil' : ''}`}
+                accessibilityState={{ disabled, selected: active }}
                 style={[
                   styles.slot,
                   active && styles.slotActive,

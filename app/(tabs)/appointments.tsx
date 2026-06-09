@@ -44,6 +44,9 @@ export default function AppointmentsScreen() {
             <Pressable
               key={t}
               onPress={() => setTab(t)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === t }}
+              accessibilityLabel={t === 'upcoming' ? 'Yaklaşan' : 'Geçmiş'}
               style={[styles.segBtn, tab === t && styles.segActive]}
             >
               <Text style={[styles.segText, tab === t && styles.segTextActive]}>

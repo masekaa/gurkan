@@ -108,7 +108,7 @@ export default function DashboardScreen() {
         />
         <RateCard
           icon="alert-circle-outline"
-          label="No-show Oranı"
+          label="İptal/Red Oranı"
           percent={stats.noShowRate}
           color={stats.noShowRate > 15 ? colors.danger : colors.pending}
           hint={stats.noShowRate > 15 ? 'Hedefin (%15) üzerinde' : 'Hedef aralığında'}
