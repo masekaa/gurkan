@@ -30,6 +30,7 @@ import type {
   Business,
   BusinessCategory,
   Loyalty,
+  Profile,
   Review,
   Service,
 } from '@/types';
@@ -133,6 +134,47 @@ export async function listAllAppointments(): Promise<Appointment[]> {
     .slice()
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1))
     .map(hydrate);
+}
+
+/** Admin-only: every user profile (most recent first). */
+export async function listAllUsers(): Promise<Profile[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(collection(requireDb(), 'profiles'));
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Profile)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+  return [];
+}
+
+/**
+ * Admin-only: delete a user's profile (and any businesses they own).
+ * Note: app-level only — the Firebase Auth account can be removed solely
+ * server-side (Admin SDK / Cloud Function).
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    const database = requireDb();
+    const owned = await getDocs(
+      query(collection(database, 'businesses'), where('ownerId', '==', userId)),
+    );
+    await Promise.all(owned.docs.map((d) => deleteDoc(d.ref)));
+    await deleteDoc(doc(database, 'profiles', userId));
+    return;
+  }
+  for (let i = mock.businesses.length - 1; i >= 0; i--) {
+    if (mock.businesses[i].ownerId === userId) mock.businesses.splice(i, 1);
+  }
+}
+
+/** Admin-only: delete a business. */
+export async function deleteBusiness(businessId: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    await deleteDoc(doc(requireDb(), 'businesses', businessId));
+    return;
+  }
+  const i = mock.businesses.findIndex((b) => b.id === businessId);
+  if (i >= 0) mock.businesses.splice(i, 1);
 }
 
 export async function getBusiness(id: string): Promise<Business | null> {

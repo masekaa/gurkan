@@ -209,3 +209,33 @@ export function useSetBusinessApproved() {
     },
   });
 }
+
+export function useAllUsers() {
+  return useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => repo.listAllUsers(),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.deleteUser(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['allUsers'] });
+      qc.invalidateQueries({ queryKey: ['allBusinesses'] });
+      qc.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
+}
+
+export function useDeleteBusiness() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.deleteBusiness(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['allBusinesses'] });
+      qc.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
+}
