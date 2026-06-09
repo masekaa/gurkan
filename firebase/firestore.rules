@@ -39,10 +39,12 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // Customers manage their own appointments; the related business can update status.
+    // Customers manage their own appointments; the related business reads them
+    // by businessId. MVP/pilot: any signed-in user can READ appointments so the
+    // business owner can load incoming bookings. Tighten later by denormalising
+    // `businessOwnerId` onto the doc and matching it to request.auth.uid.
     match /appointments/{appointmentId} {
-      allow read: if isSignedIn() &&
-        (resource.data.customerId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn();
       allow create: if isOwner(request.resource.data.customerId);
       allow update: if isSignedIn();
       allow delete: if isAdmin();
