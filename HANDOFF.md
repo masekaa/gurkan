@@ -155,11 +155,15 @@ vercel.json                   Vercel build/output + SPA rewrite
   saatleri) + hizmet **ekle/düzenle/sil** (bottom-sheet form + silme onayı).
   `repository`: `createService/updateService/deleteService`, `updateBusiness`.
 
-**Admin tarafı**
-- Rol değiştiricide **Admin** seçeneği (demo); admin-özel **Yönetim** sekmesi.
-- İşletme listesi: onayla/pasife al (`approved` toggle), onay-bekleyen sayısı.
-- Tüm randevular listesi + özet sayılar. `repository.listAllBusinesses/
-  listAllAppointments`, `useSetBusinessApproved`.
+**Admin tarafı** (admin-özel **Yönetim** sekmesi; rol Console'dan atanır)
+- 3 sekme: **İşletmeler** (onayla/pasife al + **sil**), **Kullanıcılar**
+  (ad/e-posta/rol + **sil**; silme sahip olunan işletmeleri de kaldırır),
+  **Randevular** (tümü). Özet: işletme/onay-bekleyen/kullanıcı sayısı.
+- `repository.listAllBusinesses/listAllAppointments/listAllUsers/deleteUser/
+  deleteBusiness`, `useSetBusinessApproved`. Kurallar `profiles/businesses`
+  delete = `isAdmin`.
+- ⚠️ `deleteUser` yalnızca app-içi profili + işletmelerini siler; Firebase **Auth
+  hesabı** yalnızca sunucu tarafında (Admin SDK / Cloud Function) silinebilir.
 
 **Görsel sistem (tasarım)**
 - Gradient + elevation token sistemi (`theme`: `categoryStyle`, `elevation`,
