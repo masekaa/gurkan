@@ -112,6 +112,12 @@ vercel.json                   Vercel build/output + SPA rewrite
 
 **Kimlik (Auth)**
 - E-posta/şifre ile kayıt, giriş, çıkış. Mock modda herhangi bir bilgiyle giriş.
+- **Hesap türü kayıtta seçilir (Müşteri / İşletme).** İşletme seçilirse kayıt
+  sırasında `repository.createBusiness` ile `ownerId`'li, `approved:false` bir
+  işletme oluşturulur ve profil `role:'business'` + gerçek `businessId` ile yazılır.
+  Müşteri/işletme **ayrışması** = profildeki `role` + rol bazlı sekmeler.
+- Demo rol anahtarı (Profil) hâlâ var ama artık mevcut `businessId`'yi korur
+  (gerçek sahibin işletmesini DEMO `b1`'e ezmez).
 - Oturum kalıcılığı (AsyncStorage / web localStorage).
 - Hata mesajları Türkçeleştirilmiş (`humanizeAuthError`).
 
@@ -196,8 +202,10 @@ vercel.json                   Vercel build/output + SPA rewrite
 - **Firestore kuralları**: `appointments` update şu an "giriş yapan herkes" için
   açık (geniş). İşletme yalnızca KENDİ randevularının durumunu güncelleyebilsin
   diye daraltılmalı (ör. `businesses/{id}.ownerId == auth.uid` kontrolü).
-- **businessId demo'da sabit** `'b1'` (`DEMO_BUSINESS_ID`). Gerçekte işletme kaydı
-  sırasında atanmalı (`profiles.businessId` veya `businesses.ownerId`).
+- **Demo rol anahtarı** (Profil) hâlâ b1'i atayabiliyor: gerçek `businessId`
+  yokken işletme moduna geçen demo kullanıcı `DEMO_BUSINESS_ID`'yi alır. Üretimde
+  bu anahtar yalnızca demo/test içindir; gerçek akış kayıt ekranındaki
+  Müşteri/İşletme seçimidir (✅ eklendi).
 - **Slot kilidi `delete` kuralı geniş** — şu an giriş yapan herkes silebilir
   (işletmenin red akışı için). İleride işletme sahibi/sahip kontrolüyle daraltılmalı.
 - Mock kullanıcı tek (`MOCK_USER_ID`); işletme görünümündeki diğer müşteriler
