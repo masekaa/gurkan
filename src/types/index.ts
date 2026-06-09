@@ -58,6 +58,8 @@ export interface Appointment {
   id: string;
   customerId: string;
   businessId: string;
+  /** Denormalised business owner uid — lets the owner query their inbox under strict rules. */
+  businessOwnerId?: string | null;
   serviceId: string;
   datetime: string; // ISO 8601
   status: AppointmentStatus;

@@ -16,8 +16,15 @@ import { isFirebaseEnabled } from '@/lib/firebase';
 import { centeredContent, colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
-  const { profile, signOut, setRole, updateProfile } = useAuth();
+  const { profile, signOut, updateProfile } = useAuth();
   const router = useRouter();
+
+  const roleMeta =
+    profile?.role === 'admin'
+      ? { label: 'Admin', icon: 'shield-checkmark-outline' as const }
+      : profile?.role === 'business'
+        ? { label: 'İşletme', icon: 'storefront-outline' as const }
+        : { label: 'Müşteri', icon: 'person-outline' as const };
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
@@ -80,33 +87,16 @@ export default function ProfileScreen() {
 
       <View style={styles.roleCard}>
         <View style={styles.roleHeader}>
-          <Ionicons name="swap-horizontal-outline" size={18} color={colors.gold} />
+          <Ionicons name="shield-checkmark-outline" size={18} color={colors.gold} />
           <Text style={styles.roleTitle}>Hesap Türü</Text>
         </View>
-        <Text style={styles.roleHint}>
-          Demo: müşteri, işletme ve admin deneyimi arasında geçiş yap.
-        </Text>
-        <View style={styles.roleSegment}>
-          {(
-            [
-              { key: 'user', label: 'Müşteri', icon: 'person-outline' },
-              { key: 'business', label: 'İşletme', icon: 'storefront-outline' },
-              { key: 'admin', label: 'Admin', icon: 'shield-checkmark-outline' },
-            ] as const
-          ).map((r) => {
-            const active = (profile?.role ?? 'user') === r.key;
-            return (
-              <Pressable
-                key={r.key}
-                onPress={() => setRole(r.key)}
-                style={[styles.roleBtn, active && styles.roleBtnActive]}
-              >
-                <Ionicons name={r.icon} size={15} color={active ? colors.onGold : colors.textMuted} />
-                <Text style={[styles.roleBtnText, active && styles.roleBtnTextActive]}>{r.label}</Text>
-              </Pressable>
-            );
-          })}
+        <View style={styles.roleBadge}>
+          <Ionicons name={roleMeta.icon} size={16} color={colors.gold} />
+          <Text style={styles.roleBadgeText}>{roleMeta.label}</Text>
         </View>
+        <Text style={styles.roleHint}>
+          Hesap türü kayıt sırasında belirlenir. Değiştirmek için destek ile iletişime geç.
+        </Text>
       </View>
 
       <View style={styles.menu}>
@@ -227,6 +217,20 @@ const styles = StyleSheet.create({
   roleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   roleTitle: { ...typography.bodyStrong, color: colors.text },
   roleHint: { ...typography.caption, color: colors.textMuted },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    backgroundColor: colors.gold + '1A',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.gold + '55',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    marginTop: spacing.xs,
+  },
+  roleBadgeText: { ...typography.bodyStrong, color: colors.gold },
   roleSegment: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceAlt,

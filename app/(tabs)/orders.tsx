@@ -26,9 +26,8 @@ const FILTERS: Record<Tab, AppointmentStatus[]> = {
 
 export default function OrdersScreen() {
   const { profile } = useAuth();
-  const businessId = profile?.businessId;
   const [tab, setTab] = useState<Tab>('pending');
-  const { data, isLoading, isError, refetch } = useBusinessAppointments(businessId);
+  const { data, isLoading, isError, refetch } = useBusinessAppointments(profile?.id);
   const update = useUpdateAppointmentStatus();
 
   const items = useMemo(

@@ -16,11 +16,21 @@ service cloud.firestore {
         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // A user can read/write only their own profile; admins can read all.
+    // A user reads only their own profile; admins read all.
     match /profiles/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      // Self-registration may only create a customer or business profile —
+      // never an admin (admins are granted out-of-band / by another admin).
+      allow create: if isOwner(userId)
+        && request.resource.data.role in ['user', 'business'];
+      // Users edit their own profile but CANNOT change role or businessId
+      // (no self-promotion to admin/business); admins may change anything.
+      allow update: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.get('businessId', null)
+             == resource.data.get('businessId', null)
+      );
       allow delete: if isAdmin();
     }
 
@@ -39,14 +49,22 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // Customers manage their own appointments; the related business reads them
-    // by businessId. MVP/pilot: any signed-in user can READ appointments so the
-    // business owner can load incoming bookings. Tighten later by denormalising
-    // `businessOwnerId` onto the doc and matching it to request.auth.uid.
+    // A user reads their own appointments (customerId) and a business owner
+    // reads their inbox (businessOwnerId, denormalised on create). Queries must
+    // filter by one of these fields so the list is permitted.
     match /appointments/{appointmentId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.businessOwnerId == request.auth.uid
+        || isAdmin()
+      );
       allow create: if isOwner(request.resource.data.customerId);
-      allow update: if isSignedIn();
+      // Customer (their own) or the owning business may update status.
+      allow update: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.businessOwnerId == request.auth.uid
+        || isAdmin()
+      );
       allow delete: if isAdmin();
     }
 

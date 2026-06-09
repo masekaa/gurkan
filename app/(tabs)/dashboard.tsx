@@ -22,7 +22,7 @@ export default function DashboardScreen() {
   const { profile } = useAuth();
   const businessId = profile?.businessId;
   const { data: business } = useBusiness(businessId ?? '');
-  const { data, isLoading, isError, refetch } = useBusinessAppointments(businessId);
+  const { data, isLoading, isError, refetch } = useBusinessAppointments(profile?.id);
 
   const stats = useMemo(() => {
     const appts = data ?? [];

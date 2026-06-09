@@ -281,13 +281,15 @@ export async function listAppointments(
 
 /** Appointments belonging to a business (the business-owner inbox). */
 export async function listBusinessAppointments(
-  businessId: string,
+  ownerId: string,
 ): Promise<Appointment[]> {
   if (isFirebaseEnabled) {
+    // Query by businessOwnerId so the rule (read if businessOwnerId == auth.uid)
+    // permits the whole list query for the owner.
     const snap = await getDocs(
       query(
         collection(requireDb(), 'appointments'),
-        where('businessId', '==', businessId),
+        where('businessOwnerId', '==', ownerId),
       ),
     );
     const rows = snap.docs
@@ -298,7 +300,7 @@ export async function listBusinessAppointments(
     );
   }
   return mock.appointments
-    .filter((a) => a.businessId === businessId)
+    .filter((a) => a.businessOwnerId === ownerId)
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1))
     .map(hydrate);
 }
@@ -312,8 +314,12 @@ export async function createAppointment(input: {
   durationMin?: number;
 }): Promise<Appointment> {
   const { durationMin = 30, ...appointmentFields } = input;
+  // Denormalise the business owner so the owner can query their inbox under
+  // strict rules (read allowed when businessOwnerId == auth.uid).
+  const business = await getBusiness(input.businessId);
   const base = {
     ...appointmentFields,
+    businessOwnerId: business?.ownerId ?? null,
     status: 'pending' as AppointmentStatus,
     createdAt: new Date().toISOString(),
   };

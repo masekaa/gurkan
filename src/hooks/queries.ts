@@ -51,11 +51,11 @@ export function useAppointments() {
   });
 }
 
-export function useBusinessAppointments(businessId?: string | null) {
+export function useBusinessAppointments(ownerId?: string | null) {
   return useQuery({
-    queryKey: ['businessAppointments', businessId],
-    queryFn: () => repo.listBusinessAppointments(businessId as string),
-    enabled: Boolean(businessId),
+    queryKey: ['businessAppointments', ownerId],
+    queryFn: () => repo.listBusinessAppointments(ownerId as string),
+    enabled: Boolean(ownerId),
   });
 }
 
