@@ -74,17 +74,6 @@ export default function ProfileScreen() {
         </Pressable>
       </Card>
 
-      <Card style={styles.referral}>
-        <View style={styles.referralTop}>
-          <Ionicons name="ticket-outline" size={20} color={colors.gold} />
-          <Text style={styles.referralTitle}>Referans Kodun</Text>
-        </View>
-        <Text style={styles.referralCode}>{profile?.referralCode ?? '—'}</Text>
-        <Text style={styles.referralHint}>
-          Arkadaşın bu kodla kayıt olduğunda sen +2, o +1 puan kazanır.
-        </Text>
-      </Card>
-
       <View style={styles.roleCard}>
         <View style={styles.roleHeader}>
           <Ionicons name="shield-checkmark-outline" size={18} color={colors.gold} />
@@ -197,15 +186,6 @@ const styles = StyleSheet.create({
   sheetActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   name: { ...typography.heading, color: colors.text },
   email: { ...typography.caption, color: colors.textMuted, marginTop: 1 },
-  referral: { gap: spacing.sm },
-  referralTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  referralTitle: { ...typography.bodyStrong, color: colors.text },
-  referralCode: {
-    ...typography.display,
-    color: colors.gold,
-    letterSpacing: 2,
-  },
-  referralHint: { ...typography.caption, color: colors.textMuted },
   roleCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

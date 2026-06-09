@@ -46,10 +46,6 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 
 const MOCK_KEY = 'altin100.mockProfile';
 
-function makeReferralCode() {
-  return 'ALTIN' + Math.floor(1000 + Math.random() * 9000).toString();
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -136,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email,
               phone: phone || null,
               role: isBiz ? 'business' : 'user',
-              referralCode: makeReferralCode(),
               createdAt: new Date().toISOString(),
               businessId,
             };
@@ -224,7 +219,6 @@ async function loadOrCreateProfile(
     email: seed.email,
     phone: seed.phone ?? null,
     role: 'user',
-    referralCode: makeReferralCode(),
     createdAt: new Date().toISOString(),
   };
   const { id, ...data } = profile;
@@ -245,7 +239,6 @@ function mockProfile(seed: {
     email: seed.email,
     phone: seed.phone ?? null,
     role: seed.role ?? 'user',
-    referralCode: makeReferralCode(),
     createdAt: new Date().toISOString(),
     businessId: seed.businessId ?? null,
   };

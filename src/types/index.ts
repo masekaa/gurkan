@@ -8,7 +8,6 @@ export interface Profile {
   email: string;
   phone: string | null;
   role: UserRole;
-  referralCode: string;
   createdAt: string;
   /** For business accounts: the business this account manages. */
   businessId?: string | null;
