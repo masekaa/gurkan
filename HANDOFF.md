@@ -116,8 +116,11 @@ vercel.json                   Vercel build/output + SPA rewrite
   sırasında `repository.createBusiness` ile `ownerId`'li, `approved:false` bir
   işletme oluşturulur ve profil `role:'business'` + gerçek `businessId` ile yazılır.
   Müşteri/işletme **ayrışması** = profildeki `role` + rol bazlı sekmeler.
-- Demo rol anahtarı (Profil) hâlâ var ama artık mevcut `businessId`'yi korur
-  (gerçek sahibin işletmesini DEMO `b1`'e ezmez).
+- **Roller güvenli ayrıştırıldı (production):** demo rol anahtarı KALDIRILDI
+  (kendini admin/işletme yapma açığıydı); Profil'de rol salt-okunur rozet.
+  Kurallar: profil `create` yalnızca `role in [user,business]` (admin asla
+  self-register edilemez), `update` kendi `role/businessId`'sini değiştiremez
+  (yalnızca admin). **Admin Console'dan atanır** (`profiles/{uid}.role='admin'`).
 - Oturum kalıcılığı (AsyncStorage / web localStorage).
 - Hata mesajları Türkçeleştirilmiş (`humanizeAuthError`).
 
@@ -139,9 +142,12 @@ vercel.json                   Vercel build/output + SPA rewrite
 - Referans kodu gösterimi (profil).
 
 **İşletme tarafı**
-- Profil'de **Müşteri ↔ İşletme** rol değiştirici (demo). Rol `profiles` dokümanına
-  yazılır; işletme moduna geçince `businessId = DEMO_BUSINESS_ID ('b1')` atanır.
+- İşletme hesabı **kayıtta** oluşur (`ownerId`'li, `approved:false`); admin onayı
+  sonrası Keşfet'te görünür.
 - Rol bazlı sekme menüsü (işletme: Gelen Randevular + Panel + İşletmem + Profil).
+- **Gelen Randevular yalnızca KENDİ randevuları**: `businessOwnerId == sahip uid`
+  ile sorgulanır (`profile.id`). `DEMO_BUSINESS_ID (b1)` sahipsiz olduğundan
+  demo b1 hesabı veri göstermez; gerçek test için işletme hesabı kaydı gerekir.
 - Gelen Randevular: Bekleyen/Onaylı/Geçmiş, **onayla/reddet/iptal/tamamla**.
 - Panel (dashboard): günlük & aylık kazanç, toplam randevu, bekleyen sayısı,
   doluluk oranı %, no-show oranı % (hedef %15 üstü kırmızı).
@@ -199,13 +205,9 @@ vercel.json                   Vercel build/output + SPA rewrite
 
 - **Sadakat puanı** yalnızca mock modda artıyor (`repository.grantLoyaltyPoint`).
   Üretimde Cloud Function olmalı; kurallar istemcinin `loyalty` yazmasını engeller.
-- **Firestore kuralları**: `appointments` update şu an "giriş yapan herkes" için
-  açık (geniş). İşletme yalnızca KENDİ randevularının durumunu güncelleyebilsin
-  diye daraltılmalı (ör. `businesses/{id}.ownerId == auth.uid` kontrolü).
-- **Demo rol anahtarı** (Profil) hâlâ b1'i atayabiliyor: gerçek `businessId`
-  yokken işletme moduna geçen demo kullanıcı `DEMO_BUSINESS_ID`'yi alır. Üretimde
-  bu anahtar yalnızca demo/test içindir; gerçek akış kayıt ekranındaki
-  Müşteri/İşletme seçimidir (✅ eklendi).
+- ✅ **Çözüldü**: `appointments` okuma/güncelleme artık `customerId==uid ||
+  businessOwnerId==uid || admin` ile sıkı; demo rol anahtarı kaldırıldı; profil
+  rol değişimi (self) kurallarla engellendi. Admin Console'dan atanır.
 - **Slot kilidi `delete` kuralı geniş** — şu an giriş yapan herkes silebilir
   (işletmenin red akışı için). İleride işletme sahibi/sahip kontrolüyle daraltılmalı.
 - Mock kullanıcı tek (`MOCK_USER_ID`); işletme görünümündeki diğer müşteriler

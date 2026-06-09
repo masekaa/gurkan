@@ -45,12 +45,16 @@ The document id is the Firebase Auth UID.
 
 | Field | Type | Notes |
 |---|---|---|
-| `customerId` | string | FK → profiles |
+| `customerId` | string | FK → profiles (booking customer) |
 | `businessId` | string | FK → businesses |
+| `businessOwnerId` | string\|null | Denormalised `businesses.ownerId`; the business owner queries their inbox by this field (strict rules) |
 | `serviceId` | string | FK → services |
 | `datetime` | string (ISO) | |
 | `status` | `pending \| approved \| rejected \| cancelled \| completed` | |
 | `createdAt` | string (ISO) | |
+
+Access: a user reads appointments where `customerId == uid`; a business owner
+reads where `businessOwnerId == uid`; admins read all (see `firestore.rules`).
 
 ## `loyalty/{id}`
 
