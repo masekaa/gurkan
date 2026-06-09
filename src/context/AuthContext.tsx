@@ -12,6 +12,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -52,12 +53,20 @@ function makeReferralCode() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
+  // True while signUp() is writing the profile, to suppress the auth listener.
+  const signingUp = useRef(false);
 
   useEffect(() => {
     let active = true;
 
     if (isFirebaseEnabled && auth) {
       const unsub = onAuthStateChanged(auth, async (user) => {
+        // During signUp() we write the profile (with the chosen role) ourselves;
+        // skip the listener so it doesn't race and create a default 'user' doc.
+        if (signingUp.current) {
+          if (active) setLoading(false);
+          return;
+        }
         if (user) {
           const p = await loadOrCreateProfile(user.uid, {
             name: user.displayName ?? 'Misafir',
@@ -105,53 +114,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async signUp({ name, email, phone, password, accountType, businessName, businessCategory }) {
         const isBiz = accountType === 'business' && !!businessName?.trim();
-        if (isFirebaseEnabled && auth && db) {
-          const cred = await createUserWithEmailAndPassword(auth, email, password);
-          await fbUpdateProfile(cred.user, { displayName: name });
-          const uid = cred.user.uid;
+        signingUp.current = true;
+        try {
+          if (isFirebaseEnabled && auth && db) {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            await fbUpdateProfile(cred.user, { displayName: name });
+            const uid = cred.user.uid;
+            const businessId = isBiz
+              ? await createBusiness({
+                  ownerId: uid,
+                  name: businessName!.trim(),
+                  category: businessCategory ?? 'erkek_berberi',
+                  phone,
+                })
+              : null;
+            // Write the full profile explicitly (the auth listener is suppressed
+            // via signingUp so it can't race and create a default 'user' doc).
+            const profile: Profile = {
+              id: uid,
+              name,
+              email,
+              phone: phone || null,
+              role: isBiz ? 'business' : 'user',
+              referralCode: makeReferralCode(),
+              createdAt: new Date().toISOString(),
+              businessId,
+            };
+            const { id, ...data } = profile;
+            await setDoc(doc(db, 'profiles', uid), data);
+            setProfile(profile);
+            return;
+          }
+          // Mock mode
           const businessId = isBiz
             ? await createBusiness({
-                ownerId: uid,
+                ownerId: MOCK_USER_ID,
                 name: businessName!.trim(),
                 category: businessCategory ?? 'erkek_berberi',
                 phone,
               })
             : null;
-          // Write the full profile explicitly (overrides the default 'user'
-          // doc the auth listener may create mid-signup) so the role sticks.
-          const profile: Profile = {
-            id: uid,
-            name,
-            email,
-            phone: phone || null,
-            role: isBiz ? 'business' : 'user',
-            referralCode: makeReferralCode(),
-            createdAt: new Date().toISOString(),
-            businessId,
-          };
-          const { id, ...data } = profile;
-          await setDoc(doc(db, 'profiles', uid), data);
-          setProfile(profile);
-          return;
-        }
-        // Mock mode
-        const businessId = isBiz
-          ? await createBusiness({
-              ownerId: MOCK_USER_ID,
-              name: businessName!.trim(),
-              category: businessCategory ?? 'erkek_berberi',
+          await persistMock(
+            mockProfile({
+              name,
+              email,
               phone,
-            })
-          : null;
-        await persistMock(
-          mockProfile({
-            name,
-            email,
-            phone,
-            role: isBiz ? 'business' : 'user',
-            businessId,
-          }),
-        );
+              role: isBiz ? 'business' : 'user',
+              businessId,
+            }),
+          );
+        } finally {
+          signingUp.current = false;
+        }
       },
       async signOut() {
         if (isFirebaseEnabled && auth) {
