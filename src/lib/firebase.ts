@@ -9,6 +9,7 @@ import {
   type Auth,
 } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFunctions, type Functions } from 'firebase/functions';
 import { Platform } from 'react-native';
 
 import { env } from './env';
@@ -22,6 +23,7 @@ import { env } from './env';
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
+let functionsInstance: Functions | null = null;
 
 if (env.hasFirebase) {
   app = getApps().length ? getApp() : initializeApp(env.firebaseConfig);
@@ -40,9 +42,11 @@ if (env.hasFirebase) {
   }
 
   dbInstance = getFirestore(app);
+  functionsInstance = getFunctions(app);
 }
 
 export const firebaseApp = app;
 export const auth = authInstance;
 export const db = dbInstance;
+export const functions = functionsInstance;
 export const isFirebaseEnabled = app !== null;

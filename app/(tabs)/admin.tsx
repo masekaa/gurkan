@@ -3,8 +3,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Button, ErrorState, ListSkeleton, Screen } from '@/components/ui';
+import { Badge, Button, ErrorState, Field, ListSkeleton, Screen } from '@/components/ui';
 import {
+  useAdminSetPassword,
   useAllAppointments,
   useAllBusinesses,
   useAllUsers,
@@ -41,9 +42,34 @@ export default function AdminScreen() {
   const setApproved = useSetBusinessApproved();
   const deleteUser = useDeleteUser();
   const deleteBusiness = useDeleteBusiness();
+  const setPassword = useAdminSetPassword();
 
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
+  const [pw, setPw] = useState('');
+  const [pwError, setPwError] = useState<string | null>(null);
   const busy = deleteUser.isPending || deleteBusiness.isPending;
+
+  function submitPassword() {
+    if (!pwTarget) return;
+    setPwError(null);
+    if (pw.trim().length < 6) {
+      setPwError('Şifre en az 6 karakter olmalı.');
+      return;
+    }
+    setPassword.mutate(
+      { uid: pwTarget.id, newPassword: pw.trim() },
+      {
+        onSuccess: () => setPwTarget(null),
+        onError: (e: any) =>
+          setPwError(
+            e?.message?.includes('functions') || e?.code === 'functions/not-found'
+              ? 'Cloud Functions deploy edilmemiş (functions/ klasörünü deploy et).'
+              : 'Şifre güncellenemedi. Yetki veya bağlantı sorunu.',
+          ),
+      },
+    );
+  }
 
   const pendingCount = useMemo(
     () => (businesses ?? []).filter((b) => !b.approved).length,
@@ -143,6 +169,11 @@ export default function AdminScreen() {
               <AdminUserRow
                 user={item}
                 onDelete={() => setConfirm({ kind: 'user', id: item.id, label: item.name })}
+                onPassword={() => {
+                  setPwTarget({ id: item.id, name: item.name });
+                  setPw('');
+                  setPwError(null);
+                }}
               />
             )}
           />
@@ -178,6 +209,33 @@ export default function AdminScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Button label="Sil" variant="danger" loading={busy} onPress={runDelete} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={pwTarget != null} transparent animationType="fade" onRequestClose={() => setPwTarget(null)}>
+        <View style={styles.overlay}>
+          <View style={styles.dialog}>
+            <Ionicons name="key-outline" size={26} color={colors.gold} />
+            <Text style={styles.dialogTitle}>Şifre Güncelle</Text>
+            <Text style={styles.dialogText}>{pwTarget?.name} için yeni şifre belirle.</Text>
+            <View style={{ width: '100%', marginTop: spacing.sm }}>
+              <Field
+                placeholder="Yeni şifre (en az 6 karakter)"
+                secureTextEntry
+                value={pw}
+                onChangeText={setPw}
+              />
+              {pwError ? <Text style={styles.pwError}>{pwError}</Text> : null}
+            </View>
+            <View style={styles.dialogActions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Vazgeç" variant="secondary" onPress={() => setPwTarget(null)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Güncelle" loading={setPassword.isPending} onPress={submitPassword} />
               </View>
             </View>
           </View>
@@ -236,7 +294,15 @@ function AdminBusinessRow({
   );
 }
 
-function AdminUserRow({ user, onDelete }: { user: Profile; onDelete: () => void }) {
+function AdminUserRow({
+  user,
+  onDelete,
+  onPassword,
+}: {
+  user: Profile;
+  onDelete: () => void;
+  onPassword: () => void;
+}) {
   const meta = ROLE_META[user.role] ?? ROLE_META.user;
   const initial = (user.name || '?').trim().charAt(0).toUpperCase();
   return (
@@ -250,6 +316,11 @@ function AdminUserRow({ user, onDelete }: { user: Profile; onDelete: () => void 
           <Text style={styles.cardSub} numberOfLines={1}>{user.email}</Text>
         </View>
         <Badge label={meta.label} color={meta.color} />
+      </View>
+      <View style={styles.actions}>
+        <View style={{ flex: 1 }}>
+          <Button label="Şifre Güncelle" variant="secondary" icon="key-outline" onPress={onPassword} />
+        </View>
         <Pressable
           onPress={onDelete}
           hitSlop={8}
@@ -380,4 +451,5 @@ const styles = StyleSheet.create({
   dialogTitle: { ...typography.heading, color: colors.text, textAlign: 'center' },
   dialogText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   dialogActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm, width: '100%' },
+  pwError: { ...typography.caption, color: colors.danger, marginTop: spacing.xs, marginLeft: spacing.xs },
 });

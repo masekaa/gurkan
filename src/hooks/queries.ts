@@ -220,12 +220,21 @@ export function useAllUsers() {
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => repo.deleteUser(id),
+    // Full delete (Auth + profile + businesses) via Cloud Function, with a
+    // client-side fallback when functions are not deployed.
+    mutationFn: (id: string) => repo.adminDeleteUser(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['allUsers'] });
       qc.invalidateQueries({ queryKey: ['allBusinesses'] });
       qc.invalidateQueries({ queryKey: ['businesses'] });
     },
+  });
+}
+
+export function useAdminSetPassword() {
+  return useMutation({
+    mutationFn: ({ uid, newPassword }: { uid: string; newPassword: string }) =>
+      repo.adminSetUserPassword(uid, newPassword),
   });
 }
 

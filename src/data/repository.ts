@@ -23,7 +23,9 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 
-import { db, isFirebaseEnabled } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+
+import { db, functions, isFirebaseEnabled } from '@/lib/firebase';
 import type {
   Appointment,
   AppointmentStatus,
@@ -165,6 +167,39 @@ export async function deleteUser(userId: string): Promise<void> {
   for (let i = mock.businesses.length - 1; i >= 0; i--) {
     if (mock.businesses[i].ownerId === userId) mock.businesses.splice(i, 1);
   }
+}
+
+/**
+ * Admin-only: fully delete a user via the `adminDeleteUser` Cloud Function
+ * (removes Auth account + profile + owned businesses). Falls back to the
+ * client-side `deleteUser` (profile + businesses only, no Auth) when the
+ * function is not deployed/available. Returns whether the Auth account was
+ * removed so the UI can inform the admin.
+ */
+export async function adminDeleteUser(uid: string): Promise<{ authDeleted: boolean }> {
+  if (isFirebaseEnabled && functions) {
+    try {
+      await httpsCallable(functions, 'adminDeleteUser')({ uid });
+      return { authDeleted: true };
+    } catch {
+      // Cloud Function missing/unavailable → app-level cleanup as a fallback.
+      await deleteUser(uid);
+      return { authDeleted: false };
+    }
+  }
+  await deleteUser(uid);
+  return { authDeleted: false };
+}
+
+/** Admin-only: set a user's password via the `adminSetPassword` Cloud Function. */
+export async function adminSetUserPassword(
+  uid: string,
+  newPassword: string,
+): Promise<void> {
+  if (!isFirebaseEnabled || !functions) {
+    throw new Error('Bu işlem yalnızca Firebase + Cloud Functions ile çalışır.');
+  }
+  await httpsCallable(functions, 'adminSetPassword')({ uid, newPassword });
 }
 
 /** Admin-only: delete a business. */
