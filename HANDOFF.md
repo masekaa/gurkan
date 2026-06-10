@@ -82,7 +82,7 @@ app/                          Ekranlar (expo-router)
   business/[id].tsx           İşletme detayı + hizmet listesi → booking'e yönlendirir
   booking/[businessId].tsx    Randevu akışı: tarih + saat seçimi → onay → başarı
 src/
-  theme/index.ts              Tasarım token'ları (koyu + altın tema)
+  theme/index.ts              Tasarım token'ları (açık + altın tema, Getir tarzı)
   types/index.ts              Alan modelleri (Profile, Business, Service, Appointment, Loyalty)
   lib/
     env.ts                    EXPO_PUBLIC_FIREBASE_* okuma + hasFirebase
@@ -165,11 +165,19 @@ vercel.json                   Vercel build/output + SPA rewrite
 - ⚠️ `deleteUser` yalnızca app-içi profili + işletmelerini siler; Firebase **Auth
   hesabı** yalnızca sunucu tarafında (Admin SDK / Cloud Function) silinebilir.
 
-**Görsel sistem (tasarım)**
+**Görsel sistem (tasarım) — AÇIK TEMA (Getir tarzı)**
+- **Açık (light) tema:** aydınlık zemin (`#F4F4F7`), beyaz kartlar, koyu metin,
+  derinleştirilmiş altın marka (`#B5862B`). Yumuşak gölgeler (`elevation`).
+  `StatusBar` dark; `app.json` userInterfaceStyle light.
 - Gradient + elevation token sistemi (`theme`: `categoryStyle`, `elevation`,
-  `gradients`); `expo-linear-gradient`. Premium altın gradient butonlar, kategori
-  gradient kart kapakları, tam genişlik gradient hero'lar (detay/sadakat/panel),
-  durum renkli aksan şeritleri.
+  `gradients`); `expo-linear-gradient`. Altın gradient butonlar, kategori
+  gradient kapaklar/hero'lar, durum renkli aksan şeritleri.
+- **Keşfet = Getir düzeni:** yapışkan başlık+arama, promo banner carousel,
+  kategori ızgarası (gradient tile), yatay carousel'ler ("Sana yakın", "En
+  yüksek puanlılar") + "Tümünü gör"; arama/kategori → filtreli dikey liste.
+  `BusinessCardCompact` carousel kartı.
+- Segment sekmeleri: gri ray + beyaz aktif pill; input'lar beyaz; tab bar yüzen gölge.
+- **Geri dönüş noktası:** git tag `v1.0-pre-ui-redesign` (UI yenilemesi öncesi).
 
 **Altyapı**
 - Firestore güvenlik kuralları + veri modeli dokümanı.
