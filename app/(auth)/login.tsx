@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -51,9 +52,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <View style={styles.logo}>
-              <Ionicons name="cut" size={28} color={colors.onGold} />
-            </View>
+            <Image
+              source={require('../../assets/icon.png')}
+              style={styles.brandLogo}
+              contentFit="contain"
+            />
             <Text style={styles.title}>Altın100</Text>
             <Text style={styles.subtitle}>
               Berber & güzellik randevunu saniyeler içinde al.
@@ -126,13 +129,10 @@ export function humanizeAuthError(code?: string): string | null {
 const styles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.xl, width: '100%', maxWidth: 480, alignSelf: 'center' },
   brand: { alignItems: 'center', gap: spacing.sm },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: colors.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
+  brandLogo: {
+    width: 100,
+    height: 100,
+    borderRadius: 24,
     marginBottom: spacing.sm,
   },
   title: { ...typography.display, color: colors.text },
