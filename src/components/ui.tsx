@@ -382,12 +382,12 @@ const styles = StyleSheet.create({
   fieldBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    height: 50,
+    height: 52,
   },
   fieldInput: { flex: 1, color: colors.text, ...typography.body, height: '100%' },
   badge: {

@@ -160,11 +160,9 @@ const styles = StyleSheet.create({
   title: { ...typography.title, color: colors.text },
   segment: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 12,
     padding: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
   segBtn: {
     flex: 1,
@@ -175,7 +173,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: 9,
   },
-  segActive: { backgroundColor: colors.surfaceAlt },
+  segActive: { backgroundColor: colors.surface, ...elevation.soft },
   segText: { ...typography.caption, color: colors.textMuted },
   segTextActive: { color: colors.text, fontWeight: '700' },
   count: {

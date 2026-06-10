@@ -11,7 +11,7 @@ import {
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { EmptyState, ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import { useAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
-import { centeredContent, colors, spacing, typography } from '@/theme';
+import { centeredContent, colors, elevation, spacing, typography } from '@/theme';
 import type { Appointment } from '@/types';
 
 type Tab = 'upcoming' | 'past';
@@ -99,14 +99,12 @@ const styles = StyleSheet.create({
   title: { ...typography.title, color: colors.text },
   segment: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 12,
     padding: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
   segBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: 9, alignItems: 'center' },
-  segActive: { backgroundColor: colors.surfaceAlt },
+  segActive: { backgroundColor: colors.surface, ...elevation.soft },
   segText: { ...typography.caption, color: colors.textMuted },
   segTextActive: { color: colors.text, fontWeight: '700' },
   list: { padding: spacing.lg, gap: spacing.md, flexGrow: 1, ...centeredContent },
