@@ -33,6 +33,19 @@ export function formatDate(iso: string): string {
   return dateFmt.format(new Date(iso));
 }
 
+const dayFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric' });
+const monthShortFmt = new Intl.DateTimeFormat('tr-TR', { month: 'short' });
+
+/** Day-of-month number, e.g. "9". */
+export function formatDay(iso: string): string {
+  return dayFmt.format(new Date(iso));
+}
+
+/** Short month name, e.g. "Haz". Locale-safe (no string splitting). */
+export function formatMonthShort(iso: string): string {
+  return monthShortFmt.format(new Date(iso));
+}
+
 export function formatTime(iso: string): string {
   return timeFmt.format(new Date(iso));
 }

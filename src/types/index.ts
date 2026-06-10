@@ -36,6 +36,8 @@ export interface Business {
   approved: boolean;
   openingTime: string; // "09:00"
   closingTime: string; // "20:00"
+  /** Booking slot interval in minutes (business-configurable). Default 30. */
+  slotMinutes?: number;
 }
 
 export interface Service {

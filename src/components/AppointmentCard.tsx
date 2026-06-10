@@ -4,7 +4,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, Button } from './ui';
 import {
   formatDate,
+  formatDay,
   formatDuration,
+  formatMonthShort,
   formatPrice,
   formatTime,
   statusMeta,
@@ -24,7 +26,6 @@ export function AppointmentCard({
   const { business, service, status, datetime } = appointment;
   const meta = statusMeta[status];
   const canCancel = status === 'pending' || status === 'approved';
-  const parts = formatDate(datetime).split(' '); // ["Pzt", "9", "Haziran"]
 
   return (
     <Pressable
@@ -42,8 +43,8 @@ export function AppointmentCard({
       <View style={styles.inner}>
         <View style={styles.topRow}>
           <View style={styles.dateBox}>
-            <Text style={styles.day}>{parts[1]}</Text>
-            <Text style={styles.month}>{(parts[2] ?? '').slice(0, 3)}</Text>
+            <Text style={styles.day}>{formatDay(datetime)}</Text>
+            <Text style={styles.month}>{formatMonthShort(datetime)}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.business} numberOfLines={1}>

@@ -90,7 +90,7 @@ export default function ManageScreen() {
             <InfoLine icon="call-outline" text={business?.phone ?? '—'} />
             <InfoLine
               icon="time-outline"
-              text={`${business?.openingTime ?? '--'} – ${business?.closingTime ?? '--'}`}
+              text={`${business?.openingTime ?? '--'} – ${business?.closingTime ?? '--'} · ${business?.slotMinutes ?? 30} dk slot`}
             />
             <InfoLine icon="location-outline" text={business?.district ?? '—'} />
           </View>
@@ -231,6 +231,7 @@ function ProfileEditor({
     district: string;
     openingTime: string;
     closingTime: string;
+    slotMinutes?: number;
   };
   saving: boolean;
   onSave: (patch: {
@@ -240,6 +241,7 @@ function ProfileEditor({
     district: string;
     openingTime: string;
     closingTime: string;
+    slotMinutes: number;
   }) => void;
   onCancel: () => void;
 }) {
@@ -249,6 +251,7 @@ function ProfileEditor({
   const [district, setDistrict] = useState(initial.district);
   const [open, setOpen] = useState(initial.openingTime);
   const [close, setClose] = useState(initial.closingTime);
+  const [slotMinutes, setSlotMinutes] = useState(initial.slotMinutes ?? 30);
 
   return (
     <View style={[styles.card, elevation.soft, { gap: spacing.md }]}>
@@ -263,6 +266,27 @@ function ProfileEditor({
         </View>
         <View style={{ flex: 1 }}>
           <Field label="Kapanış" value={close} onChangeText={setClose} icon="time-outline" placeholder="20:00" />
+        </View>
+      </View>
+      <View>
+        <Text style={styles.slotLabel}>Randevu aralığı (dakika)</Text>
+        <View style={styles.slotRow}>
+          {[15, 30, 45, 60].map((m) => {
+            const active = slotMinutes === m;
+            return (
+              <Pressable
+                key={m}
+                onPress={() => setSlotMinutes(m)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                style={[styles.slotChip, active && styles.slotChipActive]}
+              >
+                <Text style={[styles.slotChipText, active && styles.slotChipTextActive]}>
+                  {m} dk
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
       <View style={styles.dialogActions}>
@@ -282,6 +306,7 @@ function ProfileEditor({
                 district: district.trim(),
                 openingTime: open.trim(),
                 closingTime: close.trim(),
+                slotMinutes,
               })
             }
           />
@@ -405,6 +430,20 @@ const styles = StyleSheet.create({
   serviceMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   iconBtn: { padding: 4 },
   hourRow: { flexDirection: 'row', gap: spacing.md },
+  slotLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginBottom: spacing.xs },
+  slotRow: { flexDirection: 'row', gap: spacing.sm },
+  slotChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  slotChipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  slotChipText: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  slotChipTextActive: { color: colors.onGold },
   overlay: {
     flex: 1,
     backgroundColor: colors.overlay,

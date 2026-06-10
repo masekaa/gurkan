@@ -256,6 +256,7 @@ export async function createBusiness(input: {
     approved: false,
     openingTime: '09:00',
     closingTime: '20:00',
+    slotMinutes: 30,
   };
   if (isFirebaseEnabled) {
     const ref = await addDoc(collection(requireDb(), 'businesses'), data);

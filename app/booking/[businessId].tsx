@@ -36,13 +36,15 @@ function nextDays(count: number): Date[] {
 }
 
 /** Half-hour slots between opening and closing time ("HH:MM"). */
-function slotsBetween(open: string, close: string): string[] {
+/** Slots between open and close at `step`-minute intervals (business-set). */
+function slotsBetween(open: string, close: string, step: number): string[] {
   const [oh, om] = open.split(':').map(Number);
   const [ch, cm] = close.split(':').map(Number);
   const start = oh * 60 + om;
   const end = ch * 60 + cm;
+  const interval = step >= 5 ? step : 30;
   const out: string[] = [];
-  for (let t = start; t + 30 <= end; t += 30) {
+  for (let t = start; t + interval <= end; t += interval) {
     const h = Math.floor(t / 60);
     const m = t % 60;
     out.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
@@ -79,7 +81,13 @@ export default function BookingScreen() {
 
   const slots = useMemo(
     () =>
-      business ? slotsBetween(business.openingTime, business.closingTime) : [],
+      business
+        ? slotsBetween(
+            business.openingTime,
+            business.closingTime,
+            business.slotMinutes ?? 30,
+          )
+        : [],
     [business],
   );
 
