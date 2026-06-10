@@ -413,6 +413,7 @@ export async function createAppointment(input: {
         businessId: input.businessId,
         datetime: input.datetime,
         customerId: input.customerId,
+        businessOwnerId: business?.ownerId ?? null,
         appointmentId: apptRef.id,
         durationMin,
       });

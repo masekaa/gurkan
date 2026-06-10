@@ -38,15 +38,26 @@ service cloud.firestore {
     match /businesses/{businessId} {
       allow read: if resource.data.approved == true || isAdmin()
         || (isSignedIn() && resource.data.ownerId == request.auth.uid);
-      allow create: if isSignedIn();
+      // A new business must be owned by its creator and start UNAPPROVED —
+      // prevents self-approval / bypassing admin review. Admins are exempt
+      // (e.g. seeding sample data).
+      allow create: if isAdmin() || (isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.approved == false);
       allow update, delete: if isAdmin()
         || (isSignedIn() && resource.data.ownerId == request.auth.uid);
     }
 
-    // Services are public for reading; managed by the business owner/admin.
+    // Services are public for reading; only the owning business / admin writes.
+    function ownsBusiness(businessId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId
+          == request.auth.uid;
+    }
     match /services/{serviceId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow create: if isAdmin() || ownsBusiness(request.resource.data.businessId);
+      allow update, delete: if isAdmin() || ownsBusiness(resource.data.businessId);
     }
 
     // A user reads their own appointments (customerId) and a business owner
@@ -58,12 +69,18 @@ service cloud.firestore {
         || resource.data.businessOwnerId == request.auth.uid
         || isAdmin()
       );
-      allow create: if isOwner(request.resource.data.customerId);
-      // Customer (their own) or the owning business may update status.
+      // Customer books for themselves; the stamped businessOwnerId must match
+      // the real owner of the referenced business (no inbox spoofing).
+      allow create: if isOwner(request.resource.data.customerId)
+        && request.resource.data.businessOwnerId ==
+           get(/databases/$(database)/documents/businesses/$(request.resource.data.businessId)).data.ownerId;
+      // The owning business / admin may set any status; the customer may only
+      // CANCEL their own appointment (not self-approve or self-complete).
       allow update: if isSignedIn() && (
-        resource.data.customerId == request.auth.uid
+        isAdmin()
         || resource.data.businessOwnerId == request.auth.uid
-        || isAdmin()
+        || (resource.data.customerId == request.auth.uid
+            && request.resource.data.status == 'cancelled')
       );
       allow delete: if isAdmin();
     }
@@ -81,7 +98,12 @@ service cloud.firestore {
     match /slots/{slotId} {
       allow read: if isSignedIn();
       allow create: if isOwner(request.resource.data.customerId);
-      allow delete: if isSignedIn();
+      // Freed by the booking customer (cancel) or the owning business (reject).
+      allow delete: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.businessOwnerId == request.auth.uid
+        || isAdmin()
+      );
     }
 
     // Reviews are publicly readable; a user writes only their own review.

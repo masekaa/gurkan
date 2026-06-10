@@ -88,6 +88,7 @@ appointment in a transaction; deleted when an appointment is cancelled/rejected.
 | `businessId` | string | FK → businesses |
 | `datetime` | string (ISO) | The reserved slot start |
 | `customerId` | string | FK → profiles |
+| `businessOwnerId` | string\|null | Denormalised owner; lets the business free the lock on reject |
 | `appointmentId` | string | FK → appointments |
 | `durationMin` | number | Service length; used for overlap-aware availability |
 
