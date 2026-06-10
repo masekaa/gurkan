@@ -44,7 +44,14 @@ service cloud.firestore {
       allow create: if isAdmin() || (isSignedIn()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.approved == false);
-      allow update, delete: if isAdmin()
+      // The owner may edit their business but CANNOT self-approve or transfer
+      // ownership (approved & ownerId are immutable for non-admins).
+      allow update: if isAdmin() || (
+        isSignedIn() && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.approved == resource.data.approved
+      );
+      allow delete: if isAdmin()
         || (isSignedIn() && resource.data.ownerId == request.auth.uid);
     }
 
@@ -72,6 +79,7 @@ service cloud.firestore {
       // Customer books for themselves; the stamped businessOwnerId must match
       // the real owner of the referenced business (no inbox spoofing).
       allow create: if isOwner(request.resource.data.customerId)
+        && request.resource.data.status == 'pending'
         && request.resource.data.businessOwnerId ==
            get(/databases/$(database)/documents/businesses/$(request.resource.data.businessId)).data.ownerId;
       // The owning business / admin may set any status; the customer may only
@@ -97,7 +105,10 @@ service cloud.firestore {
     // for themselves; the slot is freed (deleted) on cancel/reject.
     match /slots/{slotId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(request.resource.data.customerId);
+      // Claimed for oneself; businessOwnerId must match the real business owner.
+      allow create: if isOwner(request.resource.data.customerId)
+        && request.resource.data.businessOwnerId ==
+           get(/databases/$(database)/documents/businesses/$(request.resource.data.businessId)).data.ownerId;
       // Freed by the booking customer (cancel) or the owning business (reject).
       allow delete: if isSignedIn() && (
         resource.data.customerId == request.auth.uid
@@ -109,7 +120,10 @@ service cloud.firestore {
     // Reviews are publicly readable; a user writes only their own review.
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId)
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
       allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
   }
