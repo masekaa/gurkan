@@ -5,10 +5,11 @@ what the client SDK **cannot**: permanently delete a user's Auth account and set
 a user's password. Each function verifies the caller is an admin by reading
 `profiles/{uid}.role == 'admin'` in Firestore.
 
-| Function | Ne yapar |
-|---|---|
-| `adminDeleteUser({ uid })` | Kullanıcının Auth hesabını + profilini + sahip olduğu işletmeleri siler |
-| `adminSetPassword({ uid, newPassword })` | Kullanıcının şifresini günceller (min 6 karakter) |
+| Function | Tür | Ne yapar |
+|---|---|---|
+| `adminDeleteUser({ uid })` | callable | Auth hesabı + profil + sahip işletmeleri siler |
+| `adminSetPassword({ uid, newPassword })` | callable | Şifre günceller (min 6 karakter) |
+| `onAppointmentCompleted` | Firestore trigger | Randevu 'completed' olunca sadakat puanı +1 (10 puan = 1 ücretsiz hizmet). `loyalty` koleksiyonu istemciye kapalı olduğundan sunucu tarafında yazılır. |
 
 ## Önkoşullar
 - Firebase projesi **Blaze (kullandıkça öde)** planında olmalı. Cloud Functions

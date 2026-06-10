@@ -14,9 +14,12 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 initializeApp();
+
+const POINTS_PER_REWARD = 10;
 
 /** Throw unless the caller's profile role is 'admin'. */
 async function assertAdmin(uid: string | undefined): Promise<void> {
@@ -76,3 +79,40 @@ export const adminSetPassword = onCall(async (req) => {
   await getAuth().updateUser(targetUid, { password: newPassword });
   return { ok: true };
 });
+
+/**
+ * Grant a loyalty point when an appointment transitions to 'completed'.
+ * Server-side so the `loyalty` collection stays client-write-protected.
+ * Every POINTS_PER_REWARD points = 1 free service.
+ */
+export const onAppointmentCompleted = onDocumentUpdated(
+  'appointments/{id}',
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!after) return;
+    // Only on the transition into 'completed'.
+    if (after.status !== 'completed' || before?.status === 'completed') return;
+
+    const customerId = after.customerId as string | undefined;
+    const businessId = after.businessId as string | undefined;
+    if (!customerId || !businessId) return;
+
+    const db = getFirestore();
+    const ref = db.doc(`loyalty/${customerId}_${businessId}`);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const points = (snap.exists ? Number(snap.data()?.points ?? 0) : 0) + 1;
+      tx.set(
+        ref,
+        {
+          userId: customerId,
+          businessId,
+          points,
+          freeServices: Math.floor(points / POINTS_PER_REWARD),
+        },
+        { merge: true },
+      );
+    });
+  },
+);
