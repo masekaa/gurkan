@@ -20,9 +20,7 @@
       "package": "com.altin100.app",
       "adaptiveIcon": {
         "backgroundColor": "#0E0E12",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icon.png"
       },
       "predictiveBackGestureEnabled": false
     },
