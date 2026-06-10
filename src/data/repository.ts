@@ -35,6 +35,7 @@ import type {
   Profile,
   Review,
   Service,
+  UserRole,
 } from '@/types';
 import * as mock from './mock';
 
@@ -200,6 +201,15 @@ export async function adminSetUserPassword(
     throw new Error('Bu işlem yalnızca Firebase + Cloud Functions ile çalışır.');
   }
   await httpsCallable(functions, 'adminSetPassword')({ uid, newPassword });
+}
+
+/** Admin-only: set a user's role (e.g. promote to admin). */
+export async function setUserRole(userId: string, role: UserRole): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'profiles', userId), { role });
+    return;
+  }
+  // Mock mode has no profiles collection.
 }
 
 /** Admin-only: delete a business. */

@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import * as repo from '@/data/repository';
 import { SlotTakenError } from '@/data/repository';
 import { MOCK_USER_ID } from '@/data/mock';
-import type { AppointmentStatus, Business } from '@/types';
+import type { AppointmentStatus, Business, UserRole } from '@/types';
 
 // Re-exported so screens can detect double-booking without importing the data
 // layer directly (screens depend on the hooks/repository boundary only).
@@ -235,6 +235,15 @@ export function useAdminSetPassword() {
   return useMutation({
     mutationFn: ({ uid, newPassword }: { uid: string; newPassword: string }) =>
       repo.adminSetUserPassword(uid, newPassword),
+  });
+}
+
+export function useSetUserRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ uid, role }: { uid: string; role: UserRole }) =>
+      repo.setUserRole(uid, role),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['allUsers'] }),
   });
 }
 

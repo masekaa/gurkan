@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge, Button, ErrorState, Field, ListSkeleton, Screen } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
 import {
   useAdminSetPassword,
   useAllAppointments,
@@ -12,6 +13,7 @@ import {
   useDeleteBusiness,
   useDeleteUser,
   useSetBusinessApproved,
+  useSetUserRole,
 } from '@/hooks/queries';
 import { categoryLabels, formatDateTime, statusMeta } from '@/lib/format';
 import {
@@ -23,31 +25,40 @@ import {
   spacing,
   typography,
 } from '@/theme';
-import type { Appointment, Business, Profile } from '@/types';
+import type { Appointment, Business, Profile, UserRole } from '@/types';
 
 type Tab = 'businesses' | 'users' | 'appointments';
 type Confirm = { kind: 'user' | 'business'; id: string; label: string };
 
-const ROLE_META: Record<string, { label: string; color: string }> = {
-  admin: { label: 'Admin', color: colors.gold },
-  business: { label: 'İşletme', color: colors.approved },
-  user: { label: 'Müşteri', color: colors.completed },
+const ROLE_META: Record<
+  string,
+  { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  admin: { label: 'Admin', color: colors.gold, icon: 'shield-checkmark-outline' },
+  business: { label: 'İşletme', color: colors.approved, icon: 'storefront-outline' },
+  user: { label: 'Müşteri', color: colors.completed, icon: 'person-outline' },
 };
+
+const ROLE_ORDER: UserRole[] = ['user', 'business', 'admin'];
 
 export default function AdminScreen() {
   const [tab, setTab] = useState<Tab>('businesses');
   const { data: businesses, isLoading: loadingB, isError: errorB, refetch: refetchB } = useAllBusinesses();
   const { data: users, isLoading: loadingU, isError: errorU, refetch: refetchU } = useAllUsers();
   const { data: appointments, isLoading: loadingA, isError: errorA, refetch: refetchA } = useAllAppointments();
+  const { profile } = useAuth();
+  const selfId = profile?.id;
   const setApproved = useSetBusinessApproved();
   const deleteUser = useDeleteUser();
   const deleteBusiness = useDeleteBusiness();
   const setPassword = useAdminSetPassword();
+  const setUserRole = useSetUserRole();
 
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
   const [pw, setPw] = useState('');
   const [pwError, setPwError] = useState<string | null>(null);
+  const [roleTarget, setRoleTarget] = useState<{ id: string; name: string; role: UserRole } | null>(null);
   const busy = deleteUser.isPending || deleteBusiness.isPending;
 
   function submitPassword() {
@@ -168,6 +179,8 @@ export default function AdminScreen() {
             renderItem={({ item }) => (
               <AdminUserRow
                 user={item}
+                isSelf={item.id === selfId}
+                onRole={() => setRoleTarget({ id: item.id, name: item.name, role: item.role })}
                 onDelete={() => setConfirm({ kind: 'user', id: item.id, label: item.name })}
                 onPassword={() => {
                   setPwTarget({ id: item.id, name: item.name });
@@ -241,6 +254,47 @@ export default function AdminScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={roleTarget != null} transparent animationType="fade" onRequestClose={() => setRoleTarget(null)}>
+        <View style={styles.overlay}>
+          <View style={styles.dialog}>
+            <Ionicons name="shield-half-outline" size={26} color={colors.gold} />
+            <Text style={styles.dialogTitle}>Rol Ata</Text>
+            <Text style={styles.dialogText}>{roleTarget?.name} için rol seç.</Text>
+            <View style={styles.roleList}>
+              {ROLE_ORDER.map((r) => {
+                const m = ROLE_META[r];
+                const active = roleTarget?.role === r;
+                return (
+                  <Pressable
+                    key={r}
+                    disabled={setUserRole.isPending}
+                    onPress={() =>
+                      roleTarget &&
+                      setUserRole.mutate(
+                        { uid: roleTarget.id, role: r },
+                        { onSuccess: () => setRoleTarget(null) },
+                      )
+                    }
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.roleOption, active && styles.roleOptionActive]}
+                  >
+                    <Ionicons name={m.icon} size={18} color={active ? colors.gold : colors.textMuted} />
+                    <Text style={[styles.roleOptionText, active && { color: colors.gold }]}>
+                      {m.label}
+                    </Text>
+                    {active ? <Ionicons name="checkmark" size={18} color={colors.gold} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={{ width: '100%', marginTop: spacing.sm }}>
+              <Button label="Kapat" variant="secondary" onPress={() => setRoleTarget(null)} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -296,10 +350,14 @@ function AdminBusinessRow({
 
 function AdminUserRow({
   user,
+  isSelf,
+  onRole,
   onDelete,
   onPassword,
 }: {
   user: Profile;
+  isSelf: boolean;
+  onRole: () => void;
   onDelete: () => void;
   onPassword: () => void;
 }) {
@@ -315,22 +373,27 @@ function AdminUserRow({
           <Text style={styles.cardTitle} numberOfLines={1}>{user.name || 'İsimsiz'}</Text>
           <Text style={styles.cardSub} numberOfLines={1}>{user.email}</Text>
         </View>
-        <Badge label={meta.label} color={meta.color} />
+        <Badge label={isSelf ? 'Sen' : meta.label} color={meta.color} />
       </View>
-      <View style={styles.actions}>
-        <View style={{ flex: 1 }}>
-          <Button label="Şifre Güncelle" variant="secondary" icon="key-outline" onPress={onPassword} />
+      {isSelf ? null : (
+        <View style={styles.actions}>
+          <View style={{ flex: 1 }}>
+            <Button label="Rol" variant="secondary" icon="shield-half-outline" onPress={onRole} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button label="Şifre" variant="secondary" icon="key-outline" onPress={onPassword} />
+          </View>
+          <Pressable
+            onPress={onDelete}
+            hitSlop={8}
+            style={styles.deleteBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`${user.name} kullanıcısını sil`}
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+          </Pressable>
         </View>
-        <Pressable
-          onPress={onDelete}
-          hitSlop={8}
-          style={styles.deleteBtn}
-          accessibilityRole="button"
-          accessibilityLabel={`${user.name} kullanıcısını sil`}
-        >
-          <Ionicons name="trash-outline" size={20} color={colors.danger} />
-        </Pressable>
-      </View>
+      )}
     </View>
   );
 }
@@ -452,4 +515,18 @@ const styles = StyleSheet.create({
   dialogText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   dialogActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm, width: '100%' },
   pwError: { ...typography.caption, color: colors.danger, marginTop: spacing.xs, marginLeft: spacing.xs },
+  roleList: { width: '100%', gap: spacing.sm, marginTop: spacing.sm },
+  roleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  roleOptionActive: { borderColor: colors.gold + '88', backgroundColor: colors.gold + '14' },
+  roleOptionText: { ...typography.bodyStrong, color: colors.text, flex: 1 },
 });
