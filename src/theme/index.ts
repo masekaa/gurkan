@@ -8,34 +8,34 @@
  */
 
 export const colors = {
-  // Brand
-  gold: '#D9B25A',
-  goldSoft: '#E7CD8E',
-  goldDeep: '#B8923C',
+  // Brand (gold) — deepened so it reads on light surfaces.
+  gold: '#B5862B',
+  goldSoft: '#D9B25A',
+  goldDeep: '#8A6520',
 
-  // Surfaces (dark theme)
-  background: '#0E0E12',
-  surface: '#17171D',
-  surfaceAlt: '#1F1F27',
-  border: '#2A2A33',
+  // Surfaces (light theme — airy, Getir-like)
+  background: '#F4F4F7',
+  surface: '#FFFFFF',
+  surfaceAlt: '#EEEEF2',
+  border: '#E4E4EA',
 
   // Text
-  text: '#F4F1EA',
-  textMuted: '#A8A6A0',
-  textFaint: '#6E6C68',
-  onGold: '#171109',
+  text: '#1B1B22',
+  textMuted: '#6C6C77',
+  textFaint: '#A6A6B0',
+  onGold: '#241A05',
 
   // Status (appointment states)
-  pending: '#E2A33C',
-  approved: '#46B26A',
-  rejected: '#D85C5C',
-  cancelled: '#8A8A93',
-  completed: '#4C8DD8',
+  pending: '#D9882A',
+  approved: '#2EA85C',
+  rejected: '#D6483B',
+  cancelled: '#9A9AA4',
+  completed: '#3B7DD8',
 
   // Misc
-  danger: '#D85C5C',
-  success: '#46B26A',
-  overlay: 'rgba(0,0,0,0.55)',
+  danger: '#D6483B',
+  success: '#2EA85C',
+  overlay: 'rgba(0,0,0,0.45)',
 } as const;
 
 export const spacing = {
@@ -71,31 +71,31 @@ export const typography = {
  */
 export const elevation = {
   soft: {
-    shadowColor: '#000',
+    shadowColor: '#1B1B22',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
   card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 7,
+    shadowColor: '#1B1B22',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
   },
   gold: {
     shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 6,
   },
 } as const;
 
 /** Brand gradient ramps (start → end), consumed by expo-linear-gradient. */
 export const gradients = {
-  goldButton: ['#EBD49B', '#D9B25A', '#C49A45'],
+  goldButton: ['#E2BE66', '#CFA23F', '#B5862B'],
 } as const;
 
 /** Per-category cover gradient + glyph, used on cards and detail heroes. */

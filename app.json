@@ -6,8 +6,8 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "primaryColor": "#D9B25A",
+    "userInterfaceStyle": "light",
+    "primaryColor": "#B5862B",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
