@@ -38,3 +38,22 @@ Fonksiyonlar **deploy edilmemişse**: silme, istemci tarafı yedeğe düşer
 ## Not
 `adminDeleteUser` Firestore güvenlik kurallarını **atlar** (Admin SDK ayrıcalıklı),
 ama fonksiyon içinde admin kontrolü yapılır — yani yalnızca admin çağırabilir.
+
+## Abonelik / ödeme (sağlayıcı seçilince eklenecek)
+İşletme listeleme aboneliği (`businesses.subscriptionStatus`/`subscriptionEnd`)
+**sağlayıcı-bağımsız** kuruldu: veri modeli + listeleme kilidi (Keşfet yalnızca
+`approved && subscriptionStatus=='active'`) + admin manuel grant/iptal
+(`repository.setSubscription`) + İşletmem abonelik kartı **çalışıyor**. Eksik olan
+yalnızca gerçek kart işleme.
+
+Sağlayıcı (iyzico / PayTR / Stripe) seçilince eklenecek fonksiyonlar:
+- `createSubscriptionCheckout({ businessId })` (callable): işletme sahibi çağırır;
+  sağlayıcıda abonelik/checkout oturumu açar, ödeme URL'i / iFrame token döner.
+- **Webhook** (HTTPS): sağlayıcıdan ödeme/iptal/yenileme bildirimini alır,
+  imza doğrular, **Admin SDK ile** `businesses/{id}.subscriptionStatus` +
+  `subscriptionEnd` günceller (istemci bunu YAZAMAZ — kurallar engelliyor).
+- Oto-aylık yenileme sağlayıcının abonelik ürünüyle; başarısız çekimde webhook
+  `past_due`/`none` yapar → işletme listeden düşer.
+
+Güvenlik: `subscriptionStatus` yalnızca admin/webhook tarafından yazılabilir
+(firestore.rules), böylece işletme parasını ödemeden kendini listeleyemez.

@@ -13,6 +13,7 @@ import {
   useDeleteBusiness,
   useDeleteUser,
   useSetBusinessApproved,
+  useSetSubscription,
   useSetUserRole,
 } from '@/hooks/queries';
 import { categoryLabels, formatDateTime, statusMeta } from '@/lib/format';
@@ -49,6 +50,7 @@ export default function AdminScreen() {
   const { profile } = useAuth();
   const selfId = profile?.id;
   const setApproved = useSetBusinessApproved();
+  const setSub = useSetSubscription();
   const deleteUser = useDeleteUser();
   const deleteBusiness = useDeleteBusiness();
   const setPassword = useAdminSetPassword();
@@ -158,8 +160,11 @@ export default function AdminScreen() {
             renderItem={({ item }) => (
               <AdminBusinessRow
                 business={item}
-                busy={setApproved.isPending}
+                busy={setApproved.isPending || setSub.isPending}
                 onToggle={() => setApproved.mutate({ id: item.id, approved: !item.approved })}
+                onSub={() =>
+                  setSub.mutate({ id: item.id, active: item.subscriptionStatus !== 'active' })
+                }
                 onDelete={() => setConfirm({ kind: 'business', id: item.id, label: item.name })}
               />
             )}
@@ -302,14 +307,18 @@ export default function AdminScreen() {
 function AdminBusinessRow({
   business,
   onToggle,
+  onSub,
   onDelete,
   busy,
 }: {
   business: Business;
   onToggle: () => void;
+  onSub: () => void;
   onDelete: () => void;
   busy: boolean;
 }) {
+  const subActive = business.subscriptionStatus === 'active';
+  const listed = business.approved && subActive;
   return (
     <View style={[styles.card, elevation.soft]}>
       <View style={styles.cardTop}>
@@ -319,11 +328,20 @@ function AdminBusinessRow({
             {categoryLabels[business.category]} · {business.district || '—'}
           </Text>
         </View>
-        <Badge
-          label={business.approved ? 'Onaylı' : 'Onay Bekliyor'}
-          color={business.approved ? colors.approved : colors.pending}
-        />
+        <View style={{ gap: 4, alignItems: 'flex-end' }}>
+          <Badge
+            label={business.approved ? 'Onaylı' : 'Onay Bekliyor'}
+            color={business.approved ? colors.approved : colors.pending}
+          />
+          <Badge
+            label={subActive ? 'Abone' : 'Abonesiz'}
+            color={subActive ? colors.gold : colors.cancelled}
+          />
+        </View>
       </View>
+      <Text style={[styles.listedNote, { color: listed ? colors.approved : colors.textFaint }]}>
+        {listed ? '● Keşfet’te listeleniyor' : '○ Listede değil (onay + abonelik gerekir)'}
+      </Text>
       <View style={styles.actions}>
         <View style={{ flex: 1 }}>
           <Button
@@ -344,6 +362,13 @@ function AdminBusinessRow({
           <Ionicons name="trash-outline" size={20} color={colors.danger} />
         </Pressable>
       </View>
+      <Button
+        label={subActive ? 'Aboneliği Kaldır' : 'Abonelik Ver'}
+        variant="secondary"
+        icon="card-outline"
+        onPress={onSub}
+        disabled={busy}
+      />
     </View>
   );
 }
@@ -470,6 +495,7 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   cardTitle: { ...typography.bodyStrong, color: colors.text },
   cardSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  listedNote: { ...typography.caption, fontWeight: '600' },
   avatar: {
     width: 40,
     height: 40,

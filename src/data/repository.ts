@@ -74,12 +74,22 @@ function requireDb(): Firestore {
 // Businesses
 // ---------------------------------------------------------------------------
 
+/** Discovery listing gate: approved AND an active paid subscription. */
+const isListable = (b: Business) =>
+  b.approved && b.subscriptionStatus === 'active';
+
+const matchesTerm = (b: Business, term: string) =>
+  term
+    ? b.name.toLowerCase().includes(term) ||
+      b.district.toLowerCase().includes(term)
+    : true;
+
 export async function listBusinesses(search = ''): Promise<Business[]> {
   const term = search.trim().toLowerCase();
   if (isFirebaseEnabled) {
     // No orderBy in the query: equality + orderBy on a different field would
-    // require a Firestore composite index. We sort client-side instead so the
-    // app works against a freshly created database with zero index setup.
+    // require a Firestore composite index. We sort/gate client-side so the app
+    // works against a freshly created database with zero index setup.
     const snap = await getDocs(
       query(
         collection(requireDb(), 'businesses'),
@@ -88,22 +98,11 @@ export async function listBusinesses(search = ''): Promise<Business[]> {
     );
     return snap.docs
       .map((d) => ({ id: d.id, ...d.data() }) as Business)
-      .sort((a, b) => b.rating - a.rating)
-      .filter((b) =>
-        term
-          ? b.name.toLowerCase().includes(term) ||
-            b.district.toLowerCase().includes(term)
-          : true,
-      );
+      .filter((b) => isListable(b) && matchesTerm(b, term))
+      .sort((a, b) => b.rating - a.rating);
   }
   return mock.businesses
-    .filter((b) => b.approved)
-    .filter((b) =>
-      term
-        ? b.name.toLowerCase().includes(term) ||
-          b.district.toLowerCase().includes(term)
-        : true,
-    )
+    .filter((b) => isListable(b) && matchesTerm(b, term))
     .sort((a, b) => b.rating - a.rating);
 }
 
@@ -212,6 +211,28 @@ export async function setUserRole(userId: string, role: UserRole): Promise<void>
   // Mock mode has no profiles collection.
 }
 
+/**
+ * Admin-only: grant or revoke a business's listing subscription. (Real billing
+ * runs through the payment webhook server-side; this is for admin/comp/testing.)
+ */
+export async function setSubscription(
+  businessId: string,
+  active: boolean,
+): Promise<void> {
+  const patch = active
+    ? {
+        subscriptionStatus: 'active' as const,
+        subscriptionEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
+      }
+    : { subscriptionStatus: 'none' as const, subscriptionEnd: null };
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'businesses', businessId), patch);
+    return;
+  }
+  const b = mock.businesses.find((x) => x.id === businessId);
+  if (b) Object.assign(b, patch);
+}
+
 /** Admin-only: delete a business. */
 export async function deleteBusiness(businessId: string): Promise<void> {
   if (isFirebaseEnabled) {
@@ -257,6 +278,8 @@ export async function createBusiness(input: {
     openingTime: '09:00',
     closingTime: '20:00',
     slotMinutes: 30,
+    subscriptionStatus: 'none',
+    subscriptionEnd: null,
   };
   if (isFirebaseEnabled) {
     const ref = await addDoc(collection(requireDb(), 'businesses'), data);

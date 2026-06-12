@@ -38,7 +38,17 @@ export interface Business {
   closingTime: string; // "20:00"
   /** Booking slot interval in minutes (business-configurable). Default 30. */
   slotMinutes?: number;
+  /**
+   * Listing subscription (paid monthly). Only admin / the payment webhook may
+   * write these — never the business owner. A business is LISTED in discovery
+   * when approved === true AND subscriptionStatus === 'active'.
+   */
+  subscriptionStatus?: SubscriptionStatus;
+  /** Current paid period end (ISO). */
+  subscriptionEnd?: string | null;
 }
+
+export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'none';
 
 export interface Service {
   id: string;

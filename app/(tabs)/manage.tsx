@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-import { Button, EmptyState, Field, Screen } from '@/components/ui';
+import { Badge, Button, EmptyState, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import {
   useBusiness,
@@ -19,8 +19,11 @@ import {
   useUpdateBusiness,
   useUpdateService,
 } from '@/hooks/queries';
-import { formatDuration, formatPrice } from '@/lib/format';
+import { formatDate, formatDuration, formatPrice } from '@/lib/format';
 import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
+
+/** Monthly listing fee (₺). Configurable; real charge runs via the provider. */
+const MONTHLY_PRICE = 499;
 
 type ServiceForm = {
   id?: string;
@@ -41,6 +44,8 @@ export default function ManageScreen() {
   const deleteService = useDeleteService(businessId);
 
   const [editProfile, setEditProfile] = useState(false);
+  const [subInfo, setSubInfo] = useState(false);
+  const subActive = business?.subscriptionStatus === 'active';
   const [serviceForm, setServiceForm] = useState<ServiceForm | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -95,6 +100,33 @@ export default function ManageScreen() {
             <InfoLine icon="location-outline" text={business?.district ?? '—'} />
           </View>
         )}
+
+        {/* Subscription */}
+        <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
+          <View style={styles.cardHead}>
+            <Text style={styles.cardTitle}>Listeleme Aboneliği</Text>
+            <Badge
+              label={subActive ? 'Aktif' : 'Pasif'}
+              color={subActive ? colors.approved : colors.cancelled}
+            />
+          </View>
+          <Text style={styles.subPrice}>{formatPrice(MONTHLY_PRICE)}/ay</Text>
+          <Text style={styles.subDesc}>
+            {subActive
+              ? `Aboneliğin aktif.${
+                  business?.subscriptionEnd
+                    ? ` Dönem sonu: ${formatDate(business.subscriptionEnd)}.`
+                    : ''
+                }`
+              : 'İşletmenin Keşfet’te listelenmesi için aktif abonelik + admin onayı gerekir.'}
+          </Text>
+          <Button
+            label={subActive ? 'Aboneliği Yönet' : 'Aboneliği Başlat'}
+            icon="card-outline"
+            variant={subActive ? 'secondary' : 'primary'}
+            onPress={() => setSubInfo(true)}
+          />
+        </View>
 
         {/* Services */}
         <View style={styles.sectionHead}>
@@ -201,6 +233,25 @@ export default function ManageScreen() {
                   }}
                 />
               </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={subInfo} transparent animationType="fade" onRequestClose={() => setSubInfo(false)}>
+        <View style={styles.overlayCenter}>
+          <View style={styles.dialog}>
+            <Ionicons name="card-outline" size={28} color={colors.gold} />
+            <Text style={styles.dialogTitle}>Listeleme Aboneliği</Text>
+            <Text style={styles.dialogText}>
+              {formatPrice(MONTHLY_PRICE)}/ay ile işletmen Keşfet’te listelenir
+              (aktif abonelik + admin onayı gerekir).
+              {'\n\n'}
+              Online kredi kartı ödemesi yakında aktif olacak (ödeme sağlayıcısı
+              entegrasyonu). Şu an için aboneliği admin sizin için tanımlayabilir.
+            </Text>
+            <View style={{ width: '100%', marginTop: spacing.sm }}>
+              <Button label="Tamam" onPress={() => setSubInfo(false)} />
             </View>
           </View>
         </View>
@@ -398,6 +449,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  subPrice: { ...typography.title, color: colors.gold },
+  subDesc: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
   cardTitle: { ...typography.heading, color: colors.text },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   editText: { ...typography.caption, color: colors.gold, fontWeight: '600' },
