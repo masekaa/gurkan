@@ -98,4 +98,6 @@ export interface Review {
   rating: number; // 1–5
   comment: string;
   createdAt: string; // ISO 8601
+  /** Proves the author booked at this business (review eligibility). */
+  appointmentId?: string;
 }

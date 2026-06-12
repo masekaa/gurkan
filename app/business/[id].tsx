@@ -7,7 +7,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, ErrorState, Field, ListSkeleton, Screen, Skeleton } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
-import { useBusiness, useCreateReview, useReviews, useServices } from '@/hooks/queries';
+import {
+  useAppointments,
+  useBusiness,
+  useCreateReview,
+  useReviews,
+  useServices,
+} from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
 import { categoryStyle, centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Review } from '@/types';
@@ -28,7 +34,12 @@ export default function BusinessDetailScreen() {
   const { data: business, isLoading, isError, refetch } = useBusiness(id);
   const { data: services } = useServices(id);
   const { data: reviews } = useReviews(id);
+  const { data: myAppointments } = useAppointments();
   const createReview = useCreateReview(id);
+
+  // Only customers who booked at this business may review (proven via an appointment).
+  const myAppt = (myAppointments ?? []).find((a) => a.businessId === id);
+  const canReview = !!myAppt;
 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [stars, setStars] = useState(5);
@@ -170,19 +181,28 @@ export default function BusinessDetailScreen() {
           {/* Reviews */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Değerlendirmeler</Text>
-            <Pressable
-              onPress={() => {
-                setStars(5);
-                setComment('');
-                setReviewOpen(true);
-              }}
-              style={styles.reviewAdd}
-              hitSlop={8}
-            >
-              <Ionicons name="create-outline" size={15} color={colors.gold} />
-              <Text style={styles.reviewAddText}>Yorum Yap</Text>
-            </Pressable>
+            {canReview ? (
+              <Pressable
+                onPress={() => {
+                  setStars(5);
+                  setComment('');
+                  setReviewOpen(true);
+                }}
+                style={styles.reviewAdd}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Yorum yap"
+              >
+                <Ionicons name="create-outline" size={15} color={colors.gold} />
+                <Text style={styles.reviewAddText}>Yorum Yap</Text>
+              </Pressable>
+            ) : null}
           </View>
+          {!canReview ? (
+            <Text style={styles.reviewHint}>
+              Yorum yapabilmek için bu işletmeden randevu almış olmalısın.
+            </Text>
+          ) : null}
 
           {reviews && reviews.length > 0 ? (
             <View style={[styles.ratingSummary, elevation.soft]}>
@@ -242,12 +262,14 @@ export default function BusinessDetailScreen() {
                   loading={createReview.isPending}
                   disabled={comment.trim().length === 0}
                   onPress={() =>
+                    myAppt &&
                     createReview.mutate(
                       {
                         userId: profile?.id ?? 'anon',
                         userName: profile?.name ?? 'Misafir',
                         rating: stars,
                         comment: comment.trim(),
+                        appointmentId: myAppt.id,
                       },
                       { onSuccess: () => setReviewOpen(false) },
                     )
@@ -404,6 +426,7 @@ const styles = StyleSheet.create({
   bookBtnText: { ...typography.micro, color: colors.onGold },
   reviewAdd: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   reviewAddText: { ...typography.caption, color: colors.gold, fontWeight: '600' },
+  reviewHint: { ...typography.caption, color: colors.textFaint, fontStyle: 'italic' },
   ratingSummary: {
     flexDirection: 'row',
     alignItems: 'center',

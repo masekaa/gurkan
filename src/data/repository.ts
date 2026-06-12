@@ -581,6 +581,7 @@ export async function createReview(input: {
   userName: string;
   rating: number;
   comment: string;
+  appointmentId: string;
 }): Promise<Review> {
   const base = { ...input, createdAt: new Date().toISOString() };
   if (isFirebaseEnabled) {

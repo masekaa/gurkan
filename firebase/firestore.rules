@@ -125,10 +125,18 @@ service cloud.firestore {
     // Reviews are publicly readable; a user writes only their own review.
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isOwner(request.resource.data.userId)
+      // Only a customer who booked at this business may review — the review must
+      // reference one of their appointments AT that business. (Admin may seed.)
+      allow create: if isAdmin() || (
+        isOwner(request.resource.data.userId)
         && request.resource.data.rating is int
         && request.resource.data.rating >= 1
-        && request.resource.data.rating <= 5;
+        && request.resource.data.rating <= 5
+        && get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.customerId
+             == request.auth.uid
+        && get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.businessId
+             == request.resource.data.businessId
+      );
       allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
   }

@@ -177,6 +177,7 @@ export function useCreateReview(businessId: string) {
       userName: string;
       rating: number;
       comment: string;
+      appointmentId: string;
     }) => repo.createReview({ businessId, ...input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews', businessId] }),
   });
