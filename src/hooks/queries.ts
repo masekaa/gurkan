@@ -167,6 +167,28 @@ export function useUpdateBusiness(businessId: string) {
   });
 }
 
+export function useAddBusinessPhoto(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (localUri: string) => repo.addBusinessPhoto(businessId, localUri),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business', businessId] });
+      qc.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
+}
+
+export function useRemoveBusinessPhoto(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (url: string) => repo.removeBusinessPhoto(businessId, url),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business', businessId] });
+      qc.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
+}
+
 // --- Reviews ----------------------------------------------------------------
 
 export function useReviews(businessId: string) {

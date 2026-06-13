@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import {
   Modal,
@@ -13,14 +15,18 @@ import {
 import { Badge, Button, EmptyState, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import {
+  useAddBusinessPhoto,
   useBusiness,
   useCreateService,
   useDeleteService,
+  useRemoveBusinessPhoto,
   useServices,
   useUpdateBusiness,
   useUpdateService,
 } from '@/hooks/queries';
+import { isStorageEnabled } from '@/lib/firebase';
 import { formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { notifyError, notifySuccess } from '@/lib/haptics';
 import { DAY_ORDER, DAY_SHORT, defaultHours, getDayHours } from '@/lib/hours';
 import { isValidPhone } from '@/lib/validators';
 import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
@@ -138,6 +144,9 @@ export default function ManageScreen() {
             onPress={() => setSubInfo(true)}
           />
         </View>
+
+        {/* Photo gallery */}
+        {business ? <PhotoManager businessId={businessId} photos={business.photos ?? []} /> : null}
 
         {/* Services */}
         <View style={styles.sectionHead}>
@@ -268,6 +277,86 @@ export default function ManageScreen() {
         </View>
       </Modal>
     </Screen>
+  );
+}
+
+function PhotoManager({ businessId, photos }: { businessId: string; photos: string[] }) {
+  const addPhoto = useAddBusinessPhoto(businessId);
+  const removePhoto = useRemoveBusinessPhoto(businessId);
+  const [error, setError] = useState<string | null>(null);
+
+  async function pick() {
+    setError(null);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setError('Galeriye erişim izni gerekiyor.');
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        allowsEditing: true,
+        aspect: [4, 3],
+      });
+      if (res.canceled || !res.assets?.[0]) return;
+      await addPhoto.mutateAsync(res.assets[0].uri);
+      notifySuccess();
+    } catch (e: any) {
+      notifyError();
+      setError(
+        e?.name === 'StorageDisabledError'
+          ? 'Fotoğraf yükleme için Firebase Storage etkinleştirilmeli.'
+          : 'Fotoğraf yüklenemedi. Lütfen tekrar dene.',
+      );
+    }
+  }
+
+  return (
+    <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
+      <View style={styles.cardHead}>
+        <Text style={styles.cardTitle}>Galeri</Text>
+        <Badge label={`${photos.length} foto`} />
+      </View>
+      {photos.length === 0 ? (
+        <Text style={styles.subDesc}>
+          İşletmenden kareler ekle; müşteriler detay sayfasında görsün.
+        </Text>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+          {photos.map((uri) => (
+            <View key={uri} style={styles.photoWrap}>
+              <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              <Pressable
+                onPress={() => removePhoto.mutate(uri)}
+                style={styles.photoRemove}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Fotoğrafı kaldır"
+              >
+                <Ionicons name="close" size={14} color="#fff" />
+              </Pressable>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+      {!isStorageEnabled ? (
+        <View style={styles.storageNote}>
+          <Ionicons name="information-circle-outline" size={15} color={colors.gold} />
+          <Text style={styles.storageNoteText}>
+            Yükleme için Firebase Storage gerekli. Etkinleştirilince butona basıp ekleyebilirsin.
+          </Text>
+        </View>
+      ) : null}
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+      <Button
+        label="Fotoğraf Ekle"
+        icon="image-outline"
+        variant="secondary"
+        loading={addPhoto.isPending}
+        onPress={pick}
+      />
+    </View>
   );
 }
 
@@ -604,6 +693,33 @@ const styles = StyleSheet.create({
   dayHourMuted: { ...typography.caption, color: colors.textFaint, flex: 1, textAlign: 'right' },
   slotLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginBottom: spacing.xs },
   fieldError: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs, marginTop: -spacing.xs },
+  photoWrap: { position: 'relative' },
+  photoThumb: {
+    width: 120,
+    height: 90,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+  },
+  photoRemove: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storageNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.gold + '12',
+    borderRadius: 10,
+    padding: spacing.sm,
+  },
+  storageNoteText: { ...typography.caption, color: colors.textMuted, flex: 1, lineHeight: 18 },
   slotRow: { flexDirection: 'row', gap: spacing.sm },
   slotChip: {
     flex: 1,

@@ -1,0 +1,30 @@
+rules_version = '2';
+
+// Cloud Storage security rules for Altın100 business galleries.
+//
+// Publish in Firebase Console > Storage > Rules (or `firebase deploy --only
+// storage`) AFTER enabling Cloud Storage for the project. Until Storage is
+// provisioned the in-app photo upload stays disabled (isStorageEnabled flag).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Business gallery images live under businesses/{businessId}/...
+    match /businesses/{businessId}/{fileName} {
+      // Anyone may view gallery images (they appear on public detail pages).
+      allow read: if true;
+
+      // Only the signed-in owner of that business may upload/replace/delete,
+      // and only real images up to 5 MB.
+      allow write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid
+        && (request.resource == null
+            || (request.resource.size < 5 * 1024 * 1024
+                && request.resource.contentType.matches('image/.*')));
+    }
+
+    // Everything else is denied by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

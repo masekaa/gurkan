@@ -10,6 +10,8 @@
 
 import {
   addDoc,
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -24,8 +26,14 @@ import {
 } from 'firebase/firestore';
 
 import { httpsCallable } from 'firebase/functions';
+import {
+  deleteObject,
+  getDownloadURL,
+  ref as storageRef,
+  uploadBytes,
+} from 'firebase/storage';
 
-import { db, functions, isFirebaseEnabled } from '@/lib/firebase';
+import { db, functions, isFirebaseEnabled, isStorageEnabled, storage } from '@/lib/firebase';
 import type {
   Appointment,
   AppointmentStatus,
@@ -313,6 +321,66 @@ export async function updateBusiness(
   }
   const b = mock.businesses.find((x) => x.id === id);
   if (b) Object.assign(b, patch);
+}
+
+/** Thrown when Cloud Storage isn't provisioned for the project yet. */
+export class StorageDisabledError extends Error {
+  constructor() {
+    super('storage-disabled');
+    this.name = 'StorageDisabledError';
+  }
+}
+
+/**
+ * Upload a local image to Storage under the business's gallery and append its
+ * download URL to `photos`. Returns the new URL. In mock mode the local URI is
+ * stored directly so the gallery still renders during development.
+ */
+export async function addBusinessPhoto(
+  businessId: string,
+  localUri: string,
+): Promise<string> {
+  if (isFirebaseEnabled) {
+    if (!isStorageEnabled || !storage) throw new StorageDisabledError();
+    const res = await fetch(localUri);
+    const blob = await res.blob();
+    // Deterministic-ish name without Date.now(): derive from blob size + count.
+    const existing = (await getBusiness(businessId))?.photos ?? [];
+    const key = `businesses/${businessId}/photo_${existing.length}_${blob.size}.jpg`;
+    const r = storageRef(storage, key);
+    await uploadBytes(r, blob);
+    const url = await getDownloadURL(r);
+    await updateDoc(doc(requireDb(), 'businesses', businessId), {
+      photos: arrayUnion(url),
+    });
+    return url;
+  }
+  const b = mock.businesses.find((x) => x.id === businessId);
+  if (b) b.photos = [...(b.photos ?? []), localUri];
+  return localUri;
+}
+
+/** Remove a photo URL from the gallery (and from Storage when possible). */
+export async function removeBusinessPhoto(
+  businessId: string,
+  url: string,
+): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'businesses', businessId), {
+      photos: arrayRemove(url),
+    });
+    if (isStorageEnabled && storage) {
+      try {
+        await deleteObject(storageRef(storage, url));
+      } catch {
+        // The object may already be gone, or `url` may not map to a ref — the
+        // gallery entry is what matters and that's already removed above.
+      }
+    }
+    return;
+  }
+  const b = mock.businesses.find((x) => x.id === businessId);
+  if (b) b.photos = (b.photos ?? []).filter((p) => p !== url);
 }
 
 // ---------------------------------------------------------------------------

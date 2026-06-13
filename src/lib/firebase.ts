@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getFunctions, type Functions } from 'firebase/functions';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
 import { env } from './env';
@@ -24,6 +25,7 @@ let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
 let functionsInstance: Functions | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
 if (env.hasFirebase) {
   app = getApps().length ? getApp() : initializeApp(env.firebaseConfig);
@@ -43,10 +45,18 @@ if (env.hasFirebase) {
 
   dbInstance = getFirestore(app);
   functionsInstance = getFunctions(app);
+  storageInstance = getStorage(app);
 }
 
 export const firebaseApp = app;
 export const auth = authInstance;
 export const db = dbInstance;
 export const functions = functionsInstance;
+export const storage = storageInstance;
 export const isFirebaseEnabled = app !== null;
+/**
+ * Storage is bundled with Firebase, but uploads only succeed once the project
+ * has Cloud Storage provisioned (Firebase Console > Storage). Until then, the
+ * photo-upload UI stays disabled with an explanatory note.
+ */
+export const isStorageEnabled = storageInstance !== null;

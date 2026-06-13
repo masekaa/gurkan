@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -162,6 +163,27 @@ export default function BusinessDetailScreen() {
               );
             })}
           </View>
+
+          {business.photos && business.photos.length > 0 ? (
+            <View style={styles.gallery}>
+              <Text style={styles.sectionTitle}>Galeri</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: spacing.sm }}
+              >
+                {business.photos.map((uri) => (
+                  <Image
+                    key={uri}
+                    source={{ uri }}
+                    style={styles.galleryImg}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
 
           {business.about ? (
             <View style={styles.about}>
@@ -437,6 +459,13 @@ const styles = StyleSheet.create({
   hourToday: { color: colors.gold },
   about: { gap: spacing.sm },
   aboutText: { ...typography.body, color: colors.textMuted, lineHeight: 22 },
+  gallery: { gap: spacing.sm },
+  galleryImg: {
+    width: 160,
+    height: 120,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+  },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { ...typography.heading, color: colors.text },
   serviceRow: {

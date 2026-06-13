@@ -33,6 +33,8 @@ export interface Business {
   phone: string;
   logoUrl: string | null;
   coverUrl: string | null;
+  /** Gallery image URLs (Firebase Storage). Shown on the business detail page. */
+  photos?: string[];
   rating: number;
   reviewCount: number;
   approved: boolean;
