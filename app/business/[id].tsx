@@ -18,6 +18,7 @@ import {
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
 import { selection } from '@/lib/haptics';
 import { DAY_LABELS, DAY_ORDER, getDayHours, isOpenToday } from '@/lib/hours';
+import { callPhone, openDirections } from '@/lib/links';
 import { categoryStyle, centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Review } from '@/types';
 
@@ -132,9 +133,21 @@ export default function BusinessDetailScreen() {
 
         <View style={styles.body}>
           <View style={styles.infoCard}>
-            <InfoRow icon="location-outline" text={`${business.address}\n${business.district}`} />
+            <InfoRow
+              icon="location-outline"
+              text={`${business.address}\n${business.district}`}
+              actionIcon="navigate-outline"
+              onPress={() =>
+                openDirections(`${business.name} ${business.address} ${business.district}`)
+              }
+            />
             <View style={styles.divider} />
-            <InfoRow icon="call-outline" text={business.phone} />
+            <InfoRow
+              icon="call-outline"
+              text={business.phone}
+              actionIcon="call"
+              onPress={() => callPhone(business.phone)}
+            />
             <View style={styles.divider} />
             <InfoRow
               icon="time-outline"
@@ -340,16 +353,38 @@ export default function BusinessDetailScreen() {
 function InfoRow({
   icon,
   text,
+  onPress,
+  actionIcon,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   text: string;
+  onPress?: () => void;
+  actionIcon?: keyof typeof Ionicons.glyphMap;
 }) {
-  return (
-    <View style={styles.infoRow}>
+  const body = (
+    <>
       <Ionicons name={icon} size={18} color={colors.gold} />
       <Text style={styles.infoText}>{text}</Text>
-    </View>
+      {onPress && actionIcon ? (
+        <Ionicons name={actionIcon} size={18} color={colors.gold} />
+      ) : null}
+    </>
   );
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={() => {
+          selection();
+          onPress();
+        }}
+        style={({ pressed }) => [styles.infoRow, pressed && { opacity: 0.6 }]}
+        accessibilityRole="button"
+      >
+        {body}
+      </Pressable>
+    );
+  }
+  return <View style={styles.infoRow}>{body}</View>;
 }
 
 function Stars({ value, size = 14 }: { value: number; size?: number }) {
