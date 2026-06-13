@@ -22,6 +22,7 @@ import {
 } from '@/hooks/queries';
 import { formatDate, formatDuration, formatPrice } from '@/lib/format';
 import { DAY_ORDER, DAY_SHORT, defaultHours, getDayHours } from '@/lib/hours';
+import { isValidPhone } from '@/lib/validators';
 import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { DayHours } from '@/types';
 
@@ -320,6 +321,7 @@ function ProfileEditor({
   );
   const [slotMinutes, setSlotMinutes] = useState(initial.slotMinutes ?? 30);
   const [cancelWindowHours, setCancelWindowHours] = useState(initial.cancelWindowHours ?? 2);
+  const phoneValid = isValidPhone(phone);
 
   const setDay = (i: number, patch: Partial<DayHours>) =>
     setHours((h) => h.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
@@ -330,6 +332,9 @@ function ProfileEditor({
       <Field label="İşletme adı" value={name} onChangeText={setName} icon="storefront-outline" />
       <Field label="Hakkında" value={about} onChangeText={setAbout} multiline />
       <Field label="Telefon" value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />
+      {!phoneValid ? (
+        <Text style={styles.fieldError}>Geçerli bir telefon numarası gir.</Text>
+      ) : null}
       <Field label="İlçe / Bölge" value={district} onChangeText={setDistrict} icon="location-outline" placeholder="Nilüfer" />
 
       <View>
@@ -428,7 +433,7 @@ function ProfileEditor({
           <Button
             label="Kaydet"
             loading={saving}
-            disabled={!name.trim()}
+            disabled={!name.trim() || !phoneValid}
             onPress={() => {
               const cleaned = hours.map((d) => ({
                 open: d.open.trim() || '09:00',
@@ -598,6 +603,7 @@ const styles = StyleSheet.create({
   dayDash: { color: colors.textFaint },
   dayHourMuted: { ...typography.caption, color: colors.textFaint, flex: 1, textAlign: 'right' },
   slotLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginBottom: spacing.xs },
+  fieldError: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs, marginTop: -spacing.xs },
   slotRow: { flexDirection: 'row', gap: spacing.sm },
   slotChip: {
     flex: 1,

@@ -14,6 +14,7 @@ import {
 import { Button, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { isFirebaseEnabled } from '@/lib/firebase';
+import { isValidEmail } from '@/lib/validators';
 import { colors, spacing, typography } from '@/theme';
 
 export default function LoginScreen() {
@@ -28,6 +29,10 @@ export default function LoginScreen() {
     setError(null);
     if (!email || !password) {
       setError('E-posta ve şifre gereklidir.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Geçerli bir e-posta adresi gir.');
       return;
     }
     setLoading(true);

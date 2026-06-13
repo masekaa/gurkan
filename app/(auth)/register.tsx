@@ -15,6 +15,7 @@ import { Button, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
+import { isValidEmail, isValidPassword, isValidPhone } from '@/lib/validators';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { BusinessCategory, UserRole } from '@/types';
 import { humanizeAuthError } from './login';
@@ -49,6 +50,18 @@ export default function RegisterScreen() {
     }
     if (isBusiness && !businessName.trim()) {
       setError('İşletme adı gereklidir.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Geçerli bir e-posta adresi gir.');
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setError('Geçerli bir telefon numarası gir.');
+      return;
+    }
+    if (!isValidPassword(password)) {
+      setError('Şifre en az 6 karakter olmalı.');
       return;
     }
     setLoading(true);

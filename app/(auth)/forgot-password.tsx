@@ -14,6 +14,7 @@ import {
 
 import { Button, Field, Screen } from '@/components/ui';
 import { auth, isFirebaseEnabled } from '@/lib/firebase';
+import { isValidEmail } from '@/lib/validators';
 import { colors, spacing, typography } from '@/theme';
 import { humanizeAuthError } from './login';
 
@@ -27,8 +28,8 @@ export default function ForgotPasswordScreen() {
   async function onSubmit() {
     setError(null);
     const value = email.trim();
-    if (!value) {
-      setError('E-posta adresini gir.');
+    if (!value || !isValidEmail(value)) {
+      setError('Geçerli bir e-posta adresi gir.');
       return;
     }
     setLoading(true);
