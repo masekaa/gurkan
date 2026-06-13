@@ -46,6 +46,11 @@ export function formatMonthShort(iso: string): string {
   return monthShortFmt.format(new Date(iso));
 }
 
+/** Hours from now until the given ISO datetime (negative if past). */
+export function hoursUntil(iso: string): number {
+  return (new Date(iso).getTime() - Date.now()) / 3600000;
+}
+
 /** True when the current local time is within [open, close) ("HH:MM"). */
 export function isOpenNow(open: string, close: string): boolean {
   const now = new Date();

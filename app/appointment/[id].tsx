@@ -12,6 +12,7 @@ import {
   formatDuration,
   formatPrice,
   formatTime,
+  hoursUntil,
   statusMeta,
 } from '@/lib/format';
 import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
@@ -54,7 +55,10 @@ export default function AppointmentDetailScreen() {
 
   const { business, service, status, datetime } = appointment;
   const meta = statusMeta[status];
-  const canCancel = status === 'pending' || status === 'approved';
+  const cancelable = status === 'pending' || status === 'approved';
+  const windowH = business?.cancelWindowHours ?? 2;
+  const cancelLocked = cancelable && hoursUntil(datetime) < windowH;
+  const canCancel = cancelable && !cancelLocked;
 
   return (
     <Screen edges={['top']}>
@@ -105,6 +109,10 @@ export default function AppointmentDetailScreen() {
 
         {canCancel ? (
           <Button label="Randevuyu İptal Et" variant="danger" icon="close" onPress={() => setConfirm(true)} />
+        ) : cancelLocked ? (
+          <Text style={styles.cancelLocked}>
+            Randevuya {windowH} saatten az kaldığı için iptal edilemez.
+          </Text>
         ) : null}
       </ScrollView>
 
@@ -214,6 +222,7 @@ const styles = StyleSheet.create({
   rowLabelText: { ...typography.caption, color: colors.textMuted },
   rowValue: { ...typography.bodyStrong, color: colors.text, flexShrink: 1, textAlign: 'right' },
   rowAccent: { color: colors.gold },
+  cancelLocked: { ...typography.caption, color: colors.textMuted, textAlign: 'center', fontStyle: 'italic' },
   overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', alignItems: 'center' },
   dialog: {
     backgroundColor: colors.surface,

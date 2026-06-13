@@ -42,6 +42,8 @@ export interface Business {
   hours?: DayHours[];
   /** Booking slot interval in minutes (business-configurable). Default 30. */
   slotMinutes?: number;
+  /** Hours before start within which a customer can no longer cancel. Default 2. */
+  cancelWindowHours?: number;
   /**
    * Listing subscription (paid monthly). Only admin / the payment webhook may
    * write these — never the business owner. A business is LISTED in discovery

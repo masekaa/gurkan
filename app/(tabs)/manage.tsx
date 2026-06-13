@@ -294,6 +294,7 @@ function ProfileEditor({
     closingTime: string;
     hours?: DayHours[];
     slotMinutes?: number;
+    cancelWindowHours?: number;
   };
   saving: boolean;
   onSave: (patch: {
@@ -305,6 +306,7 @@ function ProfileEditor({
     closingTime: string;
     hours: DayHours[];
     slotMinutes: number;
+    cancelWindowHours: number;
   }) => void;
   onCancel: () => void;
 }) {
@@ -317,6 +319,7 @@ function ProfileEditor({
       defaultHours(initial.openingTime || '09:00', initial.closingTime || '20:00'),
   );
   const [slotMinutes, setSlotMinutes] = useState(initial.slotMinutes ?? 30);
+  const [cancelWindowHours, setCancelWindowHours] = useState(initial.cancelWindowHours ?? 2);
 
   const setDay = (i: number, patch: Partial<DayHours>) =>
     setHours((h) => h.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
@@ -396,6 +399,27 @@ function ProfileEditor({
           })}
         </View>
       </View>
+      <View>
+        <Text style={styles.slotLabel}>İptal penceresi (son ne kadar kala iptal edilemez)</Text>
+        <View style={styles.slotRow}>
+          {[0, 1, 2, 4, 24].map((h) => {
+            const active = cancelWindowHours === h;
+            return (
+              <Pressable
+                key={h}
+                onPress={() => setCancelWindowHours(h)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                style={[styles.slotChip, active && styles.slotChipActive]}
+              >
+                <Text style={[styles.slotChipText, active && styles.slotChipTextActive]}>
+                  {h === 0 ? 'Yok' : `${h} sa`}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
       <View style={styles.dialogActions}>
         <View style={{ flex: 1 }}>
           <Button label="Vazgeç" variant="secondary" onPress={onCancel} />
@@ -421,6 +445,7 @@ function ProfileEditor({
                 openingTime: firstOpen?.open ?? '09:00',
                 closingTime: firstOpen?.close ?? '20:00',
                 slotMinutes,
+                cancelWindowHours,
               });
             }}
           />

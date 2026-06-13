@@ -9,6 +9,7 @@ import {
   formatMonthShort,
   formatPrice,
   formatTime,
+  hoursUntil,
   statusMeta,
 } from '@/lib/format';
 import { colors, elevation, radius, spacing, typography } from '@/theme';
@@ -25,7 +26,11 @@ export function AppointmentCard({
 }) {
   const { business, service, status, datetime } = appointment;
   const meta = statusMeta[status];
-  const canCancel = status === 'pending' || status === 'approved';
+  const cancelable = status === 'pending' || status === 'approved';
+  const windowH = business?.cancelWindowHours ?? 2;
+  const inWindow = hoursUntil(datetime) < windowH;
+  const canCancel = cancelable && !inWindow;
+  const cancelLocked = cancelable && inWindow;
 
   return (
     <Pressable
@@ -66,7 +71,9 @@ export function AppointmentCard({
 
         <View style={styles.bottomRow}>
           <Text style={styles.price}>{service ? formatPrice(service.price) : ''}</Text>
-          {canCancel && onCancel ? (
+          {cancelLocked ? (
+            <Text style={styles.cancelLocked}>Son {windowH} saatte iptal edilemez</Text>
+          ) : canCancel && onCancel ? (
             <View style={{ width: 130 }}>
               <Button label="İptal Et" variant="secondary" onPress={onCancel} />
             </View>
@@ -111,4 +118,5 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   price: { ...typography.heading, color: colors.text },
+  cancelLocked: { ...typography.caption, color: colors.textFaint, fontStyle: 'italic', flexShrink: 1, textAlign: 'right' },
 });

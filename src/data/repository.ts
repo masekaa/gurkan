@@ -289,6 +289,7 @@ export async function createBusiness(input: {
     closingTime: '20:00',
     hours: defaultHours(),
     slotMinutes: 30,
+    cancelWindowHours: 2,
     subscriptionStatus: 'none',
     subscriptionEnd: null,
   };
