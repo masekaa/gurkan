@@ -24,6 +24,7 @@ import {
 } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import { notifyError, notifySuccess } from '@/lib/haptics';
+import { scheduleAppointmentReminder } from '@/lib/notifications';
 import { getDayHours } from '@/lib/hours';
 import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
@@ -149,7 +150,7 @@ export default function BookingScreen() {
     const [h, m] = selectedTime.split(':').map(Number);
     date.setHours(h, m, 0, 0);
     try {
-      await createAppointment.mutateAsync({
+      const appt = await createAppointment.mutateAsync({
         businessId,
         serviceId: service.id,
         datetime: date.toISOString(),
@@ -157,6 +158,12 @@ export default function BookingScreen() {
       });
       notifySuccess();
       track('booking_created', { businessId, serviceId: service.id });
+      void scheduleAppointmentReminder({
+        appointmentId: appt.id,
+        businessName: business?.name ?? 'Randevu',
+        startIso: date.toISOString(),
+        minutesBefore: 60,
+      });
       setDone(true);
     } catch (e) {
       notifyError();
