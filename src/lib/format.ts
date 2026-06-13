@@ -46,6 +46,15 @@ export function formatMonthShort(iso: string): string {
   return monthShortFmt.format(new Date(iso));
 }
 
+/** True when the current local time is within [open, close) ("HH:MM"). */
+export function isOpenNow(open: string, close: string): boolean {
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const [oh, om] = open.split(':').map(Number);
+  const [ch, cm] = close.split(':').map(Number);
+  return mins >= oh * 60 + om && mins < ch * 60 + cm;
+}
+
 export function formatTime(iso: string): string {
   return timeFmt.format(new Date(iso));
 }

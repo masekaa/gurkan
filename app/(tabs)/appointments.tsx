@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   SectionList,
   StyleSheet,
   Text,
@@ -19,8 +20,18 @@ type Tab = 'upcoming' | 'past';
 export default function AppointmentsScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('upcoming');
+  const [refreshing, setRefreshing] = useState(false);
   const { data, isLoading, isError, refetch } = useAppointments();
   const updateStatus = useUpdateAppointmentStatus();
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const sections = useMemo(() => {
     const now = Date.now();
@@ -66,6 +77,9 @@ export default function AppointmentsScreen() {
           sections={sections}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />
+          }
           renderItem={({ item }) => (
             <AppointmentCard
               appointment={item}

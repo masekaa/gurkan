@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,7 +26,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
-import { categoryLabels } from '@/lib/format';
+import { categoryLabels, isOpenNow } from '@/lib/format';
 import {
   categoryStyle,
   centeredContent,
@@ -61,8 +62,20 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | BusinessCategory>('all');
   const [viewAll, setViewAll] = useState(false);
+  const [sort, setSort] = useState<'rating' | 'reviews'>('rating');
+  const [openOnly, setOpenOnly] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { data, isLoading, isError, refetch } = useBusinesses(search);
   const seed = useSeedSampleData();
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const showSeed =
     isFirebaseEnabled && !isLoading && !search && (data?.length ?? 0) === 0;
@@ -83,8 +96,16 @@ export default function DiscoverScreen() {
 
   const all = data ?? [];
   const businesses = useMemo(
-    () => all.filter((b) => filter === 'all' || b.category === filter),
-    [all, filter],
+    () =>
+      all
+        .filter((b) => filter === 'all' || b.category === filter)
+        .filter((b) => !openOnly || isOpenNow(b.openingTime, b.closingTime))
+        .sort((a, b) =>
+          sort === 'reviews'
+            ? b.reviewCount - a.reviewCount
+            : b.rating - a.rating,
+        ),
+    [all, filter, openOnly, sort],
   );
   const topRated = useMemo(
     () => [...all].sort((a, b) => b.rating - a.rating),
@@ -143,7 +164,20 @@ export default function DiscoverScreen() {
           data={businesses}
           keyExtractor={(b) => b.id}
           contentContainerStyle={styles.list}
-          ListHeaderComponent={<CategoryChips filter={filter} onSelect={selectCategory} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />
+          }
+          ListHeaderComponent={
+            <View>
+              <CategoryChips filter={filter} onSelect={selectCategory} />
+              <SortBar
+                sort={sort}
+                openOnly={openOnly}
+                onSort={setSort}
+                onToggleOpen={() => setOpenOnly((v) => !v)}
+              />
+            </View>
+          }
           renderItem={({ item }) => (
             <BusinessCard business={item} onPress={() => open(item.id)} />
           )}
@@ -163,6 +197,9 @@ export default function DiscoverScreen() {
         <ScrollView
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />
+          }
         >
           {/* Promo banners */}
           <FlatList
@@ -253,6 +290,47 @@ function CategoryChips({
         );
       })}
     </ScrollView>
+  );
+}
+
+function SortBar({
+  sort,
+  openOnly,
+  onSort,
+  onToggleOpen,
+}: {
+  sort: 'rating' | 'reviews';
+  openOnly: boolean;
+  onSort: (s: 'rating' | 'reviews') => void;
+  onToggleOpen: () => void;
+}) {
+  const Chip = ({
+    active,
+    icon,
+    label,
+    onPress,
+  }: {
+    active: boolean;
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    onPress: () => void;
+  }) => (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      style={[styles.sortChip, active && styles.sortChipActive]}
+    >
+      <Ionicons name={icon} size={13} color={active ? colors.onGold : colors.textMuted} />
+      <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
+    </Pressable>
+  );
+  return (
+    <View style={styles.sortBar}>
+      <Chip active={openOnly} icon="time-outline" label="Açık olanlar" onPress={onToggleOpen} />
+      <Chip active={sort === 'rating'} icon="star" label="Puan" onPress={() => onSort('rating')} />
+      <Chip active={sort === 'reviews'} icon="chatbubble-outline" label="Yorum" onPress={() => onSort('reviews')} />
+    </View>
   );
 }
 
@@ -360,4 +438,19 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
   chipText: { ...typography.caption, color: colors.textMuted },
   chipTextActive: { color: colors.onGold, fontWeight: '700' },
+  sortBar: { flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.md },
+  sortChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  sortChipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  sortChipText: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  sortChipTextActive: { color: colors.onGold },
 });

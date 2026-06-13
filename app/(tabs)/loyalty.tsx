@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState, ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import { useLoyalty } from '@/hooks/queries';
@@ -11,7 +12,17 @@ const POINTS_PER_REWARD = 10;
 
 export default function LoyaltyScreen() {
   const { data, isLoading, isError, refetch } = useLoyalty();
+  const [refreshing, setRefreshing] = useState(false);
   const items = data ?? [];
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const totalPoints = items.reduce((s, l) => s + l.points, 0);
   const totalFree = items.reduce((s, l) => s + l.freeServices, 0);
@@ -22,6 +33,9 @@ export default function LoyaltyScreen() {
         data={items}
         keyExtractor={(l) => l.businessId}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />
+        }
         ListHeaderComponent={
           <View style={{ gap: spacing.lg, marginBottom: spacing.md }}>
             <Text style={styles.title}>Sadakat Puanların</Text>
