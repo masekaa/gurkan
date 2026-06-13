@@ -39,6 +39,18 @@
         {
           "locationWhenInUsePermission": "Yakınındaki işletmelerin sana uzaklığını göstermek için konumun kullanılır."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "İşletme galerisine fotoğraf eklemek için galerine erişim gerekir."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#B5862B"
+        }
       ]
     ],
     "experiments": {

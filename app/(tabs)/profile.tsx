@@ -16,7 +16,7 @@ import { isFirebaseEnabled } from '@/lib/firebase';
 import { centeredContent, colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
-  const { profile, signOut, updateProfile } = useAuth();
+  const { profile, signOut, updateProfile, deleteAccount } = useAuth();
   const router = useRouter();
 
   const roleMeta =
@@ -31,9 +31,40 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [delPw, setDelPw] = useState('');
+  const [delError, setDelError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   async function onSignOut() {
     await signOut();
     router.replace('/(auth)/login');
+  }
+
+  async function confirmDelete() {
+    setDelError(null);
+    if (isFirebaseEnabled && !delPw.trim()) {
+      setDelError('Devam etmek için şifreni gir.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteAccount(delPw);
+      setDeleteOpen(false);
+      router.replace('/(auth)/login');
+    } catch (e: any) {
+      const code = e?.code as string | undefined;
+      setDelError(
+        code === 'auth/invalid-credential' ||
+          code === 'auth/wrong-password'
+          ? 'Şifre hatalı.'
+          : code === 'auth/requires-recent-login'
+            ? 'Güvenlik için tekrar giriş yapıp dene.'
+            : 'Hesap silinemedi. Lütfen tekrar dene.',
+      );
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function openEdit() {
@@ -108,6 +139,53 @@ export default function ProfileScreen() {
       </View>
 
       <Button label="Çıkış Yap" variant="danger" icon="log-out-outline" onPress={onSignOut} />
+
+      <Pressable
+        onPress={() => {
+          setDelPw('');
+          setDelError(null);
+          setDeleteOpen(true);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Hesabımı sil"
+        style={({ pressed }) => [styles.deleteLink, pressed && { opacity: 0.6 }]}
+      >
+        <Ionicons name="trash-outline" size={16} color={colors.danger} />
+        <Text style={styles.deleteLinkText}>Hesabımı Sil</Text>
+      </Pressable>
+
+      <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
+        <View style={[styles.overlay, { justifyContent: 'center', alignItems: 'center', padding: spacing.xl }]}>
+          <View style={styles.deleteDialog}>
+            <Ionicons name="warning-outline" size={28} color={colors.danger} />
+            <Text style={styles.sheetTitle}>Hesabını sil?</Text>
+            <Text style={styles.deleteText}>
+              Bu işlem geri alınamaz. Hesabın ve profil bilgilerin kalıcı olarak silinir.
+            </Text>
+            {isFirebaseEnabled ? (
+              <View style={{ width: '100%', marginTop: spacing.sm }}>
+                <Field
+                  label="Şifreni doğrula"
+                  value={delPw}
+                  onChangeText={setDelPw}
+                  secureTextEntry
+                  icon="lock-closed-outline"
+                  placeholder="Mevcut şifren"
+                />
+              </View>
+            ) : null}
+            {delError ? <Text style={styles.deleteError}>{delError}</Text> : null}
+            <View style={styles.sheetActions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Vazgeç" variant="secondary" onPress={() => setDeleteOpen(false)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Sil" variant="danger" loading={deleting} onPress={confirmDelete} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={editing} transparent animationType="slide" onRequestClose={() => setEditing(false)}>
         <View style={styles.overlay}>
@@ -257,4 +335,23 @@ const styles = StyleSheet.create({
   menuLabel: { ...typography.body, color: colors.text, flex: 1 },
   backendNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
   backendText: { ...typography.caption, color: colors.textFaint },
+  deleteLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
+  },
+  deleteLinkText: { ...typography.caption, color: colors.danger, fontWeight: '700' },
+  deleteDialog: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
+    width: '100%',
+    maxWidth: 360,
+  },
+  deleteText: { ...typography.caption, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  deleteError: { ...typography.caption, color: colors.danger, marginTop: spacing.xs, textAlign: 'center' },
 });

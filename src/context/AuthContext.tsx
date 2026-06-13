@@ -1,12 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createUserWithEmailAndPassword,
+  deleteUser as fbDeleteUser,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   signInWithEmailAndPassword,
   signOut as fbSignOut,
   updateProfile as fbUpdateProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import {
   createContext,
   useContext,
@@ -36,6 +39,11 @@ interface AuthState {
     businessCategory?: BusinessCategory;
   }) => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Permanently delete the signed-in user's account (App Store / Play Store
+   * requirement). Requires the current password to re-authenticate.
+   */
+  deleteAccount: (password: string) => Promise<void>;
   /** Switch the current account between customer and business mode. */
   setRole: (role: UserRole) => Promise<void>;
   /** Update editable profile fields (name / phone). */
@@ -167,6 +175,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signOut() {
         if (isFirebaseEnabled && auth) {
           await fbSignOut(auth);
+          setProfile(null);
+          return;
+        }
+        await persistMock(null);
+      },
+      async deleteAccount(password) {
+        if (isFirebaseEnabled && auth && db) {
+          const user = auth.currentUser;
+          if (!user) throw new Error('no-current-user');
+          // Re-authenticate first (Firebase requires a recent login to delete).
+          if (user.email) {
+            const cred = EmailAuthProvider.credential(user.email, password);
+            await reauthenticateWithCredential(user, cred);
+          }
+          // Remove the profile document, then the auth account itself.
+          try {
+            await deleteDoc(doc(db, 'profiles', user.uid));
+          } catch {
+            // Profile doc may already be gone; deleting the auth user is what
+            // ultimately revokes access.
+          }
+          await fbDeleteUser(user);
           setProfile(null);
           return;
         }

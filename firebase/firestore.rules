@@ -31,7 +31,9 @@ service cloud.firestore {
         && request.resource.data.get('businessId', null)
              == resource.data.get('businessId', null)
       );
-      allow delete: if isAdmin();
+      // The owner may delete their own profile (in-app account deletion, an
+      // App Store / Play Store requirement); admins may delete any.
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // Approved businesses are publicly readable; only the owner/admin writes.
