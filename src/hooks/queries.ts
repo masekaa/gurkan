@@ -35,6 +35,14 @@ export function useBusiness(id: string) {
   });
 }
 
+export function useFavoriteBusinesses(ids: string[]) {
+  return useQuery({
+    queryKey: ['favorites', [...ids].sort()],
+    queryFn: () => repo.getBusinessesByIds(ids),
+    enabled: ids.length > 0,
+  });
+}
+
 export function useServices(businessId: string) {
   return useQuery({
     queryKey: ['services', businessId],

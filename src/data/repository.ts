@@ -252,6 +252,15 @@ export async function getBusiness(id: string): Promise<Business | null> {
   return mock.businesses.find((b) => b.id === id) ?? null;
 }
 
+/** Fetch several businesses by id (e.g. favorites); skips unreadable/missing. */
+export async function getBusinessesByIds(ids: string[]): Promise<Business[]> {
+  if (ids.length === 0) return [];
+  const results = await Promise.all(
+    ids.map((id) => getBusiness(id).catch(() => null)),
+  );
+  return results.filter((b): b is Business => b != null);
+}
+
 /**
  * Create a business owned by `ownerId`. Starts unapproved so it stays hidden
  * from the public Keşfet feed until an admin approves it.

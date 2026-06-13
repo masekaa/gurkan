@@ -89,6 +89,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menu}>
+        <MenuRow icon="heart-outline" label="Favorilerim" onPress={() => router.push('/favorites')} />
         <MenuRow icon="notifications-outline" label="Bildirim Tercihleri" />
         <MenuRow icon="shield-checkmark-outline" label="Hesap Güvenliği" />
         <MenuRow icon="help-circle-outline" label="Yardım & Destek" />
@@ -140,12 +141,19 @@ export default function ProfileScreen() {
 function MenuRow({
   icon,
   label,
+  onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  onPress?: () => void;
 }) {
   return (
-    <Pressable style={({ pressed }) => [styles.menuRow, pressed && { opacity: 0.7 }]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.menuRow, pressed && { opacity: 0.7 }]}
+    >
       <Ionicons name={icon} size={20} color={colors.textMuted} />
       <Text style={styles.menuLabel}>{label}</Text>
       <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />

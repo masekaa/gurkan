@@ -40,6 +40,8 @@ interface AuthState {
   setRole: (role: UserRole) => Promise<void>;
   /** Update editable profile fields (name / phone). */
   updateProfile: (patch: { name?: string; phone?: string | null }) => Promise<void>;
+  /** Add/remove a business from the user's favorites. */
+  toggleFavorite: (businessId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -190,6 +192,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const next: Profile = { ...profile, ...patch };
         if (isFirebaseEnabled && db) {
           await updateDoc(doc(db, 'profiles', profile.id), patch);
+          setProfile(next);
+          return;
+        }
+        await persistMock(next);
+      },
+      async toggleFavorite(businessId) {
+        if (!profile) return;
+        const cur = profile.favorites ?? [];
+        const favorites = cur.includes(businessId)
+          ? cur.filter((x) => x !== businessId)
+          : [...cur, businessId];
+        const next: Profile = { ...profile, favorites };
+        if (isFirebaseEnabled && db) {
+          await updateDoc(doc(db, 'profiles', profile.id), { favorites });
           setProfile(next);
           return;
         }

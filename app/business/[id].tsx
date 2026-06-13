@@ -23,7 +23,8 @@ export default function BusinessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { profile } = useAuth();
+  const { profile, toggleFavorite } = useAuth();
+  const isFav = !!profile?.favorites?.includes(id);
   const { data: business, isLoading, isError, refetch } = useBusiness(id);
   const { data: services } = useServices(id);
   const { data: reviews } = useReviews(id);
@@ -82,15 +83,26 @@ export default function BusinessDetailScreen() {
             color="#ffffff12"
             style={styles.heroGlyph}
           />
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.back}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Geri"
-          >
-            <Ionicons name="chevron-back" size={22} color="#fff" />
-          </Pressable>
+          <View style={styles.heroTopRow}>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.back}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Geri"
+            >
+              <Ionicons name="chevron-back" size={22} color="#fff" />
+            </Pressable>
+            <Pressable
+              onPress={() => toggleFavorite(id)}
+              style={styles.back}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+            >
+              <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? '#FF5A6E' : '#fff'} />
+            </Pressable>
+          </View>
 
           <View style={styles.heroContent}>
             <View style={styles.logo}>
@@ -371,6 +383,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.28)',
   },
+  heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   heroContent: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
   logo: {
     width: 76,

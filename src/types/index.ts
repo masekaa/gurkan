@@ -11,6 +11,8 @@ export interface Profile {
   createdAt: string;
   /** For business accounts: the business this account manages. */
   businessId?: string | null;
+  /** Favorited business ids (customer). */
+  favorites?: string[];
 }
 
 export type BusinessCategory =
