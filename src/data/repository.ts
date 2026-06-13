@@ -290,6 +290,8 @@ export async function createBusiness(input: {
     phone: input.phone ?? '',
     logoUrl: null,
     coverUrl: null,
+    lat: null,
+    lng: null,
     rating: 0,
     reviewCount: 0,
     approved: false,

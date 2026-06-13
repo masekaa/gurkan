@@ -12,8 +12,10 @@ import {
   View,
 } from 'react-native';
 
+import LeafletMap from '@/components/LeafletMap';
 import { Badge, Button, EmptyState, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
+import { useUserLocation } from '@/context/LocationContext';
 import {
   useAddBusinessPhoto,
   useBusiness,
@@ -26,6 +28,7 @@ import {
 } from '@/hooks/queries';
 import { isStorageEnabled } from '@/lib/firebase';
 import { formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { DEFAULT_CENTER, hasLocation, type LatLng } from '@/lib/geo';
 import { notifyError, notifySuccess } from '@/lib/haptics';
 import { DAY_ORDER, DAY_SHORT, defaultHours, getDayHours } from '@/lib/hours';
 import { isValidPhone } from '@/lib/validators';
@@ -423,6 +426,8 @@ function ProfileEditor({
     hours?: DayHours[];
     slotMinutes?: number;
     cancelWindowHours?: number;
+    lat?: number | null;
+    lng?: number | null;
   };
   saving: boolean;
   onSave: (patch: {
@@ -435,6 +440,8 @@ function ProfileEditor({
     hours: DayHours[];
     slotMinutes: number;
     cancelWindowHours: number;
+    lat: number | null;
+    lng: number | null;
   }) => void;
   onCancel: () => void;
 }) {
@@ -442,6 +449,14 @@ function ProfileEditor({
   const [about, setAbout] = useState(initial.about);
   const [phone, setPhone] = useState(initial.phone);
   const [district, setDistrict] = useState(initial.district);
+  const [coords, setCoords] = useState<LatLng | null>(
+    hasLocation({ lat: initial.lat, lng: initial.lng })
+      ? { lat: initial.lat as number, lng: initial.lng as number }
+      : null,
+  );
+  const [mapReload, setMapReload] = useState(0);
+  const [locating, setLocating] = useState(false);
+  const { request: requestLocation } = useUserLocation();
   const [hours, setHours] = useState<DayHours[]>(
     initial.hours ??
       defaultHours(initial.openingTime || '09:00', initial.closingTime || '20:00'),
@@ -463,6 +478,48 @@ function ProfileEditor({
         <Text style={styles.fieldError}>Geçerli bir telefon numarası gir.</Text>
       ) : null}
       <Field label="İlçe / Bölge" value={district} onChangeText={setDistrict} icon="location-outline" placeholder="Nilüfer" />
+
+      <View>
+        <Text style={styles.slotLabel}>Konum (haritadan işaretle)</Text>
+        <LeafletMap
+          center={coords ?? DEFAULT_CENTER}
+          showMarker={!!coords}
+          interactive
+          height={200}
+          reloadKey={mapReload}
+          onPick={setCoords}
+        />
+        <View style={styles.mapMetaRow}>
+          <Text style={styles.mapCoordText}>
+            {coords
+              ? `📍 ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+              : 'Henüz konum seçilmedi'}
+          </Text>
+          <Pressable
+            onPress={async () => {
+              setLocating(true);
+              const c = await requestLocation();
+              setLocating(false);
+              if (c) {
+                setCoords(c);
+                setMapReload((n) => n + 1);
+              }
+            }}
+            style={styles.locateBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Konumumu kullan"
+          >
+            <Ionicons
+              name={locating ? 'sync-outline' : 'navigate-outline'}
+              size={15}
+              color={colors.gold}
+            />
+            <Text style={styles.locateBtnText}>
+              {locating ? 'Bulunuyor…' : 'Konumumu kullan'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
 
       <View>
         <Text style={styles.slotLabel}>Çalışma saatleri (güne özel)</Text>
@@ -578,6 +635,8 @@ function ProfileEditor({
                 closingTime: firstOpen?.close ?? '20:00',
                 slotMinutes,
                 cancelWindowHours,
+                lat: coords?.lat ?? null,
+                lng: coords?.lng ?? null,
               });
             }}
           />
@@ -731,6 +790,26 @@ const styles = StyleSheet.create({
   dayHourMuted: { ...typography.caption, color: colors.textFaint, flex: 1, textAlign: 'right' },
   slotLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginBottom: spacing.xs },
   fieldError: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs, marginTop: -spacing.xs },
+  mapMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  mapCoordText: { ...typography.caption, color: colors.textMuted, flex: 1 },
+  locateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.gold + '14',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.gold + '40',
+  },
+  locateBtnText: { ...typography.caption, color: colors.gold, fontWeight: '700' },
   photoWrap: { position: 'relative' },
   photoThumb: {
     width: 120,

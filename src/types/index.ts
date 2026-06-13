@@ -30,6 +30,9 @@ export interface Business {
   about: string;
   address: string;
   district: string;
+  /** Exact location the owner pinned on the map (for distance + directions). */
+  lat?: number | null;
+  lng?: number | null;
   phone: string;
   logoUrl: string | null;
   coverUrl: string | null;

@@ -33,7 +33,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Yakınındaki işletmelerin sana uzaklığını göstermek için konumun kullanılır."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

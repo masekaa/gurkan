@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/context/AuthContext';
+import { LocationProvider } from '@/context/LocationContext';
 import { track } from '@/lib/analytics';
 import { colors } from '@/theme';
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <LocationProvider>
           <StatusBar style="dark" />
           <Stack
             screenOptions={{
@@ -44,6 +46,7 @@ export default function RootLayout() {
             />
             <Stack.Screen name="booking/[businessId]" />
           </Stack>
+          </LocationProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

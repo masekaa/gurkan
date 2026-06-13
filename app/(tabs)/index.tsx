@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -24,9 +24,11 @@ import {
   Screen,
 } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
+import { useUserLocation } from '@/context/LocationContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
+import { hasLocation, haversineKm, type LatLng } from '@/lib/geo';
 import { isOpenToday } from '@/lib/hours';
 import {
   categoryStyle,
@@ -63,11 +65,22 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | BusinessCategory>('all');
   const [viewAll, setViewAll] = useState(false);
-  const [sort, setSort] = useState<'rating' | 'reviews'>('rating');
+  const [sort, setSort] = useState<'rating' | 'reviews' | 'nearby'>('rating');
   const [openOnly, setOpenOnly] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { data, isLoading, isError, refetch } = useBusinesses(search);
   const seed = useSeedSampleData();
+  const { coords: userCoords, request: requestLocation } = useUserLocation();
+
+  useEffect(() => {
+    // Best-effort: enables distance badges + the "Yakınımda" sort.
+    void requestLocation();
+  }, [requestLocation]);
+
+  const distanceOf = (b: Business): number | null =>
+    userCoords && hasLocation(b)
+      ? haversineKm(userCoords as LatLng, { lat: b.lat as number, lng: b.lng as number })
+      : null;
 
   async function onRefresh() {
     setRefreshing(true);
@@ -101,12 +114,22 @@ export default function DiscoverScreen() {
       all
         .filter((b) => filter === 'all' || b.category === filter)
         .filter((b) => !openOnly || isOpenToday(b))
-        .sort((a, b) =>
-          sort === 'reviews'
-            ? b.reviewCount - a.reviewCount
-            : b.rating - a.rating,
-        ),
-    [all, filter, openOnly, sort],
+        .sort((a, b) => {
+          if (sort === 'reviews') return b.reviewCount - a.reviewCount;
+          if (sort === 'nearby') {
+            const da = distanceOf(a);
+            const db = distanceOf(b);
+            // Located businesses first; among them nearest wins.
+            if (da == null && db == null) return b.rating - a.rating;
+            if (da == null) return 1;
+            if (db == null) return -1;
+            return da - db;
+          }
+          return b.rating - a.rating;
+        }),
+    // distanceOf depends on userCoords; include it so the order updates on fix.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [all, filter, openOnly, sort, userCoords],
   );
   const topRated = useMemo(
     () => [...all].sort((a, b) => b.rating - a.rating),
@@ -180,7 +203,11 @@ export default function DiscoverScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <BusinessCard business={item} onPress={() => open(item.id)} />
+            <BusinessCard
+              business={item}
+              onPress={() => open(item.id)}
+              distanceKm={distanceOf(item)}
+            />
           )}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
           ListEmptyComponent={
@@ -300,9 +327,9 @@ function SortBar({
   onSort,
   onToggleOpen,
 }: {
-  sort: 'rating' | 'reviews';
+  sort: 'rating' | 'reviews' | 'nearby';
   openOnly: boolean;
-  onSort: (s: 'rating' | 'reviews') => void;
+  onSort: (s: 'rating' | 'reviews' | 'nearby') => void;
   onToggleOpen: () => void;
 }) {
   const Chip = ({
@@ -329,6 +356,7 @@ function SortBar({
   return (
     <View style={styles.sortBar}>
       <Chip active={openOnly} icon="time-outline" label="Açık olanlar" onPress={onToggleOpen} />
+      <Chip active={sort === 'nearby'} icon="navigate" label="Yakınımda" onPress={() => onSort('nearby')} />
       <Chip active={sort === 'rating'} icon="star" label="Puan" onPress={() => onSort('rating')} />
       <Chip active={sort === 'reviews'} icon="chatbubble-outline" label="Yorum" onPress={() => onSort('reviews')} />
     </View>
@@ -439,7 +467,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
   chipText: { ...typography.caption, color: colors.textMuted },
   chipTextActive: { color: colors.onGold, fontWeight: '700' },
-  sortBar: { flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.md },
+  sortBar: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingBottom: spacing.md },
   sortChip: {
     flexDirection: 'row',
     alignItems: 'center',

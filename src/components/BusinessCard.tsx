@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { categoryLabels } from '@/lib/format';
+import { formatDistance } from '@/lib/geo';
 import { isOpenToday } from '@/lib/hours';
 import {
   categoryStyle,
@@ -19,9 +20,11 @@ import type { Business } from '@/types';
 export function BusinessCard({
   business,
   onPress,
+  distanceKm,
 }: {
   business: Business;
   onPress?: () => void;
+  distanceKm?: number | null;
 }) {
   const cat = categoryStyle[business.category] ?? categoryStyle.erkek_berberi;
   const open = isOpenToday(business);
@@ -84,11 +87,23 @@ export function BusinessCard({
             <Text style={styles.meta} numberOfLines={1}>
               {business.district}
             </Text>
-            <Text style={styles.dotSep}>·</Text>
-            <Ionicons name="time-outline" size={13} color={colors.textFaint} />
-            <Text style={styles.meta}>
-              {business.openingTime}–{business.closingTime}
-            </Text>
+            {distanceKm != null ? (
+              <>
+                <Text style={styles.dotSep}>·</Text>
+                <Ionicons name="walk-outline" size={13} color={colors.gold} />
+                <Text style={[styles.meta, { color: colors.gold, fontWeight: '700' }]}>
+                  {formatDistance(distanceKm)}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.dotSep}>·</Text>
+                <Ionicons name="time-outline" size={13} color={colors.textFaint} />
+                <Text style={styles.meta}>
+                  {business.openingTime}–{business.closingTime}
+                </Text>
+              </>
+            )}
           </View>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />

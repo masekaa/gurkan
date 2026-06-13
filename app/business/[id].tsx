@@ -16,7 +16,10 @@ import {
   useServices,
 } from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
+import LeafletMap from '@/components/LeafletMap';
+import { useUserLocation } from '@/context/LocationContext';
 import { track } from '@/lib/analytics';
+import { formatDistance, hasLocation, haversineKm } from '@/lib/geo';
 import { selection } from '@/lib/haptics';
 import { DAY_LABELS, DAY_ORDER, getDayHours, isOpenToday } from '@/lib/hours';
 import { callPhone, openDirections } from '@/lib/links';
@@ -32,9 +35,23 @@ export default function BusinessDetailScreen() {
   const { data: business, isLoading, isError, refetch } = useBusiness(id);
   const { data: services } = useServices(id);
 
+  const { coords: userCoords, request: requestLocation } = useUserLocation();
+
   useEffect(() => {
     if (id) track('business_view', { businessId: id });
   }, [id]);
+
+  const bizLocated = !!business && hasLocation(business);
+
+  useEffect(() => {
+    // Ask for location only when this business actually has a pin to measure to.
+    if (bizLocated) void requestLocation();
+  }, [bizLocated, requestLocation]);
+
+  const distanceKm =
+    business && bizLocated && userCoords
+      ? haversineKm(userCoords, { lat: business.lat as number, lng: business.lng as number })
+      : null;
   const { data: reviews } = useReviews(id);
   const { data: myAppointments } = useAppointments();
   const createReview = useCreateReview(id);
@@ -144,9 +161,22 @@ export default function BusinessDetailScreen() {
               text={`${business.address}\n${business.district}`}
               actionIcon="navigate-outline"
               onPress={() =>
-                openDirections(`${business.name} ${business.address} ${business.district}`)
+                openDirections(
+                  bizLocated
+                    ? `${business.lat},${business.lng}`
+                    : `${business.name} ${business.address} ${business.district}`,
+                )
               }
             />
+            {distanceKm != null ? (
+              <>
+                <View style={styles.divider} />
+                <InfoRow
+                  icon="walk-outline"
+                  text={`${formatDistance(distanceKm)} uzaklıkta`}
+                />
+              </>
+            ) : null}
             <View style={styles.divider} />
             <InfoRow
               icon="call-outline"
@@ -163,6 +193,25 @@ export default function BusinessDetailScreen() {
               })()}
             />
           </View>
+
+          {bizLocated ? (
+            <Pressable
+              onPress={() => openDirections(`${business.lat},${business.lng}`)}
+              accessibilityRole="button"
+              accessibilityLabel="Yol tarifi al"
+            >
+              <LeafletMap
+                center={{ lat: business.lat as number, lng: business.lng as number }}
+                showMarker
+                interactive={false}
+                height={170}
+              />
+              <View style={styles.mapDirBtn}>
+                <Ionicons name="navigate" size={14} color={colors.onGold} />
+                <Text style={styles.mapDirText}>Yol Tarifi</Text>
+              </View>
+            </Pressable>
+          ) : null}
 
           {/* Weekly hours */}
           <View style={styles.hoursCard}>
@@ -482,6 +531,20 @@ const styles = StyleSheet.create({
     ...elevation.soft,
   },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  mapDirBtn: {
+    position: 'absolute',
+    right: spacing.md,
+    bottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.gold,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    ...elevation.gold,
+  },
+  mapDirText: { ...typography.caption, color: colors.onGold, fontWeight: '700' },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   infoText: { ...typography.body, color: colors.textMuted, flex: 1, lineHeight: 21 },
   hoursCard: {
