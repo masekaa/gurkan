@@ -202,6 +202,39 @@ vercel.json                   Vercel build/output + SPA rewrite
 
 ---
 
+## 6.5. Yeni Eklenen Özellikler ve Dış Kurulum Gereksinimleri (2026-06-13)
+
+Bu turda eklenen özellikler ve çalışması için gereken **dış kurulum** (kod hazır,
+bayrakla korunuyor; kurulum yapılmadan uygulama bozulmaz):
+
+| Özellik | Durum | Gereken dış kurulum |
+| --- | --- | --- |
+| Form doğrulama (e-posta/telefon/şifre) | ✅ Tam çalışır | — |
+| Onboarding (ilk açılış 3 slayt) | ✅ Tam çalışır | — |
+| Dokunsal geri bildirim (haptics) | ✅ Native'de çalışır | — (web'de no-op) |
+| Boş durum cilası + giriş animasyonu | ✅ Tam çalışır | — |
+| Yol tarifi / tek dokunuşla arama | ✅ Tam çalışır | — (Linking, anahtarsız) |
+| İşletme foto galerisi (görüntüleme) | ✅ Tam çalışır | — |
+| Foto **yükleme** | ⏳ Bayraklı | **Firebase Storage** etkinleştir + `firebase/storage.rules` yayınla |
+| Yerel randevu hatırlatması (1s önce) | ✅ Native'de çalışır | — (OS bildirim izni) |
+| Uzak push (kampanya/işletme uyarısı) | ⏳ İskelet | **EAS projectId** + FCM/APNs kimlikleri |
+| Analitik ölçüm | ⏳ İskelet (dev'de console) | Sağlayıcı bağla (`configureAnalytics`) |
+
+**Storage'ı etkinleştirme:** Firebase Console → Storage → Başlat → sonra
+`firebase/storage.rules` içeriğini Storage → Rules'a yapıştır + Publish. Bu
+yapılınca uygulamadaki "Fotoğraf Ekle" butonu otomatik aktifleşir
+(`isStorageEnabled` bayrağı).
+
+**Uzak push:** `app.json`'a EAS `projectId` ekle, EAS Build ile native derle,
+`registerForPushToken(projectId)` çağrısını başlangıçta tetikle.
+
+**Bilinen küçük açık:** Yerel hatırlatma randevuyla birlikte iptal edilmiyor
+(bildirim id'si randevuda saklanmıyor). İptal edilen randevu için hatırlatma yine
+de tetiklenebilir — düşük etkili; ileride `appointment.reminderId` alanı eklenip
+`cancelReminder()` çağrılarak çözülebilir.
+
+---
+
 ## 7. SIRADAKİ İŞLER (yapılacaklar) ⏭️
 
 Öncelik sırasıyla önerilen yol haritası:
