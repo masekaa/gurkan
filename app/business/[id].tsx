@@ -15,16 +15,9 @@ import {
   useServices,
 } from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { DAY_LABELS, DAY_ORDER, getDayHours, isOpenToday } from '@/lib/hours';
 import { categoryStyle, centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Review } from '@/types';
-
-function isOpenNow(open: string, close: string): boolean {
-  const now = new Date();
-  const mins = now.getHours() * 60 + now.getMinutes();
-  const [oh, om] = open.split(':').map(Number);
-  const [ch, cm] = close.split(':').map(Number);
-  return mins >= oh * 60 + om && mins < ch * 60 + cm;
-}
 
 export default function BusinessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -65,7 +58,7 @@ export default function BusinessDetailScreen() {
   }
 
   const cat = categoryStyle[business.category] ?? categoryStyle.erkek_berberi;
-  const open = isOpenNow(business.openingTime, business.closingTime);
+  const open = isOpenToday(business);
   const initials = business.name
     .split(' ')
     .map((w) => w[0])
@@ -128,8 +121,30 @@ export default function BusinessDetailScreen() {
             <View style={styles.divider} />
             <InfoRow
               icon="time-outline"
-              text={`Çalışma saatleri: ${business.openingTime} – ${business.closingTime}`}
+              text={(() => {
+                const t = getDayHours(business, new Date().getDay());
+                return `Bugün: ${t.closed ? 'Kapalı' : `${t.open} – ${t.close}`}`;
+              })()}
             />
+          </View>
+
+          {/* Weekly hours */}
+          <View style={styles.hoursCard}>
+            <Text style={styles.sectionTitle}>Çalışma Saatleri</Text>
+            {DAY_ORDER.map((i) => {
+              const t = getDayHours(business, i);
+              const isToday = i === new Date().getDay();
+              return (
+                <View key={i} style={styles.hourLine}>
+                  <Text style={[styles.hourDay, isToday && styles.hourToday]}>
+                    {DAY_LABELS[i]}
+                  </Text>
+                  <Text style={[styles.hourVal, t.closed && styles.hourClosed, isToday && styles.hourToday]}>
+                    {t.closed ? 'Kapalı' : `${t.open} – ${t.close}`}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
 
           {business.about ? (
@@ -389,6 +404,20 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   infoText: { ...typography.body, color: colors.textMuted, flex: 1, lineHeight: 21 },
+  hoursCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...elevation.soft,
+  },
+  hourLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  hourDay: { ...typography.body, color: colors.textMuted },
+  hourVal: { ...typography.bodyStrong, color: colors.text },
+  hourClosed: { color: colors.rejected, fontWeight: '400' },
+  hourToday: { color: colors.gold },
   about: { gap: spacing.sm },
   aboutText: { ...typography.body, color: colors.textMuted, lineHeight: 22 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

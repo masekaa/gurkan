@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { categoryLabels } from '@/lib/format';
+import { isOpenToday } from '@/lib/hours';
 import {
   categoryStyle,
   colors,
@@ -14,13 +15,6 @@ import {
 import type { Business } from '@/types';
 
 /** True when `now` falls within the business's daily opening window. */
-function isOpenNow(open: string, close: string): boolean {
-  const now = new Date();
-  const mins = now.getHours() * 60 + now.getMinutes();
-  const [oh, om] = open.split(':').map(Number);
-  const [ch, cm] = close.split(':').map(Number);
-  return mins >= oh * 60 + om && mins < ch * 60 + cm;
-}
 
 export function BusinessCard({
   business,
@@ -30,7 +24,7 @@ export function BusinessCard({
   onPress?: () => void;
 }) {
   const cat = categoryStyle[business.category] ?? categoryStyle.erkek_berberi;
-  const open = isOpenNow(business.openingTime, business.closingTime);
+  const open = isOpenToday(business);
   const initials = business.name
     .split(' ')
     .map((w) => w[0])

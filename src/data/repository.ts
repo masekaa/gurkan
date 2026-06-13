@@ -37,6 +37,7 @@ import type {
   Service,
   UserRole,
 } from '@/types';
+import { defaultHours } from '@/lib/hours';
 import * as mock from './mock';
 
 function uid(prefix: string) {
@@ -277,6 +278,7 @@ export async function createBusiness(input: {
     approved: false,
     openingTime: '09:00',
     closingTime: '20:00',
+    hours: defaultHours(),
     slotMinutes: 30,
     subscriptionStatus: 'none',
     subscriptionEnd: null,

@@ -34,8 +34,10 @@ export interface Business {
   rating: number;
   reviewCount: number;
   approved: boolean;
-  openingTime: string; // "09:00"
-  closingTime: string; // "20:00"
+  openingTime: string; // "09:00" — legacy fallback when `hours` is unset
+  closingTime: string; // "20:00" — legacy fallback when `hours` is unset
+  /** Per-weekday hours, indexed by Date.getDay() (0=Sun..6=Sat). */
+  hours?: DayHours[];
   /** Booking slot interval in minutes (business-configurable). Default 30. */
   slotMinutes?: number;
   /**
@@ -49,6 +51,13 @@ export interface Business {
 }
 
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'none';
+
+/** One weekday's working hours. */
+export interface DayHours {
+  open: string; // "09:00"
+  close: string; // "20:00"
+  closed: boolean;
+}
 
 export interface Service {
   id: string;

@@ -26,7 +26,8 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
-import { categoryLabels, isOpenNow } from '@/lib/format';
+import { categoryLabels } from '@/lib/format';
+import { isOpenToday } from '@/lib/hours';
 import {
   categoryStyle,
   centeredContent,
@@ -99,7 +100,7 @@ export default function DiscoverScreen() {
     () =>
       all
         .filter((b) => filter === 'all' || b.category === filter)
-        .filter((b) => !openOnly || isOpenNow(b.openingTime, b.closingTime))
+        .filter((b) => !openOnly || isOpenToday(b))
         .sort((a, b) =>
           sort === 'reviews'
             ? b.reviewCount - a.reviewCount

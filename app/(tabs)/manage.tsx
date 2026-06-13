@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -20,7 +21,9 @@ import {
   useUpdateService,
 } from '@/hooks/queries';
 import { formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { DAY_ORDER, DAY_SHORT, defaultHours, getDayHours } from '@/lib/hours';
 import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
+import type { DayHours } from '@/types';
 
 /** Monthly listing fee (₺). Configurable; real charge runs via the provider. */
 const MONTHLY_PRICE = 499;
@@ -95,7 +98,14 @@ export default function ManageScreen() {
             <InfoLine icon="call-outline" text={business?.phone ?? '—'} />
             <InfoLine
               icon="time-outline"
-              text={`${business?.openingTime ?? '--'} – ${business?.closingTime ?? '--'} · ${business?.slotMinutes ?? 30} dk slot`}
+              text={
+                business
+                  ? (() => {
+                      const t = getDayHours(business, new Date().getDay());
+                      return `${t.closed ? 'Bugün kapalı' : `Bugün ${t.open}–${t.close}`} · ${business.slotMinutes ?? 30} dk slot`;
+                    })()
+                  : '--'
+              }
             />
             <InfoLine icon="location-outline" text={business?.district ?? '—'} />
           </View>
@@ -282,6 +292,7 @@ function ProfileEditor({
     district: string;
     openingTime: string;
     closingTime: string;
+    hours?: DayHours[];
     slotMinutes?: number;
   };
   saving: boolean;
@@ -292,6 +303,7 @@ function ProfileEditor({
     district: string;
     openingTime: string;
     closingTime: string;
+    hours: DayHours[];
     slotMinutes: number;
   }) => void;
   onCancel: () => void;
@@ -300,9 +312,14 @@ function ProfileEditor({
   const [about, setAbout] = useState(initial.about);
   const [phone, setPhone] = useState(initial.phone);
   const [district, setDistrict] = useState(initial.district);
-  const [open, setOpen] = useState(initial.openingTime);
-  const [close, setClose] = useState(initial.closingTime);
+  const [hours, setHours] = useState<DayHours[]>(
+    initial.hours ??
+      defaultHours(initial.openingTime || '09:00', initial.closingTime || '20:00'),
+  );
   const [slotMinutes, setSlotMinutes] = useState(initial.slotMinutes ?? 30);
+
+  const setDay = (i: number, patch: Partial<DayHours>) =>
+    setHours((h) => h.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
 
   return (
     <View style={[styles.card, elevation.soft, { gap: spacing.md }]}>
@@ -311,12 +328,51 @@ function ProfileEditor({
       <Field label="Hakkında" value={about} onChangeText={setAbout} multiline />
       <Field label="Telefon" value={phone} onChangeText={setPhone} icon="call-outline" keyboardType="phone-pad" />
       <Field label="İlçe / Bölge" value={district} onChangeText={setDistrict} icon="location-outline" placeholder="Nilüfer" />
-      <View style={styles.hourRow}>
-        <View style={{ flex: 1 }}>
-          <Field label="Açılış" value={open} onChangeText={setOpen} icon="time-outline" placeholder="09:00" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Field label="Kapanış" value={close} onChangeText={setClose} icon="time-outline" placeholder="20:00" />
+
+      <View>
+        <Text style={styles.slotLabel}>Çalışma saatleri (güne özel)</Text>
+        <View style={{ gap: spacing.xs }}>
+          {DAY_ORDER.map((i) => {
+            const d = hours[i];
+            return (
+              <View key={i} style={styles.dayHourRow}>
+                <Text style={styles.dayHourLabel}>{DAY_SHORT[i]}</Text>
+                <Pressable
+                  onPress={() => setDay(i, { closed: !d.closed })}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: !d.closed }}
+                  style={[styles.dayToggle, d.closed ? styles.dayToggleClosed : styles.dayToggleOpen]}
+                >
+                  <Text style={d.closed ? styles.dayToggleClosedText : styles.dayToggleOpenText}>
+                    {d.closed ? 'Kapalı' : 'Açık'}
+                  </Text>
+                </Pressable>
+                {d.closed ? (
+                  <Text style={styles.dayHourMuted}>—</Text>
+                ) : (
+                  <View style={styles.dayTimeWrap}>
+                    <TextInput
+                      value={d.open}
+                      onChangeText={(v) => setDay(i, { open: v })}
+                      placeholder="09:00"
+                      placeholderTextColor={colors.textFaint}
+                      style={styles.dayTime}
+                      maxLength={5}
+                    />
+                    <Text style={styles.dayDash}>–</Text>
+                    <TextInput
+                      value={d.close}
+                      onChangeText={(v) => setDay(i, { close: v })}
+                      placeholder="20:00"
+                      placeholderTextColor={colors.textFaint}
+                      style={styles.dayTime}
+                      maxLength={5}
+                    />
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
       </View>
       <View>
@@ -349,17 +405,24 @@ function ProfileEditor({
             label="Kaydet"
             loading={saving}
             disabled={!name.trim()}
-            onPress={() =>
+            onPress={() => {
+              const cleaned = hours.map((d) => ({
+                open: d.open.trim() || '09:00',
+                close: d.close.trim() || '20:00',
+                closed: d.closed,
+              }));
+              const firstOpen = cleaned.find((d) => !d.closed);
               onSave({
                 name: name.trim(),
                 about: about.trim(),
                 phone: phone.trim(),
                 district: district.trim(),
-                openingTime: open.trim(),
-                closingTime: close.trim(),
+                hours: cleaned,
+                openingTime: firstOpen?.open ?? '09:00',
+                closingTime: firstOpen?.close ?? '20:00',
                 slotMinutes,
-              })
-            }
+              });
+            }}
           />
         </View>
       </View>
@@ -483,6 +546,32 @@ const styles = StyleSheet.create({
   serviceMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   iconBtn: { padding: 4 },
   hourRow: { flexDirection: 'row', gap: spacing.md },
+  dayHourRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dayHourLabel: { ...typography.bodyStrong, color: colors.text, width: 40 },
+  dayToggle: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  dayToggleOpen: { backgroundColor: colors.gold + '1A', borderColor: colors.gold + '66' },
+  dayToggleClosed: { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+  dayToggleOpenText: { ...typography.caption, color: colors.goldDeep, fontWeight: '700' },
+  dayToggleClosedText: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  dayTimeWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end' },
+  dayTime: {
+    width: 58,
+    textAlign: 'center',
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    color: colors.text,
+    ...typography.caption,
+  },
+  dayDash: { color: colors.textFaint },
+  dayHourMuted: { ...typography.caption, color: colors.textFaint, flex: 1, textAlign: 'right' },
   slotLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginBottom: spacing.xs },
   slotRow: { flexDirection: 'row', gap: spacing.sm },
   slotChip: {

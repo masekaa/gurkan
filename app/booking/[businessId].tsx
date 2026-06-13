@@ -22,6 +22,7 @@ import {
   formatDuration,
   formatPrice,
 } from '@/lib/format';
+import { getDayHours } from '@/lib/hours';
 import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
 /** Build the next `count` calendar days starting today. */
@@ -79,17 +80,16 @@ export default function BookingScreen() {
 
   const [slotError, setSlotError] = useState<string | null>(null);
 
-  const slots = useMemo(
-    () =>
-      business
-        ? slotsBetween(
-            business.openingTime,
-            business.closingTime,
-            business.slotMinutes ?? 30,
-          )
-        : [],
-    [business],
-  );
+  const dayClosed = business
+    ? getDayHours(business, days[selectedDay].getDay()).closed
+    : false;
+
+  const slots = useMemo(() => {
+    if (!business) return [];
+    const dh = getDayHours(business, days[selectedDay].getDay());
+    if (dh.closed) return [];
+    return slotsBetween(dh.open, dh.close, business.slotMinutes ?? 30);
+  }, [business, days, selectedDay]);
 
   // Times that cannot be picked on the selected day: already booked, or past.
   // A start time is unavailable when it is in the past, when the chosen service
@@ -103,7 +103,8 @@ export default function BookingScreen() {
       day.getMonth() === now.getMonth() &&
       day.getDate() === now.getDate();
     const dur = service?.durationMin ?? 30;
-    const [ch, cm] = (business?.closingTime ?? '23:59').split(':').map(Number);
+    const dh = business ? getDayHours(business, day.getDay()) : null;
+    const [ch, cm] = (dh?.close ?? '23:59').split(':').map(Number);
     const closeMin = ch * 60 + cm;
     const nowMin = now.getHours() * 60 + now.getMinutes();
 
@@ -224,14 +225,19 @@ export default function BookingScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
           {days.map((d, i) => {
             const active = i === selectedDay;
+            const closed = business ? getDayHours(business, d.getDay()).closed : false;
             return (
               <Pressable
                 key={i}
                 onPress={() => pickDay(i)}
                 accessibilityRole="button"
-                accessibilityLabel={`${dayFmt.format(d)} ${dateFmt.format(d)}`}
+                accessibilityLabel={`${dayFmt.format(d)} ${dateFmt.format(d)}${closed ? ', kapalı' : ''}`}
                 accessibilityState={{ selected: active }}
-                style={[styles.dayChip, active && styles.dayChipActive]}
+                style={[
+                  styles.dayChip,
+                  active && styles.dayChipActive,
+                  closed && !active && styles.dayChipClosed,
+                ]}
               >
                 <Text style={[styles.dayName, active && styles.dayActiveText]}>
                   {dayFmt.format(d)}
@@ -239,12 +245,21 @@ export default function BookingScreen() {
                 <Text style={[styles.dayNum, active && styles.dayActiveText]}>
                   {dateFmt.format(d)}
                 </Text>
+                {closed ? (
+                  <Text style={[styles.dayClosedTag, active && styles.dayActiveText]}>Kapalı</Text>
+                ) : null}
               </Pressable>
             );
           })}
         </ScrollView>
 
         <Text style={styles.label}>Saat seç</Text>
+        {dayClosed ? (
+          <View style={styles.closedBox}>
+            <Ionicons name="moon-outline" size={20} color={colors.textMuted} />
+            <Text style={styles.closedText}>İşletme bu gün kapalı. Lütfen başka bir gün seç.</Text>
+          </View>
+        ) : null}
         <View style={styles.slotGrid}>
           {slots.map((t) => {
             const active = t === selectedTime;
@@ -327,6 +342,18 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayChipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  dayChipClosed: { opacity: 0.55 },
+  dayClosedTag: { ...typography.micro, color: colors.rejected, marginTop: 1 },
+  closedBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  closedText: { ...typography.caption, color: colors.textMuted, flex: 1 },
   dayName: { ...typography.micro, color: colors.textMuted },
   dayNum: { ...typography.heading, color: colors.text },
   dayActiveText: { color: colors.onGold },
