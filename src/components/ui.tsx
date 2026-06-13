@@ -199,8 +199,10 @@ export function EmptyState({
   actionIcon?: keyof typeof Ionicons.glyphMap;
 }) {
   return (
-    <View style={styles.empty}>
-      <Ionicons name={icon} size={42} color={colors.textFaint} />
+    <FadeInUp style={styles.empty}>
+      <View style={styles.emptyHalo}>
+        <Ionicons name={icon} size={40} color={colors.gold} />
+      </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {subtitle ? <Text style={styles.emptySub}>{subtitle}</Text> : null}
       {actionLabel && onAction ? (
@@ -208,7 +210,40 @@ export function EmptyState({
           <Button label={actionLabel} icon={actionIcon} variant="secondary" onPress={onAction} />
         </View>
       ) : null}
-    </View>
+    </FadeInUp>
+  );
+}
+
+/** Fades children in while rising a few px on mount — for empty/success states. */
+export function FadeInUp({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(t, {
+      toValue: 1,
+      duration: 320,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
+  }, [t]);
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity: t,
+          transform: [
+            { translateY: t.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
   );
 }
 
@@ -418,6 +453,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { ...typography.heading, color: colors.text },
   empty: { alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, gap: spacing.sm },
+  emptyHalo: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    backgroundColor: colors.gold + '14',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyTitle: { ...typography.heading, color: colors.text, marginTop: spacing.sm },
   emptySub: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   avatar: {
