@@ -215,6 +215,7 @@ bayrakla korunuyor; kurulum yapılmadan uygulama bozulmaz):
 | Boş durum cilası + giriş animasyonu | ✅ Tam çalışır | — |
 | Yol tarifi / tek dokunuşla arama | ✅ Tam çalışır | — (Linking, anahtarsız) |
 | İşletme foto galerisi (görüntüleme) | ✅ Tam çalışır | — |
+| Foto **moderasyonu** (yüklenen foto admin onayına düşer, onaysız yayınlanmaz) | ✅ Tam çalışır | **firestore.rules yeniden yayınla** (owner `photos`'a yazamaz) |
 | Foto **yükleme** | ⏳ Bayraklı | **Firebase Storage** etkinleştir + `firebase/storage.rules` yayınla |
 | Yerel randevu hatırlatması (1s önce) | ✅ Native'de çalışır | — (OS bildirim izni) |
 | Uzak push (kampanya/işletme uyarısı) | ⏳ İskelet | **EAS projectId** + FCM/APNs kimlikleri |

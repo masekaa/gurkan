@@ -332,9 +332,10 @@ export class StorageDisabledError extends Error {
 }
 
 /**
- * Upload a local image to Storage under the business's gallery and append its
- * download URL to `photos`. Returns the new URL. In mock mode the local URI is
- * stored directly so the gallery still renders during development.
+ * Upload a local image to Storage and queue it for admin moderation by adding
+ * the URL to `pendingPhotos` (NOT `photos`). It stays invisible to customers
+ * until an admin approves it. Returns the new URL. In mock mode the local URI
+ * is queued directly so the moderation flow still works during development.
  */
 export async function addBusinessPhoto(
   businessId: string,
@@ -344,39 +345,77 @@ export async function addBusinessPhoto(
     if (!isStorageEnabled || !storage) throw new StorageDisabledError();
     const res = await fetch(localUri);
     const blob = await res.blob();
-    // Deterministic-ish name without Date.now(): derive from blob size + count.
-    const existing = (await getBusiness(businessId))?.photos ?? [];
-    const key = `businesses/${businessId}/photo_${existing.length}_${blob.size}.jpg`;
+    const current = await getBusiness(businessId);
+    // Deterministic-ish name without Date.now(): derive from total count + size.
+    const count = (current?.photos?.length ?? 0) + (current?.pendingPhotos?.length ?? 0);
+    const key = `businesses/${businessId}/photo_${count}_${blob.size}.jpg`;
     const r = storageRef(storage, key);
     await uploadBytes(r, blob);
     const url = await getDownloadURL(r);
     await updateDoc(doc(requireDb(), 'businesses', businessId), {
-      photos: arrayUnion(url),
+      pendingPhotos: arrayUnion(url),
     });
     return url;
   }
   const b = mock.businesses.find((x) => x.id === businessId);
-  if (b) b.photos = [...(b.photos ?? []), localUri];
+  if (b) b.pendingPhotos = [...(b.pendingPhotos ?? []), localUri];
   return localUri;
 }
 
-/** Remove a photo URL from the gallery (and from Storage when possible). */
-export async function removeBusinessPhoto(
-  businessId: string,
-  url: string,
-): Promise<void> {
+async function deleteStorageObject(url: string): Promise<void> {
+  if (!isStorageEnabled || !storage) return;
+  try {
+    await deleteObject(storageRef(storage, url));
+  } catch {
+    // Object may already be gone, or url may not map to a ref — the array
+    // entry is what matters and the caller removes that.
+  }
+}
+
+/**
+ * Owner (or admin) removes a still-pending photo before it's reviewed. Deletes
+ * the underlying Storage object too.
+ */
+export async function removePendingPhoto(businessId: string, url: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'businesses', businessId), {
+      pendingPhotos: arrayRemove(url),
+    });
+    await deleteStorageObject(url);
+    return;
+  }
+  const b = mock.businesses.find((x) => x.id === businessId);
+  if (b) b.pendingPhotos = (b.pendingPhotos ?? []).filter((p) => p !== url);
+}
+
+/** ADMIN: approve a pending photo — moves it from `pendingPhotos` to `photos`. */
+export async function approveBusinessPhoto(businessId: string, url: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'businesses', businessId), {
+      pendingPhotos: arrayRemove(url),
+      photos: arrayUnion(url),
+    });
+    return;
+  }
+  const b = mock.businesses.find((x) => x.id === businessId);
+  if (b) {
+    b.pendingPhotos = (b.pendingPhotos ?? []).filter((p) => p !== url);
+    if (!(b.photos ?? []).includes(url)) b.photos = [...(b.photos ?? []), url];
+  }
+}
+
+/** ADMIN: reject a pending photo — removes it without publishing. */
+export async function rejectBusinessPhoto(businessId: string, url: string): Promise<void> {
+  return removePendingPhoto(businessId, url);
+}
+
+/** ADMIN: take down an already-approved (public) photo. */
+export async function removeApprovedPhoto(businessId: string, url: string): Promise<void> {
   if (isFirebaseEnabled) {
     await updateDoc(doc(requireDb(), 'businesses', businessId), {
       photos: arrayRemove(url),
     });
-    if (isStorageEnabled && storage) {
-      try {
-        await deleteObject(storageRef(storage, url));
-      } catch {
-        // The object may already be gone, or `url` may not map to a ref — the
-        // gallery entry is what matters and that's already removed above.
-      }
-    }
+    await deleteStorageObject(url);
     return;
   }
   const b = mock.businesses.find((x) => x.id === businessId);

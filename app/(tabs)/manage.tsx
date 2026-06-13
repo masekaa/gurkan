@@ -19,7 +19,7 @@ import {
   useBusiness,
   useCreateService,
   useDeleteService,
-  useRemoveBusinessPhoto,
+  useRemovePendingPhoto,
   useServices,
   useUpdateBusiness,
   useUpdateService,
@@ -146,7 +146,13 @@ export default function ManageScreen() {
         </View>
 
         {/* Photo gallery */}
-        {business ? <PhotoManager businessId={businessId} photos={business.photos ?? []} /> : null}
+        {business ? (
+          <PhotoManager
+            businessId={businessId}
+            photos={business.photos ?? []}
+            pendingPhotos={business.pendingPhotos ?? []}
+          />
+        ) : null}
 
         {/* Services */}
         <View style={styles.sectionHead}>
@@ -280,9 +286,17 @@ export default function ManageScreen() {
   );
 }
 
-function PhotoManager({ businessId, photos }: { businessId: string; photos: string[] }) {
+function PhotoManager({
+  businessId,
+  photos,
+  pendingPhotos,
+}: {
+  businessId: string;
+  photos: string[];
+  pendingPhotos: string[];
+}) {
   const addPhoto = useAddBusinessPhoto(businessId);
-  const removePhoto = useRemoveBusinessPhoto(businessId);
+  const removePending = useRemovePendingPhoto(businessId);
   const [error, setError] = useState<string | null>(null);
 
   async function pick() {
@@ -312,34 +326,58 @@ function PhotoManager({ businessId, photos }: { businessId: string; photos: stri
     }
   }
 
+  const total = photos.length + pendingPhotos.length;
+
   return (
     <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
       <View style={styles.cardHead}>
         <Text style={styles.cardTitle}>Galeri</Text>
-        <Badge label={`${photos.length} foto`} />
+        <Badge label={`${total} foto`} />
       </View>
-      {photos.length === 0 ? (
+
+      <View style={styles.moderationNote}>
+        <Ionicons name="shield-checkmark-outline" size={15} color={colors.gold} />
+        <Text style={styles.storageNoteText}>
+          Eklediğin fotoğraflar admin onayından sonra Keşfet’te yayınlanır.
+        </Text>
+      </View>
+
+      {total === 0 ? (
         <Text style={styles.subDesc}>
-          İşletmenden kareler ekle; müşteriler detay sayfasında görsün.
+          İşletmenden kareler ekle; onaylandığında müşteriler detay sayfasında görür.
         </Text>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-          {photos.map((uri) => (
+          {pendingPhotos.map((uri) => (
             <View key={uri} style={styles.photoWrap}>
               <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              <View style={styles.photoStatePending}>
+                <Ionicons name="time-outline" size={11} color="#fff" />
+                <Text style={styles.photoStateText}>Onay bekliyor</Text>
+              </View>
               <Pressable
-                onPress={() => removePhoto.mutate(uri)}
+                onPress={() => removePending.mutate(uri)}
                 style={styles.photoRemove}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Fotoğrafı kaldır"
+                accessibilityLabel="Bekleyen fotoğrafı kaldır"
               >
                 <Ionicons name="close" size={14} color="#fff" />
               </Pressable>
             </View>
           ))}
+          {photos.map((uri) => (
+            <View key={uri} style={styles.photoWrap}>
+              <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              <View style={styles.photoStateLive}>
+                <Ionicons name="checkmark-circle" size={11} color="#fff" />
+                <Text style={styles.photoStateText}>Yayında</Text>
+              </View>
+            </View>
+          ))}
         </ScrollView>
       )}
+
       {!isStorageEnabled ? (
         <View style={styles.storageNote}>
           <Ionicons name="information-circle-outline" size={15} color={colors.gold} />
@@ -719,7 +757,40 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: spacing.sm,
   },
+  moderationNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.gold + '10',
+    borderRadius: 10,
+    padding: spacing.sm,
+  },
   storageNoteText: { ...typography.caption, color: colors.textMuted, flex: 1, lineHeight: 18 },
+  photoStatePending: {
+    position: 'absolute',
+    left: 6,
+    bottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.pending,
+    borderRadius: radius.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  photoStateLive: {
+    position: 'absolute',
+    left: 6,
+    bottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.approved,
+    borderRadius: radius.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  photoStateText: { ...typography.micro, color: '#fff', fontWeight: '700' },
   slotRow: { flexDirection: 'row', gap: spacing.sm },
   slotChip: {
     flex: 1,

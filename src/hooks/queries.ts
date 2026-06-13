@@ -167,25 +167,57 @@ export function useUpdateBusiness(businessId: string) {
   });
 }
 
+function invalidateBusiness(qc: ReturnType<typeof useQueryClient>, businessId: string) {
+  qc.invalidateQueries({ queryKey: ['business', businessId] });
+  qc.invalidateQueries({ queryKey: ['businesses'] });
+  qc.invalidateQueries({ queryKey: ['allBusinesses'] });
+}
+
+/** Owner uploads a photo → queued for admin moderation (pendingPhotos). */
 export function useAddBusinessPhoto(businessId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (localUri: string) => repo.addBusinessPhoto(businessId, localUri),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['business', businessId] });
-      qc.invalidateQueries({ queryKey: ['businesses'] });
-    },
+    onSuccess: () => invalidateBusiness(qc, businessId),
   });
 }
 
-export function useRemoveBusinessPhoto(businessId: string) {
+/** Owner cancels a still-pending photo. */
+export function useRemovePendingPhoto(businessId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (url: string) => repo.removeBusinessPhoto(businessId, url),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['business', businessId] });
-      qc.invalidateQueries({ queryKey: ['businesses'] });
-    },
+    mutationFn: (url: string) => repo.removePendingPhoto(businessId, url),
+    onSuccess: () => invalidateBusiness(qc, businessId),
+  });
+}
+
+/** Admin: approve a pending photo (moves it into the public gallery). */
+export function useApproveBusinessPhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ businessId, url }: { businessId: string; url: string }) =>
+      repo.approveBusinessPhoto(businessId, url),
+    onSuccess: (_d, { businessId }) => invalidateBusiness(qc, businessId),
+  });
+}
+
+/** Admin: reject a pending photo (deletes it without publishing). */
+export function useRejectBusinessPhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ businessId, url }: { businessId: string; url: string }) =>
+      repo.rejectBusinessPhoto(businessId, url),
+    onSuccess: (_d, { businessId }) => invalidateBusiness(qc, businessId),
+  });
+}
+
+/** Admin: take down an already-approved photo. */
+export function useRemoveApprovedPhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ businessId, url }: { businessId: string; url: string }) =>
+      repo.removeApprovedPhoto(businessId, url),
+    onSuccess: (_d, { businessId }) => invalidateBusiness(qc, businessId),
   });
 }
 

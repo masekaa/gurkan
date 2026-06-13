@@ -1,17 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Button, ErrorState, Field, ListSkeleton, Screen } from '@/components/ui';
+import { Badge, Button, EmptyState, ErrorState, Field, ListSkeleton, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import {
   useAdminSetPassword,
   useAllAppointments,
   useAllBusinesses,
   useAllUsers,
+  useApproveBusinessPhoto,
   useDeleteBusiness,
   useDeleteUser,
+  useRejectBusinessPhoto,
   useSetBusinessApproved,
   useSetSubscription,
   useSetUserRole,
@@ -28,7 +31,7 @@ import {
 } from '@/theme';
 import type { Appointment, Business, Profile, UserRole } from '@/types';
 
-type Tab = 'businesses' | 'users' | 'appointments';
+type Tab = 'businesses' | 'photos' | 'users' | 'appointments';
 type Confirm = { kind: 'user' | 'business'; id: string; label: string };
 
 const ROLE_META: Record<
@@ -51,6 +54,8 @@ export default function AdminScreen() {
   const selfId = profile?.id;
   const setApproved = useSetBusinessApproved();
   const setSub = useSetSubscription();
+  const approvePhoto = useApproveBusinessPhoto();
+  const rejectPhoto = useRejectBusinessPhoto();
   const deleteUser = useDeleteUser();
   const deleteBusiness = useDeleteBusiness();
   const setPassword = useAdminSetPassword();
@@ -89,6 +94,18 @@ export default function AdminScreen() {
     [businesses],
   );
 
+  const photoQueue = useMemo(
+    () =>
+      (businesses ?? [])
+        .filter((b) => (b.pendingPhotos?.length ?? 0) > 0)
+        .map((b) => ({ business: b, urls: b.pendingPhotos ?? [] })),
+    [businesses],
+  );
+  const pendingPhotoCount = useMemo(
+    () => photoQueue.reduce((n, q) => n + q.urls.length, 0),
+    [photoQueue],
+  );
+
   function runDelete() {
     if (!confirm) return;
     const opts = { onSuccess: () => setConfirm(null) };
@@ -98,6 +115,7 @@ export default function AdminScreen() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'businesses', label: 'İşletmeler' },
+    { key: 'photos', label: pendingPhotoCount > 0 ? `Fotoğraflar (${pendingPhotoCount})` : 'Fotoğraflar' },
     { key: 'users', label: 'Kullanıcılar' },
     { key: 'appointments', label: 'Randevular' },
   ];
@@ -166,6 +184,34 @@ export default function AdminScreen() {
                   setSub.mutate({ id: item.id, active: item.subscriptionStatus !== 'active' })
                 }
                 onDelete={() => setConfirm({ kind: 'business', id: item.id, label: item.name })}
+              />
+            )}
+          />
+        )
+      ) : tab === 'photos' ? (
+        loadingB ? (
+          <ListSkeleton kind="card" count={3} />
+        ) : errorB ? (
+          <ErrorState onRetry={() => refetchB()} />
+        ) : photoQueue.length === 0 ? (
+          <EmptyState
+            icon="images-outline"
+            title="Bekleyen fotoğraf yok"
+            subtitle="İşletmeler fotoğraf yükledikçe burada onayına düşer."
+          />
+        ) : (
+          <FlatList
+            data={photoQueue}
+            keyExtractor={(q) => q.business.id}
+            contentContainerStyle={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+            renderItem={({ item }) => (
+              <AdminPhotoRow
+                businessName={item.business.name}
+                urls={item.urls}
+                busy={approvePhoto.isPending || rejectPhoto.isPending}
+                onApprove={(url) => approvePhoto.mutate({ businessId: item.business.id, url })}
+                onReject={(url) => rejectPhoto.mutate({ businessId: item.business.id, url })}
               />
             )}
           />
@@ -373,6 +419,59 @@ function AdminBusinessRow({
   );
 }
 
+function AdminPhotoRow({
+  businessName,
+  urls,
+  busy,
+  onApprove,
+  onReject,
+}: {
+  businessName: string;
+  urls: string[];
+  busy: boolean;
+  onApprove: (url: string) => void;
+  onReject: (url: string) => void;
+}) {
+  return (
+    <View style={[styles.card, elevation.soft]}>
+      <View style={styles.cardTop}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle} numberOfLines={1}>{businessName}</Text>
+          <Text style={styles.cardSub}>{urls.length} fotoğraf onay bekliyor</Text>
+        </View>
+        <Badge label="Onay Bekliyor" color={colors.pending} />
+      </View>
+      {urls.map((url) => (
+        <View key={url} style={styles.photoModRow}>
+          <Image source={{ uri: url }} style={styles.photoModThumb} contentFit="cover" transition={150} />
+          <View style={styles.photoModActions}>
+            <Pressable
+              onPress={() => onApprove(url)}
+              disabled={busy}
+              style={[styles.photoModBtn, styles.photoModApprove]}
+              accessibilityRole="button"
+              accessibilityLabel="Fotoğrafı onayla"
+            >
+              <Ionicons name="checkmark" size={18} color={colors.approved} />
+              <Text style={[styles.photoModBtnText, { color: colors.approved }]}>Onayla</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onReject(url)}
+              disabled={busy}
+              style={[styles.photoModBtn, styles.photoModReject]}
+              accessibilityRole="button"
+              accessibilityLabel="Fotoğrafı reddet"
+            >
+              <Ionicons name="close" size={18} color={colors.danger} />
+              <Text style={[styles.photoModBtnText, { color: colors.danger }]}>Reddet</Text>
+            </Pressable>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function AdminUserRow({
   user,
   isSelf,
@@ -520,6 +619,27 @@ const styles = StyleSheet.create({
   },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   time: { ...typography.caption, color: colors.textMuted },
+  photoModRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
+  photoModThumb: {
+    width: 96,
+    height: 72,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+  },
+  photoModActions: { flex: 1, flexDirection: 'row', gap: spacing.sm },
+  photoModBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  photoModApprove: { backgroundColor: colors.approved + '14', borderColor: colors.approved + '40' },
+  photoModReject: { backgroundColor: colors.danger + '14', borderColor: colors.danger + '40' },
+  photoModBtnText: { ...typography.caption, fontWeight: '700' },
   overlay: {
     flex: 1,
     backgroundColor: colors.overlay,
