@@ -1,14 +1,21 @@
 import { Redirect } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '@/context/AuthContext';
+import { hasSeenOnboarding } from '@/lib/onboarding';
 import { colors } from '@/theme';
 
-/** Entry gate: route to the app when signed in, otherwise to the auth flow. */
+/** Entry gate: onboarding (first launch) -> auth -> app. */
 export default function Index() {
   const { loading, profile } = useAuth();
+  const [seenOnboarding, setSeenOnboarding] = useState<boolean | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    void hasSeenOnboarding().then(setSeenOnboarding);
+  }, []);
+
+  if (loading || seenOnboarding === null) {
     return (
       <View
         style={{
@@ -23,5 +30,7 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={profile ? '/(tabs)' : '/(auth)/login'} />;
+  if (profile) return <Redirect href="/(tabs)" />;
+  if (!seenOnboarding) return <Redirect href="/onboarding" />;
+  return <Redirect href="/(auth)/login" />;
 }
