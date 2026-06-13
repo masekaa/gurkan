@@ -22,6 +22,7 @@ import {
   formatDuration,
   formatPrice,
 } from '@/lib/format';
+import { notifyError, notifySuccess } from '@/lib/haptics';
 import { getDayHours } from '@/lib/hours';
 import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
@@ -153,8 +154,10 @@ export default function BookingScreen() {
         datetime: date.toISOString(),
         durationMin: service.durationMin,
       });
+      notifySuccess();
       setDone(true);
     } catch (e) {
+      notifyError();
       if (e instanceof SlotTakenError) {
         setSlotError('Bu saat az önce doldu. Lütfen başka bir saat seç.');
         setSelectedTime(null);

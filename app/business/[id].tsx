@@ -15,6 +15,7 @@ import {
   useServices,
 } from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { selection } from '@/lib/haptics';
 import { DAY_LABELS, DAY_ORDER, getDayHours, isOpenToday } from '@/lib/hours';
 import { categoryStyle, centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Review } from '@/types';
@@ -94,7 +95,10 @@ export default function BusinessDetailScreen() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </Pressable>
             <Pressable
-              onPress={() => toggleFavorite(id)}
+              onPress={() => {
+                selection();
+                toggleFavorite(id);
+              }}
               style={styles.back}
               hitSlop={10}
               accessibilityRole="button"

@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { tapLight } from '@/lib/haptics';
 import { colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 
 /** Full-screen container that respects safe areas and the brand background. */
@@ -65,6 +66,13 @@ export function Button({
   const fg =
     variant === 'primary' ? colors.onGold : variant === 'danger' ? '#fff' : colors.text;
 
+  const handlePress = onPress
+    ? () => {
+        tapLight();
+        onPress();
+      }
+    : undefined;
+
   const inner = loading ? (
     <ActivityIndicator color={fg} />
   ) : (
@@ -78,7 +86,7 @@ export function Button({
   if (variant === 'primary') {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         disabled={isDisabled}
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -104,7 +112,7 @@ export function Button({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={label}
