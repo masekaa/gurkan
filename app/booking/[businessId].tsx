@@ -22,6 +22,7 @@ import {
   formatDuration,
   formatPrice,
 } from '@/lib/format';
+import { track } from '@/lib/analytics';
 import { notifyError, notifySuccess } from '@/lib/haptics';
 import { getDayHours } from '@/lib/hours';
 import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
@@ -155,6 +156,7 @@ export default function BookingScreen() {
         durationMin: service.durationMin,
       });
       notifySuccess();
+      track('booking_created', { businessId, serviceId: service.id });
       setDone(true);
     } catch (e) {
       notifyError();

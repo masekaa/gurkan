@@ -1,13 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/context/AuthContext';
+import { track } from '@/lib/analytics';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
+  useEffect(() => {
+    track('app_open');
+  }, []);
+
   const [queryClient] = useState(
     () =>
       new QueryClient({

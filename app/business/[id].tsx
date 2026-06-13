@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ import {
   useServices,
 } from '@/hooks/queries';
 import { categoryLabels, formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { track } from '@/lib/analytics';
 import { selection } from '@/lib/haptics';
 import { DAY_LABELS, DAY_ORDER, getDayHours, isOpenToday } from '@/lib/hours';
 import { callPhone, openDirections } from '@/lib/links';
@@ -30,6 +31,10 @@ export default function BusinessDetailScreen() {
   const isFav = !!profile?.favorites?.includes(id);
   const { data: business, isLoading, isError, refetch } = useBusiness(id);
   const { data: services } = useServices(id);
+
+  useEffect(() => {
+    if (id) track('business_view', { businessId: id });
+  }, [id]);
   const { data: reviews } = useReviews(id);
   const { data: myAppointments } = useAppointments();
   const createReview = useCreateReview(id);
@@ -99,6 +104,7 @@ export default function BusinessDetailScreen() {
             <Pressable
               onPress={() => {
                 selection();
+                track('favorite_toggle', { businessId: id, on: !isFav });
                 toggleFavorite(id);
               }}
               style={styles.back}
