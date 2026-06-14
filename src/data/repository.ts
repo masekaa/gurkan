@@ -339,20 +339,35 @@ export class StorageDisabledError extends Error {
  * until an admin approves it. Returns the new URL. In mock mode the local URI
  * is queued directly so the moderation flow still works during development.
  */
+/**
+ * Read a local file URI into a Blob. On React Native `fetch(uri).blob()` is
+ * unreliable for file:// URIs, so use XMLHttpRequest which works on both native
+ * and web.
+ */
+function uriToBlob(uri: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as Blob);
+    xhr.onerror = () => reject(new Error('Görsel okunamadı (yerel dosya).'));
+    xhr.responseType = 'blob';
+    xhr.open('GET', uri, true);
+    xhr.send(null);
+  });
+}
+
 export async function addBusinessPhoto(
   businessId: string,
   localUri: string,
 ): Promise<string> {
   if (isFirebaseEnabled) {
     if (!isStorageEnabled || !storage) throw new StorageDisabledError();
-    const res = await fetch(localUri);
-    const blob = await res.blob();
+    const blob = await uriToBlob(localUri);
     const current = await getBusiness(businessId);
-    // Deterministic-ish name without Date.now(): derive from total count + size.
+    // Unique-enough name without Date.now(): total count + blob size.
     const count = (current?.photos?.length ?? 0) + (current?.pendingPhotos?.length ?? 0);
     const key = `businesses/${businessId}/photo_${count}_${blob.size}.jpg`;
     const r = storageRef(storage, key);
-    await uploadBytes(r, blob);
+    await uploadBytes(r, blob, { contentType: blob.type || 'image/jpeg' });
     const url = await getDownloadURL(r);
     await updateDoc(doc(requireDb(), 'businesses', businessId), {
       pendingPhotos: arrayUnion(url),

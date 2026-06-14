@@ -289,6 +289,28 @@ export default function ManageScreen() {
   );
 }
 
+/** Maps a thrown upload error to a Turkish message, including the raw code. */
+function photoUploadError(name?: string, code?: string): string {
+  if (name === 'StorageDisabledError') {
+    return 'Firebase bağlı değil; fotoğraf yüklenemez.';
+  }
+  switch (code) {
+    case 'storage/unauthorized':
+      return 'Storage kuralları izin vermiyor. firebase/storage.rules dosyasını Console’da yayınla.';
+    case 'storage/unauthenticated':
+      return 'Oturum doğrulanamadı. Çıkış yapıp tekrar giriş yap.';
+    case 'storage/bucket-not-found':
+    case 'storage/project-not-found':
+      return 'Cloud Storage etkin değil. Firebase Console → Storage → Başlat.';
+    case 'storage/retry-limit-exceeded':
+      return 'Ağ sorunu: yükleme zaman aşımına uğradı. Tekrar dene.';
+    case 'storage/quota-exceeded':
+      return 'Storage kotası dolu.';
+    default:
+      return `Fotoğraf yüklenemedi${code ? ` (${code})` : ''}. Lütfen tekrar dene.`;
+  }
+}
+
 function PhotoManager({
   businessId,
   photos,
@@ -321,11 +343,8 @@ function PhotoManager({
       notifySuccess();
     } catch (e: any) {
       notifyError();
-      setError(
-        e?.name === 'StorageDisabledError'
-          ? 'Fotoğraf yükleme için Firebase Storage etkinleştirilmeli.'
-          : 'Fotoğraf yüklenemedi. Lütfen tekrar dene.',
-      );
+      const code: string | undefined = e?.code;
+      setError(photoUploadError(e?.name, code));
     }
   }
 
