@@ -47,6 +47,7 @@ export default function RootLayout() {
             <Stack.Screen name="booking/[businessId]" />
             <Stack.Screen name="legal/privacy" />
             <Stack.Screen name="legal/terms" />
+            <Stack.Screen name="legal/delete-account" />
           </Stack>
           </LocationProvider>
         </AuthProvider>
