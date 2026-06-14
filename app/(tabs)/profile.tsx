@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -121,10 +122,9 @@ export default function ProfileScreen() {
 
       <View style={styles.menu}>
         <MenuRow icon="heart-outline" label="Favorilerim" onPress={() => router.push('/favorites')} />
-        <MenuRow icon="notifications-outline" label="Bildirim Tercihleri" />
-        <MenuRow icon="shield-checkmark-outline" label="Hesap Güvenliği" />
-        <MenuRow icon="help-circle-outline" label="Yardım & Destek" />
-        <MenuRow icon="document-text-outline" label="Kullanım Koşulları" />
+        <MenuRow icon="lock-closed-outline" label="Gizlilik Politikası" onPress={() => router.push('/legal/privacy')} />
+        <MenuRow icon="document-text-outline" label="Kullanım Koşulları" onPress={() => router.push('/legal/terms')} />
+        <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:ahmetdemirexhesap@gmail.com')} />
       </View>
 
       <View style={styles.backendNote}>

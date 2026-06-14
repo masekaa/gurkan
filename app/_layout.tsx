@@ -45,6 +45,8 @@ export default function RootLayout() {
               options={{ presentation: 'card' }}
             />
             <Stack.Screen name="booking/[businessId]" />
+            <Stack.Screen name="legal/privacy" />
+            <Stack.Screen name="legal/terms" />
           </Stack>
           </LocationProvider>
         </AuthProvider>
