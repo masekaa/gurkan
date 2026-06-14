@@ -60,7 +60,8 @@
           "color": "#B5862B"
         }
       ],
-      "expo-image"
+      "expo-image",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
