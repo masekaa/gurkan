@@ -7,18 +7,42 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCOA6P3lYEGO83iQPEuMILcGI7RxcqKVT4",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "gurkan-92fcf.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "gurkan-92fcf",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "gurkan-92fcf.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "276273821733",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:276273821733:web:7296aa33875e35bc4aa7cc"
+      }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCOA6P3lYEGO83iQPEuMILcGI7RxcqKVT4",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "gurkan-92fcf.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "gurkan-92fcf",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "gurkan-92fcf.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "276273821733",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:276273821733:web:7296aa33875e35bc4aa7cc"
       }
     },
     "production": {
       "channel": "production",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCOA6P3lYEGO83iQPEuMILcGI7RxcqKVT4",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "gurkan-92fcf.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "gurkan-92fcf",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "gurkan-92fcf.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "276273821733",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:276273821733:web:7296aa33875e35bc4aa7cc"
+      }
     }
   },
   "submit": {
