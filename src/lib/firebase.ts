@@ -28,24 +28,35 @@ let functionsInstance: Functions | null = null;
 let storageInstance: FirebaseStorage | null = null;
 
 if (env.hasFirebase) {
-  app = getApps().length ? getApp() : initializeApp(env.firebaseConfig);
+  // Never let a Firebase init error crash the app at launch — fall back to the
+  // in-memory mock backend instead (e.g. malformed config on a native build).
+  try {
+    app = getApps().length ? getApp() : initializeApp(env.firebaseConfig);
 
-  if (Platform.OS === 'web') {
-    authInstance = getAuth(app);
-  } else {
-    // initializeAuth must run exactly once; guard against Fast Refresh re-runs.
-    try {
-      authInstance = initializeAuth(app, {
-        persistence: getReactNativePersistence(AsyncStorage),
-      });
-    } catch {
+    if (Platform.OS === 'web') {
       authInstance = getAuth(app);
+    } else {
+      // initializeAuth must run exactly once; guard against Fast Refresh re-runs.
+      try {
+        authInstance = initializeAuth(app, {
+          persistence: getReactNativePersistence(AsyncStorage),
+        });
+      } catch {
+        authInstance = getAuth(app);
+      }
     }
-  }
 
-  dbInstance = getFirestore(app);
-  functionsInstance = getFunctions(app);
-  storageInstance = getStorage(app);
+    dbInstance = getFirestore(app);
+    functionsInstance = getFunctions(app);
+    storageInstance = getStorage(app);
+  } catch (e) {
+    console.warn('[firebase] init failed, falling back to mock mode:', e);
+    app = null;
+    authInstance = null;
+    dbInstance = null;
+    functionsInstance = null;
+    storageInstance = null;
+  }
 }
 
 export const firebaseApp = app;
