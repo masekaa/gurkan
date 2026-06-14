@@ -59,7 +59,8 @@
         {
           "color": "#B5862B"
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true
