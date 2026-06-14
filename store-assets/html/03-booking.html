@@ -1,0 +1,50 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg, #D9B25A 0%, #B5862B 45%, #8A6520 100%);}
+.stage{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:3.2vh;padding:4vh 4vw;}
+.caption{color:#fff;font-weight:800;font-size:4vh;line-height:1.15;text-align:center;max-width:90%;
+  text-shadow:0 0.3vh 1.2vh rgba(0,0,0,.18);letter-spacing:-0.5px;}
+.phone{height:80vh;width:calc(80vh * 0.462);background:#0E0E12;border-radius:6vh;padding:0.9vh;
+  box-shadow:0 3vh 7vh rgba(0,0,0,.35);position:relative;}
+.screen{width:100%;height:100%;border-radius:5.2vh;overflow:hidden;background:#F4F4F7;position:relative;display:flex;flex-direction:column;}
+.sb{height:4.2vh;display:flex;align-items:center;justify-content:space-between;padding:0 5%;font-size:1.6vh;font-weight:700;color:#fff;}
+.sb.dark{color:#1B1B22;}
+.sb .r{display:flex;gap:0.7vh;align-items:center;font-size:1.5vh;}
+.body{flex:1;overflow:hidden;}
+/* shared bits */
+.gold-head{background:linear-gradient(140deg, #B5862B, #8A6520);padding:0 5% 2.6vh;}
+.row{display:flex;align-items:center;}
+.pill{border-radius:999px;font-weight:700;}
+.card{background:#FFFFFF;border:1px solid #E4E4EA;border-radius:2.4vh;}
+.shadow{box-shadow:0 1.2vh 3vh rgba(27,27,34,.08);}
+.muted{color:#6C6C77;}
+.gold{color:#B5862B;}
+</style></head>
+<body><div class="stage"><div class="caption">Saniyeler içinde randevu al</div>
+<div class="phone"><div class="screen">
+<div class="sb dark"><span>9:41</span><span class="r">◔ ▮▮▮ ▰</span></div>
+
+<div style="padding:2vh 5%;border-bottom:1px solid #E4E4EA;"><div class="row" style="gap:1.4vh;font-size:2.2vh;"><span>‹</span><b style="color:#1B1B22;">Randevu Al</b></div></div>
+<div class="body" style="padding:2vh 5%;">
+  <div class="card shadow" style="padding:1.8vh;margin-bottom:2vh;">
+    <div class="muted" style="font-size:1.4vh;">Seçilen hizmet</div>
+    <div class="row" style="justify-content:space-between;margin-top:0.6vh;"><b style="color:#1B1B22;font-size:2vh;">Saç + Sakal</b><span class="gold" style="font-weight:800;font-size:2vh;">₺500</span></div>
+    <div class="muted" style="font-size:1.5vh;margin-top:0.4vh;">45 dk · Nilüfer Barber House</div>
+  </div>
+  <div style="font-weight:800;color:#1B1B22;font-size:1.9vh;margin-bottom:1.2vh;">Gün seç</div>
+  <div class="row" style="gap:1.2vh;margin-bottom:2.2vh;"><div style="text-align:center;padding:1.4vh 0;border-radius:1.6vh;min-width:7vh;background:#FFFFFF;border:1px solid #E4E4EA;color:#6C6C77;"><div style="font-size:1.4vh;">Pzt</div><div style="font-weight:800;font-size:2.2vh;">15</div></div><div style="text-align:center;padding:1.4vh 0;border-radius:1.6vh;min-width:7vh;background:#B5862B;color:#241A05;"><div style="font-size:1.4vh;">Sal</div><div style="font-weight:800;font-size:2.2vh;">16</div></div><div style="text-align:center;padding:1.4vh 0;border-radius:1.6vh;min-width:7vh;background:#FFFFFF;border:1px solid #E4E4EA;color:#6C6C77;"><div style="font-size:1.4vh;">Çar</div><div style="font-weight:800;font-size:2.2vh;">17</div></div><div style="text-align:center;padding:1.4vh 0;border-radius:1.6vh;min-width:7vh;background:#FFFFFF;border:1px solid #E4E4EA;color:#6C6C77;"><div style="font-size:1.4vh;">Per</div><div style="font-weight:800;font-size:2.2vh;">18</div></div></div>
+  <div style="font-weight:800;color:#1B1B22;font-size:1.9vh;margin-bottom:1.2vh;">Saat seç</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vh;margin-bottom:2.4vh;">
+    <div style="text-align:center;padding:1.4vh 0;border-radius:1.4vh;font-size:1.6vh;font-weight:700;
+  background:#EEEEF2;color:#A6A6B0;text-decoration:line-through;">09:00</div><div style="text-align:center;padding:1.4vh 0;border-radius:1.4vh;font-size:1.6vh;font-weight:700;
+  background:#FFFFFF;color:#1B1B22;border:1px solid #E4E4EA;">09:45</div><div style="text-align:center;padding:1.4vh 0;border-radius:1.4vh;font-size:1.6vh;font-weight:700;
+  background:#B5862B;color:#241A05;">10:30</div><div style="text-align:center;padding:1.4vh 0;border-radius:1.4vh;font-size:1.6vh;font-weight:700;
+  background:#FFFFFF;color:#1B1B22;border:1px solid #E4E4EA;">11:15</div><div style="text-align:center;padding:1.4vh 0;border-radius:1.4vh;font-size:1.6vh;font-weight:700;
+  background:#EEEEF2;color:#A6A6B0;text-decoration:line-through;">12:00</div><div style="text-align:center;padding:1.4vh 0;border-radius:1.4vh;font-size:1.6vh;font-weight:700;
+  background:#FFFFFF;color:#1B1B22;border:1px solid #E4E4EA;">12:45</div>
+  </div>
+  <div class="pill" style="background:linear-gradient(135deg,#B5862B,#8A6520);color:#241A05;text-align:center;padding:1.9vh;font-weight:800;font-size:1.9vh;box-shadow:0 1.4vh 3vh rgba(181,134,43,.4);">Randevuyu Onayla</div>
+</div>
+</div></div></div></body></html>
