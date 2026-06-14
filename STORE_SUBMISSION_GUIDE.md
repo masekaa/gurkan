@@ -37,6 +37,12 @@ hesap açma + konsol + komut işidir.
 3. 99 USD/yıl öde. Onay e-postasını bekle.
 
 ## A2. App Store Connect'te uygulamayı oluştur
+> ℹ️ Bu adım İSTEĞE BAĞLI. `eas submit` (A5), uygulama kaydı yoksa **otomatik
+> oluşturur**. Otomatik oluşturmanın çalışması için: (1) üyelik onaylı, (2)
+> App Store Connect → Business/Agreements'ta en güncel sözleşme **kabul edilmiş**,
+> (3) A4'teki API anahtarı hazır olmalı. Adı elle kontrol etmek istersen ya da
+> "Altın100" adı alınmışsa, aşağıdaki gibi manuel oluştur:
+
 1. https://appstoreconnect.apple.com → **My Apps → ➕ → New App**.
 2. Doldur:
    - Platforms: **iOS**
