@@ -141,9 +141,9 @@ export default function ManageScreen() {
               : 'İşletmenin Keşfet’te listelenmesi için aktif abonelik + admin onayı gerekir.'}
           </Text>
           <Button
-            label={subActive ? 'Aboneliği Yönet' : 'Aboneliği Başlat'}
-            icon="card-outline"
-            variant={subActive ? 'secondary' : 'primary'}
+            label="Listeleme Hakkında Bilgi"
+            icon="information-circle-outline"
+            variant="secondary"
             onPress={() => setSubInfo(true)}
           />
         </View>
@@ -273,11 +273,13 @@ export default function ManageScreen() {
             <Ionicons name="card-outline" size={28} color={colors.gold} />
             <Text style={styles.dialogTitle}>Listeleme Aboneliği</Text>
             <Text style={styles.dialogText}>
-              {formatPrice(MONTHLY_PRICE)}/ay ile işletmen Keşfet’te listelenir
-              (aktif abonelik + admin onayı gerekir).
+              İşletmenin Keşfet’te listelenmesi yönetici onayına ve aktif bir
+              listeleme aboneliğine bağlıdır.
               {'\n\n'}
-              Online kredi kartı ödemesi yakında aktif olacak (ödeme sağlayıcısı
-              entegrasyonu). Şu an için aboneliği admin sizin için tanımlayabilir.
+              Listeleme ücreti uygulama dışında, Altın100 ekibi tarafından
+              doğrudan faturalandırılır (banka havalesi/fatura). Uygulama içinde
+              herhangi bir satın alma yapılmaz. Bilgi için bizimle iletişime geç:
+              ahmetdemirexhesap@gmail.com
             </Text>
             <View style={{ width: '100%', marginTop: spacing.sm }}>
               <Button label="Tamam" onPress={() => setSubInfo(false)} />

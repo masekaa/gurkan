@@ -84,6 +84,45 @@ export default function ProfileScreen() {
     }
   }
 
+  // Guests browse without an account (App Store 5.1.1). Show a sign-in prompt
+  // plus the public legal/help links instead of account management.
+  if (!profile) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Profil</Text>
+
+        <Card style={styles.guestCard}>
+          <Avatar name="Misafir" size={64} />
+          <Text style={styles.guestTitle}>Misafir olarak geziyorsun</Text>
+          <Text style={styles.guestSub}>
+            Randevu almak, favorilere eklemek ve sadakat puanı kazanmak için giriş yap.
+          </Text>
+          <View style={{ width: '100%', gap: spacing.sm, marginTop: spacing.sm }}>
+            <Button label="Giriş Yap" icon="log-in-outline" onPress={() => router.push('/(auth)/login')} />
+            <Button label="Kayıt Ol" variant="secondary" icon="person-add-outline" onPress={() => router.push('/(auth)/register')} />
+          </View>
+        </Card>
+
+        <View style={styles.menu}>
+          <MenuRow icon="lock-closed-outline" label="Gizlilik Politikası" onPress={() => router.push('/legal/privacy')} />
+          <MenuRow icon="document-text-outline" label="Kullanım Koşulları" onPress={() => router.push('/legal/terms')} />
+          <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:ahmetdemirexhesap@gmail.com')} />
+        </View>
+
+        <View style={styles.backendNote}>
+          <Ionicons
+            name={isFirebaseEnabled ? 'cloud-done-outline' : 'flask-outline'}
+            size={14}
+            color={colors.textFaint}
+          />
+          <Text style={styles.backendText}>
+            {isFirebaseEnabled ? 'Firebase bağlı' : 'Demo modu (yerel veri)'}
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Profil</Text>
@@ -243,6 +282,9 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl, ...centeredContent },
   title: { ...typography.title, color: colors.text, marginTop: spacing.md },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  guestCard: { alignItems: 'center', gap: spacing.sm },
+  guestTitle: { ...typography.heading, color: colors.text, textAlign: 'center', marginTop: spacing.sm },
+  guestSub: { ...typography.caption, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
   editIcon: {
     width: 36,
     height: 36,

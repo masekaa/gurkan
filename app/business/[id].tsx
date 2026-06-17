@@ -120,6 +120,10 @@ export default function BusinessDetailScreen() {
             </Pressable>
             <Pressable
               onPress={() => {
+                if (!profile) {
+                  router.push('/(auth)/login');
+                  return;
+                }
                 selection();
                 track('favorite_toggle', { businessId: id, on: !isFav });
                 toggleFavorite(id);
@@ -268,12 +272,16 @@ export default function BusinessDetailScreen() {
             {(services ?? []).map((s) => (
               <Pressable
                 key={s.id}
-                onPress={() =>
+                onPress={() => {
+                  if (!profile) {
+                    router.push('/(auth)/login');
+                    return;
+                  }
                   router.push({
                     pathname: '/booking/[businessId]',
                     params: { businessId: business.id, serviceId: s.id },
-                  })
-                }
+                  });
+                }}
                 style={({ pressed }) => [
                   styles.serviceRow,
                   pressed && { transform: [{ scale: 0.98 }], opacity: 0.95 },

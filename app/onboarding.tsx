@@ -56,7 +56,8 @@ export default function OnboardingScreen() {
     } catch {
       // Ignore storage errors — worst case the user sees onboarding again.
     }
-    router.replace('/(auth)/login');
+    // Guests browse without login (App Store 5.1.1); enter the app directly.
+    router.replace('/(tabs)');
   }
 
   function onMomentumEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {

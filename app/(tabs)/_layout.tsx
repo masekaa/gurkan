@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 
 import { useAuth } from '@/context/AuthContext';
 import { colors } from '@/theme';
 
 export default function TabsLayout() {
-  const { profile, loading } = useAuth();
-  if (!loading && !profile) return <Redirect href="/(auth)/login" />;
-
+  const { profile } = useAuth();
+  // Guests (no profile) may browse Keşfet + Profil freely (App Store 5.1.1);
+  // account-based tabs (Randevular, Sadakat) appear only once signed in.
   const role = profile?.role;
   const isBusiness = role === 'business';
   const isAdmin = role === 'admin';
   const isUser = !isBusiness && !isAdmin;
+  const isCustomer = isUser && !!profile;
   // Hidden tabs use `href: null` so the screen stays routable but the button
   // is removed for the irrelevant role.
   const hide = { href: null } as const;
@@ -50,7 +51,7 @@ export default function TabsLayout() {
         name="appointments"
         options={{
           title: 'Randevular',
-          ...(isUser ? {} : hide),
+          ...(isCustomer ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -60,7 +61,7 @@ export default function TabsLayout() {
         name="loyalty"
         options={{
           title: 'Sadakat',
-          ...(isUser ? {} : hide),
+          ...(isCustomer ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="gift-outline" size={size} color={color} />
           ),

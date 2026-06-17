@@ -56,7 +56,7 @@ export default function RegisterScreen() {
       setError('Geçerli bir e-posta adresi gir.');
       return;
     }
-    if (!isValidPhone(phone)) {
+    if (phone.trim() && !isValidPhone(phone)) {
       setError('Geçerli bir telefon numarası gir.');
       return;
     }
@@ -191,7 +191,7 @@ export default function RegisterScreen() {
               onChangeText={setEmail}
             />
             <Field
-              label="Telefon"
+              label="Telefon (isteğe bağlı)"
               icon="call-outline"
               keyboardType="phone-pad"
               placeholder="+90 5xx xxx xx xx"
