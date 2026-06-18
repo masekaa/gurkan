@@ -35,9 +35,6 @@ import { isValidPhone } from '@/lib/validators';
 import { centeredContent, colors, elevation, radius, spacing, typography } from '@/theme';
 import type { DayHours } from '@/types';
 
-/** Monthly listing fee (₺). Configurable; real charge runs via the provider. */
-const MONTHLY_PRICE = 499;
-
 type ServiceForm = {
   id?: string;
   name: string;
@@ -121,24 +118,23 @@ export default function ManageScreen() {
           </View>
         )}
 
-        {/* Subscription */}
+        {/* Listing status (B2B, arranged off-app — no in-app purchase) */}
         <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>Listeleme Aboneliği</Text>
+            <Text style={styles.cardTitle}>İşletme Listeleme</Text>
             <Badge
-              label={subActive ? 'Aktif' : 'Pasif'}
+              label={subActive ? 'Listeleniyor' : 'Listede değil'}
               color={subActive ? colors.approved : colors.cancelled}
             />
           </View>
-          <Text style={styles.subPrice}>{formatPrice(MONTHLY_PRICE)}/ay</Text>
           <Text style={styles.subDesc}>
             {subActive
-              ? `Aboneliğin aktif.${
+              ? `İşletmen Keşfet’te listeleniyor.${
                   business?.subscriptionEnd
                     ? ` Dönem sonu: ${formatDate(business.subscriptionEnd)}.`
                     : ''
                 }`
-              : 'İşletmenin Keşfet’te listelenmesi için aktif abonelik + admin onayı gerekir.'}
+              : 'İşletmenin Keşfet’te listelenmesi yönetici onayına bağlıdır. Listeleme, Altın100 ekibi tarafından uygulama dışında ayarlanır.'}
           </Text>
           <Button
             label="Listeleme Hakkında Bilgi"
@@ -270,16 +266,14 @@ export default function ManageScreen() {
       <Modal visible={subInfo} transparent animationType="fade" onRequestClose={() => setSubInfo(false)}>
         <View style={styles.overlayCenter}>
           <View style={styles.dialog}>
-            <Ionicons name="card-outline" size={28} color={colors.gold} />
-            <Text style={styles.dialogTitle}>Listeleme Aboneliği</Text>
+            <Ionicons name="information-circle-outline" size={28} color={colors.gold} />
+            <Text style={styles.dialogTitle}>İşletme Listeleme</Text>
             <Text style={styles.dialogText}>
-              İşletmenin Keşfet’te listelenmesi yönetici onayına ve aktif bir
-              listeleme aboneliğine bağlıdır.
+              İşletmenin Keşfet’te listelenmesi yönetici onayına bağlıdır.
               {'\n\n'}
-              Listeleme ücreti uygulama dışında, Altın100 ekibi tarafından
-              doğrudan faturalandırılır (banka havalesi/fatura). Uygulama içinde
-              herhangi bir satın alma yapılmaz. Bilgi için bizimle iletişime geç:
-              ahmetdemirexhesap@gmail.com
+              Listeleme, Altın100 ekibi tarafından uygulama dışında ayarlanır ve
+              faturalandırılır. Uygulama içinde herhangi bir satın alma yapılmaz.
+              Bilgi için bizimle iletişime geç: ahmetdemirexhesap@gmail.com
             </Text>
             <View style={{ width: '100%', marginTop: spacing.sm }}>
               <Button label="Tamam" onPress={() => setSubInfo(false)} />
@@ -749,7 +743,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  subPrice: { ...typography.title, color: colors.gold },
   subDesc: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
   cardTitle: { ...typography.heading, color: colors.text },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
