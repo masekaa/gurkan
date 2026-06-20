@@ -54,8 +54,7 @@ export default function ManageScreen() {
   const deleteService = useDeleteService(businessId);
 
   const [editProfile, setEditProfile] = useState(false);
-  const [subInfo, setSubInfo] = useState(false);
-  const subActive = business?.subscriptionStatus === 'active';
+  const approved = !!business?.approved;
   const [serviceForm, setServiceForm] = useState<ServiceForm | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -118,30 +117,20 @@ export default function ManageScreen() {
           </View>
         )}
 
-        {/* Listing status (B2B, arranged off-app — no in-app purchase) */}
+        {/* Listing status — free, admin-approval only (no payment) */}
         <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>İşletme Listeleme</Text>
+            <Text style={styles.cardTitle}>Yayın Durumu</Text>
             <Badge
-              label={subActive ? 'Listeleniyor' : 'Listede değil'}
-              color={subActive ? colors.approved : colors.cancelled}
+              label={approved ? 'Yayında' : 'İncelemede'}
+              color={approved ? colors.approved : colors.pending}
             />
           </View>
           <Text style={styles.subDesc}>
-            {subActive
-              ? `İşletmen Keşfet’te listeleniyor.${
-                  business?.subscriptionEnd
-                    ? ` Dönem sonu: ${formatDate(business.subscriptionEnd)}.`
-                    : ''
-                }`
-              : 'İşletmenin Keşfet’te listelenmesi yönetici onayına bağlıdır. Listeleme, Altın100 ekibi tarafından uygulama dışında ayarlanır.'}
+            {approved
+              ? 'İşletmen Keşfet’te yayında. Listeleme ücretsizdir.'
+              : 'İşletmen yönetici onayı bekliyor. Onaylanınca Keşfet’te ücretsiz olarak yayınlanır. Hizmetlerini ve bilgilerini eksiksiz doldurman onayı hızlandırır.'}
           </Text>
-          <Button
-            label="Listeleme Hakkında Bilgi"
-            icon="information-circle-outline"
-            variant="secondary"
-            onPress={() => setSubInfo(true)}
-          />
         </View>
 
         {/* Photo gallery */}
@@ -263,24 +252,6 @@ export default function ManageScreen() {
         </View>
       </Modal>
 
-      <Modal visible={subInfo} transparent animationType="fade" onRequestClose={() => setSubInfo(false)}>
-        <View style={styles.overlayCenter}>
-          <View style={styles.dialog}>
-            <Ionicons name="information-circle-outline" size={28} color={colors.gold} />
-            <Text style={styles.dialogTitle}>İşletme Listeleme</Text>
-            <Text style={styles.dialogText}>
-              İşletmenin Keşfet’te listelenmesi yönetici onayına bağlıdır.
-              {'\n\n'}
-              Listeleme, Altın100 ekibi tarafından uygulama dışında ayarlanır ve
-              faturalandırılır. Uygulama içinde herhangi bir satın alma yapılmaz.
-              Bilgi için bizimle iletişime geç: ahmetdemirexhesap@gmail.com
-            </Text>
-            <View style={{ width: '100%', marginTop: spacing.sm }}>
-              <Button label="Tamam" onPress={() => setSubInfo(false)} />
-            </View>
-          </View>
-        </View>
-      </Modal>
     </Screen>
   );
 }

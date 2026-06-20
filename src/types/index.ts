@@ -55,12 +55,11 @@ export interface Business {
   /** Hours before start within which a customer can no longer cancel. Default 2. */
   cancelWindowHours?: number;
   /**
-   * Listing subscription (paid monthly). Only admin / the payment webhook may
-   * write these — never the business owner. A business is LISTED in discovery
-   * when approved === true AND subscriptionStatus === 'active'.
+   * LEGACY / unused. Listing is now FREE — a business is LISTED in discovery
+   * solely when approved === true. These fields are retained only for backward
+   * compatibility with existing documents and are not read anywhere.
    */
   subscriptionStatus?: SubscriptionStatus;
-  /** Current paid period end (ISO). */
   subscriptionEnd?: string | null;
 }
 

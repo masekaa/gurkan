@@ -24,7 +24,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '4. İşletme Hesapları ve Listeleme',
     body:
-      'İşletmelerin Keşfet’te listelenmesi yönetici onayına ve aktif aylık aboneliğe bağlıdır. ' +
+      'İşletmelerin Keşfet’te listelenmesi yönetici onayına bağlıdır ve ücretsizdir. ' +
       'İşletmeler yükledikleri içeriğin doğruluğundan ve haklarından sorumludur.',
   },
   {

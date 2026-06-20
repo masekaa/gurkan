@@ -108,6 +108,13 @@ export default function LoginScreen() {
               Kayıt Ol
             </Link>
           </View>
+
+          <Button
+            label="Hesapsız Devam Et"
+            variant="secondary"
+            icon="compass-outline"
+            onPress={() => router.replace('/(tabs)')}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>

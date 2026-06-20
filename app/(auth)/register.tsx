@@ -220,6 +220,13 @@ export default function RegisterScreen() {
               Giriş Yap
             </Link>
           </View>
+
+          <Button
+            label="Hesapsız Devam Et"
+            variant="secondary"
+            icon="compass-outline"
+            onPress={() => router.replace('/(tabs)')}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>

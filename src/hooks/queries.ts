@@ -321,15 +321,3 @@ export function useDeleteBusiness() {
   });
 }
 
-export function useSetSubscription() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
-      repo.setSubscription(id, active),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['allBusinesses'] });
-      qc.invalidateQueries({ queryKey: ['businesses'] });
-      qc.invalidateQueries({ queryKey: ['business'] });
-    },
-  });
-}

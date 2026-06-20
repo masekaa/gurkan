@@ -83,9 +83,8 @@ function requireDb(): Firestore {
 // Businesses
 // ---------------------------------------------------------------------------
 
-/** Discovery listing gate: approved AND an active paid subscription. */
-const isListable = (b: Business) =>
-  b.approved && b.subscriptionStatus === 'active';
+/** Discovery listing gate: admin-approved. Listing is free (no subscription). */
+const isListable = (b: Business) => b.approved;
 
 const matchesTerm = (b: Business, term: string) =>
   term
@@ -218,28 +217,6 @@ export async function setUserRole(userId: string, role: UserRole): Promise<void>
     return;
   }
   // Mock mode has no profiles collection.
-}
-
-/**
- * Admin-only: grant or revoke a business's listing subscription. (Real billing
- * runs through the payment webhook server-side; this is for admin/comp/testing.)
- */
-export async function setSubscription(
-  businessId: string,
-  active: boolean,
-): Promise<void> {
-  const patch = active
-    ? {
-        subscriptionStatus: 'active' as const,
-        subscriptionEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
-      }
-    : { subscriptionStatus: 'none' as const, subscriptionEnd: null };
-  if (isFirebaseEnabled) {
-    await updateDoc(doc(requireDb(), 'businesses', businessId), patch);
-    return;
-  }
-  const b = mock.businesses.find((x) => x.id === businessId);
-  if (b) Object.assign(b, patch);
 }
 
 /** Admin-only: delete a business. */
