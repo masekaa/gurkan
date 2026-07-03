@@ -72,8 +72,16 @@ export const adminSetPassword = onCall(async (req) => {
   if (!targetUid || !newPassword) {
     throw new HttpsError('invalid-argument', 'uid ve newPassword gerekli.');
   }
-  if (newPassword.length < 6) {
-    throw new HttpsError('invalid-argument', 'Şifre en az 6 karakter olmalı.');
+  if (
+    newPassword.length < 8 ||
+    !/[a-zçğıiöşü]/.test(newPassword) ||
+    !/[A-ZÇĞIİÖŞÜ]/.test(newPassword) ||
+    !/[0-9]/.test(newPassword)
+  ) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Şifre en az 8 karakter olmalı ve büyük harf, küçük harf ve rakam içermeli.',
+    );
   }
 
   await getAuth().updateUser(targetUid, { password: newPassword });

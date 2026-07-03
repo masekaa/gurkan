@@ -8,7 +8,7 @@ a user's password. Each function verifies the caller is an admin by reading
 | Function | Tür | Ne yapar |
 |---|---|---|
 | `adminDeleteUser({ uid })` | callable | Auth hesabı + profil + sahip işletmeleri siler |
-| `adminSetPassword({ uid, newPassword })` | callable | Şifre günceller (min 6 karakter) |
+| `adminSetPassword({ uid, newPassword })` | callable | Şifre günceller (min 8 karakter; büyük harf, küçük harf ve rakam zorunlu) |
 | `onAppointmentCompleted` | Firestore trigger | Randevu 'completed' olunca sadakat puanı +1 (10 puan = 1 ücretsiz hizmet). `loyalty` koleksiyonu istemciye kapalı olduğundan sunucu tarafında yazılır. |
 
 ## Önkoşullar

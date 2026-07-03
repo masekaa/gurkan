@@ -15,7 +15,7 @@ import { Button, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
-import { isValidEmail, isValidPassword, isValidPhone } from '@/lib/validators';
+import { PASSWORD_RULE, isValidEmail, isValidPassword, isValidPhone } from '@/lib/validators';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { BusinessCategory, UserRole } from '@/types';
 import { humanizeAuthError } from './login';
@@ -61,7 +61,7 @@ export default function RegisterScreen() {
       return;
     }
     if (!isValidPassword(password)) {
-      setError('Şifre en az 6 karakter olmalı.');
+      setError(PASSWORD_RULE);
       return;
     }
     setLoading(true);
@@ -202,10 +202,11 @@ export default function RegisterScreen() {
               label="Şifre"
               icon="lock-closed-outline"
               secureTextEntry
-              placeholder="En az 6 karakter"
+              placeholder="En az 8 karakter"
               value={password}
               onChangeText={setPassword}
             />
+            <Text style={styles.hint}>{PASSWORD_RULE}</Text>
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Button
               label={isBusiness ? 'İşletme Hesabı Oluştur' : 'Kayıt Ol'}
@@ -301,6 +302,7 @@ const styles = StyleSheet.create({
   catChipTextActive: { color: colors.onGold, fontWeight: '700' },
   bizNote: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   bizNoteText: { ...typography.caption, color: colors.textMuted, flex: 1, lineHeight: 18 },
+  hint: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginTop: -spacing.xs, lineHeight: 18 },
   error: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
   footerText: { ...typography.body, color: colors.textMuted },

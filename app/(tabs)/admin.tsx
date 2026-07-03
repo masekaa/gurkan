@@ -19,6 +19,7 @@ import {
   useSetUserRole,
 } from '@/hooks/queries';
 import { categoryLabels, formatDateTime, statusMeta } from '@/lib/format';
+import { PASSWORD_RULE, isValidPassword } from '@/lib/validators';
 import {
   centeredContent,
   colors,
@@ -69,8 +70,8 @@ export default function AdminScreen() {
   function submitPassword() {
     if (!pwTarget) return;
     setPwError(null);
-    if (pw.trim().length < 6) {
-      setPwError('Şifre en az 6 karakter olmalı.');
+    if (!isValidPassword(pw.trim())) {
+      setPwError(PASSWORD_RULE);
       return;
     }
     setPassword.mutate(
@@ -282,7 +283,7 @@ export default function AdminScreen() {
             <Text style={styles.dialogText}>{pwTarget?.name} için yeni şifre belirle.</Text>
             <View style={{ width: '100%', marginTop: spacing.sm }}>
               <Field
-                placeholder="Yeni şifre (en az 6 karakter)"
+                placeholder="Yeni şifre (en az 8 karakter)"
                 secureTextEntry
                 value={pw}
                 onChangeText={setPw}

@@ -132,7 +132,7 @@ export function humanizeAuthError(code?: string): string | null {
     case 'auth/email-already-in-use':
       return 'Bu e-posta zaten kayıtlı.';
     case 'auth/weak-password':
-      return 'Şifre en az 6 karakter olmalı.';
+      return 'Şifre en az 8 karakter olmalı ve büyük harf, küçük harf ve rakam içermeli.';
     default:
       return null;
   }
