@@ -11,7 +11,12 @@ import {
 
 import { Badge, Button, EmptyState, ErrorState, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
-import { useBusinessAppointments, useUpdateAppointmentStatus } from '@/hooks/queries';
+import {
+  SlotTakenError,
+  useBusinessAppointments,
+  useRevertAppointment,
+  useUpdateAppointmentStatus,
+} from '@/hooks/queries';
 import { formatDate, formatTime, statusMeta } from '@/lib/format';
 import { colors, elevation, radius, spacing, typography } from '@/theme';
 import type { Appointment, AppointmentStatus } from '@/types';
@@ -21,7 +26,7 @@ type Tab = 'pending' | 'approved' | 'history';
 const FILTERS: Record<Tab, AppointmentStatus[]> = {
   pending: ['pending'],
   approved: ['approved'],
-  history: ['completed', 'cancelled', 'rejected'],
+  history: ['completed', 'no_show', 'cancelled', 'rejected'],
 };
 
 export default function OrdersScreen() {
@@ -29,6 +34,8 @@ export default function OrdersScreen() {
   const [tab, setTab] = useState<Tab>('pending');
   const { data, isLoading, isError, refetch } = useBusinessAppointments(profile?.id);
   const update = useUpdateAppointmentStatus();
+  const revert = useRevertAppointment();
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const items = useMemo(
     () => (data ?? []).filter((a) => FILTERS[tab].includes(a.status)),
@@ -36,6 +43,26 @@ export default function OrdersScreen() {
   );
 
   const pendingCount = (data ?? []).filter((a) => a.status === 'pending').length;
+
+  function onAction(id: string, status: AppointmentStatus) {
+    setActionError(null);
+    update.mutate(
+      { id, status },
+      { onError: () => setActionError('İşlem yapılamadı. Lütfen tekrar dene.') },
+    );
+  }
+
+  function onRevert(id: string) {
+    setActionError(null);
+    revert.mutate(id, {
+      onError: (e) =>
+        setActionError(
+          e instanceof SlotTakenError
+            ? 'Bu saat başka bir müşteri tarafından alınmış; geri alınamadı.'
+            : 'Geri alınamadı. Lütfen tekrar dene.',
+        ),
+    });
+  }
 
   return (
     <Screen>
@@ -73,11 +100,20 @@ export default function OrdersScreen() {
           data={items}
           keyExtractor={(a) => a.id}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            actionError ? (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle-outline" size={16} color={colors.danger} />
+                <Text style={styles.errorBannerText}>{actionError}</Text>
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <OrderCard
               appointment={item}
-              busy={update.isPending}
-              onAction={(status) => update.mutate({ id: item.id, status })}
+              busy={update.isPending || revert.isPending}
+              onAction={(status) => onAction(item.id, status)}
+              onRevert={() => onRevert(item.id)}
             />
           )}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
@@ -97,13 +133,15 @@ export default function OrdersScreen() {
 function OrderCard({
   appointment,
   onAction,
+  onRevert,
   busy,
 }: {
   appointment: Appointment;
   onAction: (status: AppointmentStatus) => void;
+  onRevert: () => void;
   busy: boolean;
 }) {
-  const { customerName, service, status, datetime } = appointment;
+  const { customerName, service, status, datetime, employeeName } = appointment;
   const meta = statusMeta[status];
   const initial = (customerName ?? 'M').trim().charAt(0).toUpperCase();
 
@@ -129,24 +167,49 @@ function OrderCard({
           </Text>
         </View>
 
-      {status === 'pending' ? (
-        <View style={styles.actions}>
-          <View style={{ flex: 1 }}>
-            <Button label="Reddet" variant="secondary" onPress={() => onAction('rejected')} disabled={busy} />
+        {employeeName ? (
+          <View style={styles.timeRow}>
+            <Ionicons name="person-outline" size={14} color={colors.textFaint} />
+            <Text style={styles.time}>{employeeName}</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Button label="Onayla" onPress={() => onAction('approved')} disabled={busy} />
-          </View>
-        </View>
-      ) : null}
+        ) : null}
 
-        {status === 'approved' ? (
+        {status === 'pending' ? (
           <View style={styles.actions}>
             <View style={{ flex: 1 }}>
-              <Button label="İptal" variant="secondary" onPress={() => onAction('cancelled')} disabled={busy} />
+              <Button label="Reddet" variant="secondary" onPress={() => onAction('rejected')} disabled={busy} />
             </View>
             <View style={{ flex: 1 }}>
-              <Button label="Tamamlandı" icon="checkmark" onPress={() => onAction('completed')} disabled={busy} />
+              <Button label="Onayla" onPress={() => onAction('approved')} disabled={busy} />
+            </View>
+          </View>
+        ) : null}
+
+        {status === 'approved' ? (
+          <View style={{ gap: spacing.sm }}>
+            <View style={styles.actions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Onayı Geri Al" variant="secondary" icon="arrow-undo-outline" onPress={onRevert} disabled={busy} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="İptal" variant="secondary" onPress={() => onAction('cancelled')} disabled={busy} />
+              </View>
+            </View>
+            <View style={styles.actions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Gelmedi" variant="danger" icon="person-remove-outline" onPress={() => onAction('no_show')} disabled={busy} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Geldi" icon="checkmark" onPress={() => onAction('completed')} disabled={busy} />
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        {status === 'rejected' ? (
+          <View style={styles.actions}>
+            <View style={{ flex: 1 }}>
+              <Button label="Geri Al" variant="secondary" icon="arrow-undo-outline" onPress={onRevert} disabled={busy} />
             </View>
           </View>
         ) : null}
@@ -187,6 +250,18 @@ const styles = StyleSheet.create({
   },
   countText: { ...typography.micro, color: colors.onGold },
   list: { padding: spacing.lg, flexGrow: 1 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.danger + '14',
+    borderColor: colors.danger + '40',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  errorBannerText: { ...typography.caption, color: colors.danger, flex: 1 },
   card: {
     flexDirection: 'row',
     backgroundColor: colors.surface,

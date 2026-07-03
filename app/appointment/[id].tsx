@@ -23,6 +23,7 @@ const STATUS_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   rejected: 'close-circle-outline',
   cancelled: 'ban-outline',
   completed: 'sparkles-outline',
+  no_show: 'person-remove-outline',
 };
 
 export default function AppointmentDetailScreen() {
@@ -105,6 +106,16 @@ export default function AppointmentDetailScreen() {
             icon="storefront-outline"
             onPress={() => router.push({ pathname: '/business/[id]', params: { id: business.id } })}
           />
+        ) : null}
+
+        {status === 'no_show' ? (
+          <View style={styles.noShowWarn}>
+            <Ionicons name="alert-circle-outline" size={18} color={colors.noShow} />
+            <Text style={styles.noShowWarnText}>
+              Bu randevuya gelmedin olarak işaretlendi. Randevularına gitmemek
+              tekrarlanırsa hesabın askıya alınabilir.
+            </Text>
+          </View>
         ) : null}
 
         {canCancel ? (
@@ -223,6 +234,17 @@ const styles = StyleSheet.create({
   rowValue: { ...typography.bodyStrong, color: colors.text, flexShrink: 1, textAlign: 'right' },
   rowAccent: { color: colors.gold },
   cancelLocked: { ...typography.caption, color: colors.textMuted, textAlign: 'center', fontStyle: 'italic' },
+  noShowWarn: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.noShow + '14',
+    borderColor: colors.noShow + '44',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  noShowWarnText: { ...typography.caption, color: colors.text, flex: 1, lineHeight: 18 },
   overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', alignItems: 'center' },
   dialog: {
     backgroundColor: colors.surface,

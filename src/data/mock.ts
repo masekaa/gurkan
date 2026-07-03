@@ -1,6 +1,7 @@
 import type {
   Appointment,
   Business,
+  Employee,
   Loyalty,
   Review,
   Service,
@@ -111,6 +112,12 @@ export const services: Service[] = [
   { id: 's7', businessId: 'b3', name: 'Lazer Epilasyon (Bölge)', durationMin: 30, price: 700 },
   { id: 's8', businessId: 'b4', name: 'Saç Boyama', durationMin: 90, price: 1200 },
   { id: 's9', businessId: 'b4', name: 'Fön', durationMin: 30, price: 350 },
+];
+
+/** Staff members (demo business b1 has two so the picker is exercised). */
+export const employees: Employee[] = [
+  { id: 'e1', businessId: 'b1', name: 'Kemal Usta', title: 'Berber', active: true },
+  { id: 'e2', businessId: 'b1', name: 'Serkan', title: 'Berber', active: true },
 ];
 
 /** Mutable session stores. */

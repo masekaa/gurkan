@@ -17,6 +17,7 @@ import {
   useRejectBusinessPhoto,
   useSetBusinessApproved,
   useSetUserRole,
+  useSetUserSuspended,
 } from '@/hooks/queries';
 import { categoryLabels, formatDateTime, statusMeta } from '@/lib/format';
 import { PASSWORD_RULE, isValidPassword } from '@/lib/validators';
@@ -59,6 +60,17 @@ export default function AdminScreen() {
   const deleteBusiness = useDeleteBusiness();
   const setPassword = useAdminSetPassword();
   const setUserRole = useSetUserRole();
+  const setSuspended = useSetUserSuspended();
+
+  // No-show counts per customer (computed from all appointments — no server
+  // needed). Customers with 3+ no-shows are flagged for suspension.
+  const noShowByUser = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const a of appointments ?? []) {
+      if (a.status === 'no_show') map[a.customerId] = (map[a.customerId] ?? 0) + 1;
+    }
+    return map;
+  }, [appointments]);
 
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
@@ -227,6 +239,8 @@ export default function AdminScreen() {
               <AdminUserRow
                 user={item}
                 isSelf={item.id === selfId}
+                noShowCount={noShowByUser[item.id] ?? 0}
+                suspendBusy={setSuspended.isPending}
                 onRole={() => setRoleTarget({ id: item.id, name: item.name, role: item.role })}
                 onDelete={() => setConfirm({ kind: 'user', id: item.id, label: item.name })}
                 onPassword={() => {
@@ -234,6 +248,9 @@ export default function AdminScreen() {
                   setPw('');
                   setPwError(null);
                 }}
+                onToggleSuspend={() =>
+                  setSuspended.mutate({ uid: item.id, suspended: !item.suspended })
+                }
               />
             )}
           />
@@ -455,18 +472,25 @@ function AdminPhotoRow({
 function AdminUserRow({
   user,
   isSelf,
+  noShowCount,
+  suspendBusy,
   onRole,
   onDelete,
   onPassword,
+  onToggleSuspend,
 }: {
   user: Profile;
   isSelf: boolean;
+  noShowCount: number;
+  suspendBusy: boolean;
   onRole: () => void;
   onDelete: () => void;
   onPassword: () => void;
+  onToggleSuspend: () => void;
 }) {
   const meta = ROLE_META[user.role] ?? ROLE_META.user;
   const initial = (user.name || '?').trim().charAt(0).toUpperCase();
+  const flagged = noShowCount >= 3;
   return (
     <View style={[styles.card, elevation.soft]}>
       <View style={styles.cardTop}>
@@ -477,26 +501,54 @@ function AdminUserRow({
           <Text style={styles.cardTitle} numberOfLines={1}>{user.name || 'İsimsiz'}</Text>
           <Text style={styles.cardSub} numberOfLines={1}>{user.email}</Text>
         </View>
-        <Badge label={isSelf ? 'Sen' : meta.label} color={meta.color} />
-      </View>
-      {isSelf ? null : (
-        <View style={styles.actions}>
-          <View style={{ flex: 1 }}>
-            <Button label="Rol" variant="secondary" icon="shield-half-outline" onPress={onRole} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Button label="Şifre" variant="secondary" icon="key-outline" onPress={onPassword} />
-          </View>
-          <Pressable
-            onPress={onDelete}
-            hitSlop={8}
-            style={styles.deleteBtn}
-            accessibilityRole="button"
-            accessibilityLabel={`${user.name} kullanıcısını sil`}
-          >
-            <Ionicons name="trash-outline" size={20} color={colors.danger} />
-          </Pressable>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          <Badge label={isSelf ? 'Sen' : meta.label} color={meta.color} />
+          {user.suspended ? <Badge label="Askıda" color={colors.danger} /> : null}
         </View>
+      </View>
+
+      {noShowCount > 0 ? (
+        <View style={styles.noShowNote}>
+          <Ionicons
+            name={flagged ? 'alert-circle' : 'alert-circle-outline'}
+            size={15}
+            color={flagged ? colors.danger : colors.noShow}
+          />
+          <Text style={[styles.noShowNoteText, flagged && { color: colors.danger }]}>
+            {noShowCount} randevuya gelmedi{flagged ? ' — askıya alma önerilir' : ''}
+          </Text>
+        </View>
+      ) : null}
+
+      {isSelf ? null : (
+        <>
+          <View style={styles.actions}>
+            <View style={{ flex: 1 }}>
+              <Button label="Rol" variant="secondary" icon="shield-half-outline" onPress={onRole} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Şifre" variant="secondary" icon="key-outline" onPress={onPassword} />
+            </View>
+            <Pressable
+              onPress={onDelete}
+              hitSlop={8}
+              style={styles.deleteBtn}
+              accessibilityRole="button"
+              accessibilityLabel={`${user.name} kullanıcısını sil`}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.danger} />
+            </Pressable>
+          </View>
+          {user.role === 'user' ? (
+            <Button
+              label={user.suspended ? 'Askıdan Çıkar' : 'Askıya Al'}
+              variant={user.suspended ? 'secondary' : 'danger'}
+              icon={user.suspended ? 'lock-open-outline' : 'lock-closed-outline'}
+              loading={suspendBusy}
+              onPress={onToggleSuspend}
+            />
+          ) : null}
+        </>
       )}
     </View>
   );
@@ -575,6 +627,8 @@ const styles = StyleSheet.create({
   cardTitle: { ...typography.bodyStrong, color: colors.text },
   cardSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   listedNote: { ...typography.caption, fontWeight: '600' },
+  noShowNote: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  noShowNoteText: { ...typography.caption, color: colors.noShow, fontWeight: '600' },
   avatar: {
     width: 40,
     height: 40,

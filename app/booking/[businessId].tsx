@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 
 import { Button, Screen } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
 import {
   SlotTakenError,
   useBusiness,
   useCreateAppointment,
+  useEmployees,
   useServices,
   useTakenSlots,
 } from '@/hooks/queries';
@@ -65,9 +67,12 @@ export default function BookingScreen() {
     serviceId?: string;
   }>();
   const router = useRouter();
+  const { profile } = useAuth();
+  const suspended = !!profile?.suspended;
 
   const { data: business } = useBusiness(businessId);
   const { data: services } = useServices(businessId);
+  const { data: employees } = useEmployees(businessId);
   const { data: takenSlots, refetch: refetchTaken } = useTakenSlots(businessId);
   const createAppointment = useCreateAppointment();
 
@@ -75,6 +80,13 @@ export default function BookingScreen() {
     () => services?.find((s) => s.id === serviceId) ?? services?.[0],
     [services, serviceId],
   );
+
+  // Active staff, if any. When present the customer must pick one and each has
+  // an independent schedule; otherwise booking is business-level (as before).
+  const staff = useMemo(() => (employees ?? []).filter((e) => e.active), [employees]);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const needsEmployee = staff.length > 0;
+  const employeeChosen = !needsEmployee || selectedEmployee != null;
 
   const days = useMemo(() => nextDays(14), []);
   const [selectedDay, setSelectedDay] = useState(0);
@@ -113,6 +125,9 @@ export default function BookingScreen() {
 
     const taken: [number, number][] = [];
     for (const slot of takenSlots ?? []) {
+      // Only slots for the chosen scope block availability: the selected
+      // employee's bookings, or business-level bookings when no staff.
+      if ((slot.employeeId ?? null) !== (selectedEmployee ?? null)) continue;
       const d = new Date(slot.datetime);
       if (
         d.getFullYear() === day.getFullYear() &&
@@ -135,7 +150,7 @@ export default function BookingScreen() {
       if (past || overflow || overlaps) set.add(t);
     }
     return set;
-  }, [takenSlots, days, selectedDay, slots, service, business]);
+  }, [takenSlots, days, selectedDay, slots, service, business, selectedEmployee]);
 
   function pickDay(i: number) {
     setSelectedDay(i);
@@ -144,16 +159,23 @@ export default function BookingScreen() {
   }
 
   async function confirm() {
-    if (!service || selectedTime == null) return;
+    if (!service || selectedTime == null || !employeeChosen) return;
+    if (suspended) {
+      setSlotError('Hesabın askıya alındığı için randevu oluşturamazsın.');
+      return;
+    }
     setSlotError(null);
     const date = new Date(days[selectedDay]);
     const [h, m] = selectedTime.split(':').map(Number);
     date.setHours(h, m, 0, 0);
+    const employee = staff.find((e) => e.id === selectedEmployee) ?? null;
     try {
       const appt = await createAppointment.mutateAsync({
         businessId,
         serviceId: service.id,
         datetime: date.toISOString(),
+        employeeId: employee?.id ?? null,
+        employeeName: employee?.name ?? null,
         durationMin: service.durationMin,
       });
       notifySuccess();
@@ -233,6 +255,50 @@ export default function BookingScreen() {
           </View>
         ) : null}
 
+        {suspended ? (
+          <View style={styles.suspendBox}>
+            <Ionicons name="lock-closed" size={18} color={colors.danger} />
+            <Text style={styles.suspendText}>
+              Hesabın askıya alındı; şu an randevu oluşturamazsın. İtiraz için:
+              ahmetdemirexhesap@gmail.com
+            </Text>
+          </View>
+        ) : null}
+
+        {needsEmployee ? (
+          <>
+            <Text style={styles.label}>Çalışan seç</Text>
+            <View style={styles.staffGrid}>
+              {staff.map((e) => {
+                const active = e.id === selectedEmployee;
+                return (
+                  <Pressable
+                    key={e.id}
+                    onPress={() => {
+                      setSelectedEmployee(e.id);
+                      setSelectedTime(null);
+                      setSlotError(null);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.staffChip, active && styles.staffChipActive]}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={14}
+                      color={active ? colors.onGold : colors.textMuted}
+                    />
+                    <Text style={[styles.staffText, active && styles.staffTextActive]}>
+                      {e.name}
+                      {e.title?.trim() ? ` · ${e.title.trim()}` : ''}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+
         <Text style={styles.label}>Tarih seç</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
           {days.map((d, i) => {
@@ -266,6 +332,12 @@ export default function BookingScreen() {
         </ScrollView>
 
         <Text style={styles.label}>Saat seç</Text>
+        {!employeeChosen ? (
+          <View style={styles.closedBox}>
+            <Ionicons name="person-outline" size={20} color={colors.textMuted} />
+            <Text style={styles.closedText}>Uygun saatleri görmek için önce bir çalışan seç.</Text>
+          </View>
+        ) : null}
         {dayClosed ? (
           <View style={styles.closedBox}>
             <Ionicons name="moon-outline" size={20} color={colors.textMuted} />
@@ -273,7 +345,7 @@ export default function BookingScreen() {
           </View>
         ) : null}
         <View style={styles.slotGrid}>
-          {slots.map((t) => {
+          {(employeeChosen ? slots : []).map((t) => {
             const active = t === selectedTime;
             const disabled = unavailable.has(t);
             return (
@@ -311,7 +383,7 @@ export default function BookingScreen() {
           label="Randevuyu Onayla"
           onPress={confirm}
           loading={createAppointment.isPending}
-          disabled={!service || selectedTime == null}
+          disabled={!service || selectedTime == null || !employeeChosen || suspended}
         />
       </View>
     </Screen>
@@ -338,10 +410,36 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     ...elevation.soft,
   },
+  suspendBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.danger + '12',
+    borderColor: colors.danger + '40',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  suspendText: { ...typography.caption, color: colors.text, flex: 1, lineHeight: 18 },
   summaryBiz: { ...typography.bodyStrong, color: colors.text },
   summaryService: { ...typography.caption, color: colors.gold, marginTop: 2 },
   summaryPrice: { ...typography.heading, color: colors.text },
   label: { ...typography.bodyStrong, color: colors.text, marginTop: spacing.sm },
+  staffGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  staffChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  staffChipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  staffText: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  staffTextActive: { color: colors.onGold },
   dayRow: { gap: spacing.sm, paddingVertical: spacing.xs },
   dayChip: {
     width: 56,

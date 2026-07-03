@@ -13,6 +13,11 @@ export interface Profile {
   businessId?: string | null;
   /** Favorited business ids (customer). */
   favorites?: string[];
+  /**
+   * Admin-set: a suspended customer cannot create new appointments. Set when a
+   * customer repeatedly no-shows (3+). Only an admin may toggle this.
+   */
+  suspended?: boolean;
 }
 
 /**
@@ -102,12 +107,30 @@ export interface Service {
   price: number; // TRY
 }
 
+/**
+ * A staff member of a business. When a business has one or more active
+ * employees, customers pick which employee to book and each employee keeps an
+ * independent schedule (slot locks are namespaced per employee). Businesses
+ * with no employees behave exactly as before (business-level scheduling).
+ */
+export interface Employee {
+  id: string;
+  businessId: string;
+  name: string;
+  /** Optional role/title, e.g. "Berber", "Uzman". */
+  title?: string;
+  /** Inactive employees are hidden from booking but kept for history. */
+  active: boolean;
+}
+
 export type AppointmentStatus =
   | 'pending'
   | 'approved'
   | 'rejected'
   | 'cancelled'
-  | 'completed';
+  | 'completed'
+  /** Customer did not show up for an approved appointment. */
+  | 'no_show';
 
 export interface Appointment {
   id: string;
@@ -116,6 +139,10 @@ export interface Appointment {
   /** Denormalised business owner uid — lets the owner query their inbox under strict rules. */
   businessOwnerId?: string | null;
   serviceId: string;
+  /** Chosen employee (when the business has staff); null = business-level. */
+  employeeId?: string | null;
+  /** Denormalised employee name for the business/customer-side lists. */
+  employeeName?: string | null;
   datetime: string; // ISO 8601
   status: AppointmentStatus;
   createdAt: string;

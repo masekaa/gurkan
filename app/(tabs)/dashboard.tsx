@@ -49,7 +49,9 @@ export default function DashboardScreen() {
     const occupancy = slots ? Math.round((bookedToday / slots) * 100) : 0;
 
     const past = appts.filter((a) => new Date(a.datetime).getTime() < now.getTime());
-    const noShows = past.filter((a) => a.status === 'cancelled' || a.status === 'rejected').length;
+    const noShows = past.filter(
+      (a) => a.status === 'no_show' || a.status === 'cancelled' || a.status === 'rejected',
+    ).length;
     const noShowRate = past.length ? Math.round((noShows / past.length) * 100) : 0;
 
     return { daily, monthly, total: appts.length, pending, occupancy, noShowRate };
@@ -108,7 +110,7 @@ export default function DashboardScreen() {
         />
         <RateCard
           icon="alert-circle-outline"
-          label="İptal/Red Oranı"
+          label="Gelmeme & İptal Oranı"
           percent={stats.noShowRate}
           color={stats.noShowRate > 15 ? colors.danger : colors.pending}
           hint={stats.noShowRate > 15 ? 'Hedefin (%15) üzerinde' : 'Hedef aralığında'}

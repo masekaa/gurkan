@@ -31,6 +31,7 @@ export const colors = {
   rejected: '#D6483B',
   cancelled: '#9A9AA4',
   completed: '#3B7DD8',
+  noShow: '#8A5A2B',
 
   // Misc
   danger: '#D6483B',

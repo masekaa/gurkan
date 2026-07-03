@@ -83,6 +83,8 @@ export function useCreateAppointment() {
       businessId: string;
       serviceId: string;
       datetime: string;
+      employeeId?: string | null;
+      employeeName?: string | null;
       durationMin?: number;
     }) => repo.createAppointment({ customerId: userId, ...input }),
     onSuccess: (appt) => {
@@ -121,6 +123,55 @@ export function useUpdateAppointmentStatus() {
       qc.invalidateQueries({ queryKey: ['loyalty'] });
       qc.invalidateQueries({ queryKey: ['takenSlots'] });
     },
+  });
+}
+
+/** Undo an approve/reject — move an appointment back to pending. */
+export function useRevertAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.revertAppointmentToPending(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['appointments'] });
+      qc.invalidateQueries({ queryKey: ['businessAppointments'] });
+      qc.invalidateQueries({ queryKey: ['takenSlots'] });
+    },
+  });
+}
+
+// --- Employees (per-business staff) -----------------------------------------
+
+export function useEmployees(businessId: string) {
+  return useQuery({
+    queryKey: ['employees', businessId],
+    queryFn: () => repo.listEmployees(businessId),
+    enabled: Boolean(businessId),
+  });
+}
+
+export function useCreateEmployee(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; title?: string }) =>
+      repo.createEmployee({ businessId, ...input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['employees', businessId] }),
+  });
+}
+
+export function useUpdateEmployee(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...patch }: { id: string; name?: string; title?: string; active?: boolean }) =>
+      repo.updateEmployee(id, patch),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['employees', businessId] }),
+  });
+}
+
+export function useDeleteEmployee(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.deleteEmployee(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['employees', businessId] }),
   });
 }
 
@@ -306,6 +357,16 @@ export function useSetUserRole() {
   return useMutation({
     mutationFn: ({ uid, role }: { uid: string; role: UserRole }) =>
       repo.setUserRole(uid, role),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['allUsers'] }),
+  });
+}
+
+/** Admin: suspend/unsuspend a customer (blocks their new bookings). */
+export function useSetUserSuspended() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ uid, suspended }: { uid: string; suspended: boolean }) =>
+      repo.setUserSuspended(uid, suspended),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['allUsers'] }),
   });
 }

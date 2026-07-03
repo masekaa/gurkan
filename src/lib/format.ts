@@ -90,4 +90,5 @@ export const statusMeta: Record<
   rejected: { label: 'Reddedildi', color: colors.rejected },
   cancelled: { label: 'İptal Edildi', color: colors.cancelled },
   completed: { label: 'Tamamlandı', color: colors.completed },
+  no_show: { label: 'Gelmedi', color: colors.noShow },
 };

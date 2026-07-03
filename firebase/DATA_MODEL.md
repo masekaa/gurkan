@@ -14,6 +14,7 @@ The document id is the Firebase Auth UID.
 | `phone` | string \| null | |
 | `role` | `'user' \| 'business' \| 'admin'` | Default `user` |
 | `referralCode` | string | e.g. `ALTIN1234` |
+| `suspended` | boolean | Admin-set; a suspended customer cannot create appointments (set after repeated no-shows). Only an admin may toggle it. |
 | `createdAt` | string (ISO) | |
 
 ## `businesses/{id}`
@@ -41,6 +42,19 @@ The document id is the Firebase Auth UID.
 | `durationMin` | number | |
 | `price` | number | TRY |
 
+## `employees/{id}`
+
+Per-business staff. When a business has one or more `active` employees, customers
+pick one at booking and each keeps an independent schedule (slot locks are
+namespaced per employee). Public read; owning business / admin writes.
+
+| Field | Type | Notes |
+|---|---|---|
+| `businessId` | string | FK → businesses |
+| `name` | string | |
+| `title` | string | Optional role, e.g. "Berber" |
+| `active` | boolean | Inactive staff are hidden from booking |
+
 ## `appointments/{id}`
 
 | Field | Type | Notes |
@@ -49,8 +63,10 @@ The document id is the Firebase Auth UID.
 | `businessId` | string | FK → businesses |
 | `businessOwnerId` | string\|null | Denormalised `businesses.ownerId`; the business owner queries their inbox by this field (strict rules) |
 | `serviceId` | string | FK → services |
+| `employeeId` | string\|null | Chosen employee (FK → employees); null = business-level |
+| `employeeName` | string\|null | Denormalised employee name for lists |
 | `datetime` | string (ISO) | |
-| `status` | `pending \| approved \| rejected \| cancelled \| completed` | |
+| `status` | `pending \| approved \| rejected \| cancelled \| completed \| no_show` | `no_show` = customer didn't show up |
 | `createdAt` | string (ISO) | |
 
 Access: a user reads appointments where `customerId == uid`; a business owner
@@ -78,15 +94,19 @@ reads where `businessOwnerId == uid`; admins read all (see `firestore.rules`).
 
 Public read; a user creates/edits only their own review (see `firestore.rules`).
 
-## `slots/{businessId__datetimeISO}`
+## `slots/{businessId__datetimeISO}` or `{businessId__employeeId__datetimeISO}`
 
 Deterministic-id lock that prevents double-booking. Created atomically with the
-appointment in a transaction; deleted when an appointment is cancelled/rejected.
+appointment in a transaction; deleted when an appointment is
+cancelled/rejected/no-show, and re-created when a rejection is undone. When an
+employee is chosen the id is namespaced per employee so two staff can hold the
+same time.
 
 | Field | Type | Notes |
 |---|---|---|
 | `businessId` | string | FK → businesses |
 | `datetime` | string (ISO) | The reserved slot start |
+| `employeeId` | string\|null | The employee the slot belongs to (null = business-level) |
 | `customerId` | string | FK → profiles |
 | `businessOwnerId` | string\|null | Denormalised owner; lets the business free the lock on reject |
 | `appointmentId` | string | FK → appointments |

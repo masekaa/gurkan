@@ -30,6 +30,9 @@ service cloud.firestore {
         && request.resource.data.role == resource.data.role
         && request.resource.data.get('businessId', null)
              == resource.data.get('businessId', null)
+        // A user cannot lift their own suspension — only an admin toggles it.
+        && request.resource.data.get('suspended', false)
+             == resource.data.get('suspended', false)
       );
       // The owner may delete their own profile (in-app account deletion, an
       // App Store / Play Store requirement); admins may delete any.
@@ -81,6 +84,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || ownsBusiness(resource.data.businessId);
     }
 
+    // Employees (staff) are public for reading (customers pick one when
+    // booking); only the owning business / admin writes.
+    match /employees/{employeeId} {
+      allow read: if true;
+      allow create: if isAdmin() || ownsBusiness(request.resource.data.businessId);
+      allow update, delete: if isAdmin() || ownsBusiness(resource.data.businessId);
+    }
+
     // A user reads their own appointments (customerId) and a business owner
     // reads their inbox (businessOwnerId, denormalised on create). Queries must
     // filter by one of these fields so the list is permitted.
@@ -119,9 +130,14 @@ service cloud.firestore {
     // for themselves; the slot is freed (deleted) on cancel/reject.
     match /slots/{slotId} {
       allow read: if isSignedIn();
-      // Claimed for oneself; businessOwnerId must match the real business owner.
-      allow create: if isOwner(request.resource.data.customerId)
-        && request.resource.data.businessOwnerId ==
+      // Claimed by the customer for themselves (booking), OR re-created by the
+      // owning business / admin when undoing a rejection (revert-to-pending).
+      // In all cases businessOwnerId must match the real business owner.
+      allow create: if (
+        isOwner(request.resource.data.customerId)
+        || request.resource.data.businessOwnerId == request.auth.uid
+        || isAdmin()
+      ) && request.resource.data.businessOwnerId ==
            get(/databases/$(database)/documents/businesses/$(request.resource.data.businessId)).data.ownerId;
       // Freed by the booking customer (cancel) or the owning business (reject).
       allow delete: if isSignedIn() && (

@@ -39,6 +39,7 @@ import type {
   AppointmentStatus,
   Business,
   BusinessCategory,
+  Employee,
   Loyalty,
   Profile,
   Review,
@@ -68,10 +69,13 @@ const isActiveStatus = (s: AppointmentStatus) => ACTIVE_STATUSES.includes(s);
 
 /**
  * Deterministic id for a slot lock so a booking can atomically claim a
- * (business, datetime) pair via a transaction — no Cloud Function required.
+ * (business, [employee,] datetime) triple via a transaction — no Cloud
+ * Function required. When an employee is chosen the lock is namespaced per
+ * employee so two staff can be booked at the same time; with no employee the
+ * id keeps its original (business, datetime) form for backward compatibility.
  */
-const slotId = (businessId: string, datetime: string) =>
-  `${businessId}__${datetime}`;
+const slotId = (businessId: string, datetime: string, employeeId?: string | null) =>
+  employeeId ? `${businessId}__${employeeId}__${datetime}` : `${businessId}__${datetime}`;
 
 /** Narrowing helper so TypeScript trusts `db` inside the Firebase branches. */
 function requireDb(): Firestore {
@@ -472,6 +476,68 @@ export async function deleteService(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Employees (per-business staff; enables per-employee scheduling)
+// ---------------------------------------------------------------------------
+
+export async function listEmployees(businessId: string): Promise<Employee[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(
+      query(
+        collection(requireDb(), 'employees'),
+        where('businessId', '==', businessId),
+      ),
+    );
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Employee)
+      .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  }
+  return mock.employees
+    .filter((e) => e.businessId === businessId)
+    .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+}
+
+export async function createEmployee(input: {
+  businessId: string;
+  name: string;
+  title?: string;
+}): Promise<Employee> {
+  const data = {
+    businessId: input.businessId,
+    name: input.name,
+    title: input.title ?? '',
+    active: true,
+  };
+  if (isFirebaseEnabled) {
+    const ref = await addDoc(collection(requireDb(), 'employees'), data);
+    return { id: ref.id, ...data };
+  }
+  const employee: Employee = { id: uid('e'), ...data };
+  mock.employees.push(employee);
+  return employee;
+}
+
+export async function updateEmployee(
+  id: string,
+  patch: Partial<Omit<Employee, 'id' | 'businessId'>>,
+): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'employees', id), patch);
+    return;
+  }
+  const e = mock.employees.find((x) => x.id === id);
+  if (e) Object.assign(e, patch);
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    await deleteDoc(doc(requireDb(), 'employees', id));
+    return;
+  }
+  const i = mock.employees.findIndex((x) => x.id === id);
+  if (i >= 0) mock.employees.splice(i, 1);
+}
+
+// ---------------------------------------------------------------------------
 // Appointments
 // ---------------------------------------------------------------------------
 
@@ -534,22 +600,31 @@ export async function createAppointment(input: {
   businessId: string;
   serviceId: string;
   datetime: string;
+  /** Chosen employee (when the business has staff); null = business-level. */
+  employeeId?: string | null;
+  employeeName?: string | null;
   /** Service length in minutes; stored on the lock for overlap-aware availability. */
   durationMin?: number;
 }): Promise<Appointment> {
-  const { durationMin = 30, ...appointmentFields } = input;
+  const { durationMin = 30, employeeId = null, employeeName = null, ...appointmentFields } = input;
   // Denormalise the business owner so the owner can query their inbox under
   // strict rules (read allowed when businessOwnerId == auth.uid).
   const business = await getBusiness(input.businessId);
   const base = {
     ...appointmentFields,
+    employeeId,
+    employeeName,
     businessOwnerId: business?.ownerId ?? null,
     status: 'pending' as AppointmentStatus,
     createdAt: new Date().toISOString(),
   };
   if (isFirebaseEnabled) {
     const database = requireDb();
-    const lockRef = doc(database, 'slots', slotId(input.businessId, input.datetime));
+    const lockRef = doc(
+      database,
+      'slots',
+      slotId(input.businessId, input.datetime, employeeId),
+    );
     const apptRef = doc(collection(database, 'appointments'));
     // Atomically claim the slot and create the appointment. If the lock already
     // exists the transaction aborts, so two clients cannot take the same time.
@@ -559,6 +634,7 @@ export async function createAppointment(input: {
       tx.set(lockRef, {
         businessId: input.businessId,
         datetime: input.datetime,
+        employeeId,
         customerId: input.customerId,
         businessOwnerId: business?.ownerId ?? null,
         appointmentId: apptRef.id,
@@ -568,11 +644,13 @@ export async function createAppointment(input: {
     });
     return { id: apptRef.id, ...base };
   }
-  // Mock mode: reject if an active appointment already occupies the slot.
+  // Mock mode: reject if an active appointment already occupies the slot for
+  // the same employee (or the business, when no employee is chosen).
   const taken = mock.appointments.some(
     (a) =>
       a.businessId === input.businessId &&
       a.datetime === input.datetime &&
+      (a.employeeId ?? null) === employeeId &&
       isActiveStatus(a.status),
   );
   if (taken) throw new SlotTakenError();
@@ -582,7 +660,12 @@ export async function createAppointment(input: {
 }
 
 /** Booked slot datetimes (ISO) for a business, used to disable taken times. */
-export type TakenSlot = { datetime: string; durationMin: number };
+export type TakenSlot = {
+  datetime: string;
+  durationMin: number;
+  /** Which employee the slot belongs to (null = business-level). */
+  employeeId?: string | null;
+};
 
 export async function listTakenSlots(businessId: string): Promise<TakenSlot[]> {
   if (isFirebaseEnabled) {
@@ -590,8 +673,12 @@ export async function listTakenSlots(businessId: string): Promise<TakenSlot[]> {
       query(collection(requireDb(), 'slots'), where('businessId', '==', businessId)),
     );
     return snap.docs.map((d) => {
-      const data = d.data() as { datetime: string; durationMin?: number };
-      return { datetime: data.datetime, durationMin: data.durationMin ?? 30 };
+      const data = d.data() as { datetime: string; durationMin?: number; employeeId?: string | null };
+      return {
+        datetime: data.datetime,
+        durationMin: data.durationMin ?? 30,
+        employeeId: data.employeeId ?? null,
+      };
     });
   }
   return mock.appointments
@@ -599,6 +686,7 @@ export async function listTakenSlots(businessId: string): Promise<TakenSlot[]> {
     .map((a) => ({
       datetime: a.datetime,
       durationMin: mock.services.find((s) => s.id === a.serviceId)?.durationMin ?? 30,
+      employeeId: a.employeeId ?? null,
     }));
 }
 
@@ -609,14 +697,17 @@ export async function updateAppointmentStatus(
   if (isFirebaseEnabled) {
     const database = requireDb();
     await updateDoc(doc(database, 'appointments', id), { status });
-    // Free the slot lock so a cancelled/rejected time becomes bookable again.
-    if (status === 'cancelled' || status === 'rejected') {
+    // Free the slot lock so a cancelled/rejected/no-show time becomes bookable
+    // again.
+    if (status === 'cancelled' || status === 'rejected' || status === 'no_show') {
       const snap = await getDoc(doc(database, 'appointments', id));
-      const a = snap.data() as { businessId?: string; datetime?: string } | undefined;
+      const a = snap.data() as
+        | { businessId?: string; datetime?: string; employeeId?: string | null }
+        | undefined;
       if (a?.businessId && a.datetime) {
-        await deleteDoc(doc(database, 'slots', slotId(a.businessId, a.datetime))).catch(
-          () => undefined,
-        );
+        await deleteDoc(
+          doc(database, 'slots', slotId(a.businessId, a.datetime, a.employeeId ?? null)),
+        ).catch(() => undefined);
       }
     }
     return;
@@ -627,6 +718,70 @@ export async function updateAppointmentStatus(
   // In mock mode, completing an appointment grants a loyalty point (in
   // production this is a Cloud Function so clients cannot forge points).
   if (status === 'completed') grantLoyaltyPoint(appt.customerId, appt.businessId);
+}
+
+/**
+ * Undo an approve/reject: move an appointment back to `pending`. Re-claims the
+ * slot lock (a reject had freed it) — if another customer has since taken the
+ * slot this throws SlotTakenError so the business can't silently double-book.
+ */
+export async function revertAppointmentToPending(id: string): Promise<void> {
+  if (isFirebaseEnabled) {
+    const database = requireDb();
+    const apptRef = doc(database, 'appointments', id);
+    const snap = await getDoc(apptRef);
+    if (!snap.exists()) return;
+    const a = snap.data() as Appointment;
+    const service = await getService(a.serviceId);
+    const lockRef = doc(
+      database,
+      'slots',
+      slotId(a.businessId, a.datetime, a.employeeId ?? null),
+    );
+    await runTransaction(database, async (tx) => {
+      const lock = await tx.get(lockRef);
+      if (lock.exists()) {
+        // A lock is fine only if it's still THIS appointment's lock (approved
+        // case). A different appointment holding it means the slot was re-taken.
+        const held = lock.data() as { appointmentId?: string };
+        if (held.appointmentId && held.appointmentId !== id) throw new SlotTakenError();
+      } else {
+        // Reject had deleted the lock — recreate it for this appointment.
+        tx.set(lockRef, {
+          businessId: a.businessId,
+          datetime: a.datetime,
+          employeeId: a.employeeId ?? null,
+          customerId: a.customerId,
+          businessOwnerId: a.businessOwnerId ?? null,
+          appointmentId: id,
+          durationMin: service?.durationMin ?? 30,
+        });
+      }
+      tx.update(apptRef, { status: 'pending' });
+    });
+    return;
+  }
+  const appt = mock.appointments.find((x) => x.id === id);
+  if (!appt) return;
+  const clash = mock.appointments.some(
+    (x) =>
+      x.id !== id &&
+      x.businessId === appt.businessId &&
+      x.datetime === appt.datetime &&
+      (x.employeeId ?? null) === (appt.employeeId ?? null) &&
+      isActiveStatus(x.status),
+  );
+  if (clash) throw new SlotTakenError();
+  appt.status = 'pending';
+}
+
+/** Admin-only: suspend/unsuspend a customer (blocks new bookings). */
+export async function setUserSuspended(userId: string, suspended: boolean): Promise<void> {
+  if (isFirebaseEnabled) {
+    await updateDoc(doc(requireDb(), 'profiles', userId), { suspended });
+    return;
+  }
+  // Mock mode has no persistent profiles collection.
 }
 
 /** Mock-only: +1 point per completed visit; every 10 points → 1 free service. */

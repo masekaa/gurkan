@@ -21,12 +21,16 @@ import { useUserLocation } from '@/context/LocationContext';
 import {
   useAddBusinessPhoto,
   useBusiness,
+  useCreateEmployee,
   useCreateService,
+  useDeleteEmployee,
   useDeleteService,
+  useEmployees,
   useRemoveApprovedPhoto,
   useRemovePendingPhoto,
   useServices,
   useUpdateBusiness,
+  useUpdateEmployee,
   useUpdateService,
 } from '@/hooks/queries';
 import { isStorageEnabled } from '@/lib/firebase';
@@ -43,6 +47,13 @@ type ServiceForm = {
   name: string;
   durationMin: string;
   price: string;
+};
+
+type EmployeeForm = {
+  id?: string;
+  name: string;
+  title: string;
+  active: boolean;
 };
 
 export default function ManageScreen() {
@@ -206,6 +217,9 @@ export default function ManageScreen() {
             ))}
           </View>
         )}
+
+        {/* Employees / staff */}
+        <EmployeesSection businessId={businessId} />
       </ScrollView>
 
       {/* Add / edit service modal */}
@@ -765,6 +779,202 @@ function ServiceFormModal({
                 disabled={!valid}
                 onPress={() => onSubmit(f)}
               />
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function EmployeesSection({ businessId }: { businessId: string }) {
+  const { data: employees } = useEmployees(businessId);
+  const createEmp = useCreateEmployee(businessId);
+  const updateEmp = useUpdateEmployee(businessId);
+  const deleteEmp = useDeleteEmployee(businessId);
+  const [form, setForm] = useState<EmployeeForm | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const list = employees ?? [];
+
+  return (
+    <>
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionTitle}>Çalışanlar</Text>
+        <Pressable
+          onPress={() => setForm({ name: '', title: '', active: true })}
+          style={styles.addBtn}
+          hitSlop={8}
+        >
+          <Ionicons name="add" size={18} color={colors.onGold} />
+          <Text style={styles.addText}>Ekle</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.moderationNote}>
+        <Ionicons name="people-outline" size={15} color={colors.gold} />
+        <Text style={styles.storageNoteText}>
+          Çalışan eklersen müşteriler randevu alırken çalışan seçer ve her
+          çalışanın ayrı takvimi olur. Çalışan eklemezsen randevular işletme
+          geneli olur.
+        </Text>
+      </View>
+
+      {list.length === 0 ? (
+        <EmptyState
+          icon="people-outline"
+          title="Henüz çalışan yok"
+          subtitle="Çalışan ekleyerek her biri için ayrı randevu takvimi oluştur."
+          actionLabel="Çalışan Ekle"
+          actionIcon="add"
+          onAction={() => setForm({ name: '', title: '', active: true })}
+        />
+      ) : (
+        <View style={{ gap: spacing.md }}>
+          {list.map((e) => (
+            <View key={e.id} style={[styles.serviceRow, elevation.soft]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.serviceName}>{e.name}</Text>
+                <Text style={styles.serviceMeta}>{e.title?.trim() || 'Çalışan'}</Text>
+              </View>
+              <Badge label={e.active ? 'Aktif' : 'Pasif'} color={e.active ? colors.approved : colors.cancelled} />
+              <Pressable
+                onPress={() => setForm({ id: e.id, name: e.name, title: e.title ?? '', active: e.active })}
+                hitSlop={8}
+                style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`${e.name} çalışanını düzenle`}
+              >
+                <Ionicons name="create-outline" size={20} color={colors.textMuted} />
+              </Pressable>
+              <Pressable
+                onPress={() => setDeleteId(e.id)}
+                hitSlop={8}
+                style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`${e.name} çalışanını sil`}
+              >
+                <Ionicons name="trash-outline" size={20} color={colors.danger} />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <EmployeeFormModal
+        form={form}
+        saving={createEmp.isPending || updateEmp.isPending}
+        onChange={setForm}
+        onClose={() => setForm(null)}
+        onSubmit={(f) => {
+          const payload = { name: f.name.trim(), title: f.title.trim() };
+          if (f.id) {
+            updateEmp.mutate(
+              { id: f.id, ...payload, active: f.active },
+              { onSuccess: () => setForm(null) },
+            );
+          } else {
+            createEmp.mutate(payload, { onSuccess: () => setForm(null) });
+          }
+        }}
+      />
+
+      <Modal visible={deleteId != null} transparent animationType="fade" onRequestClose={() => setDeleteId(null)}>
+        <View style={styles.overlayCenter}>
+          <View style={styles.dialog}>
+            <Ionicons name="trash-outline" size={28} color={colors.danger} />
+            <Text style={styles.dialogTitle}>Çalışanı sil?</Text>
+            <Text style={styles.dialogText}>Bu çalışan kalıcı olarak silinecek.</Text>
+            <View style={styles.dialogActions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Vazgeç" variant="secondary" onPress={() => setDeleteId(null)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Sil"
+                  variant="danger"
+                  loading={deleteEmp.isPending}
+                  onPress={() => {
+                    if (deleteId) deleteEmp.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+function EmployeeFormModal({
+  form,
+  saving,
+  onChange,
+  onSubmit,
+  onClose,
+}: {
+  form: EmployeeForm | null;
+  saving: boolean;
+  onChange: (f: EmployeeForm) => void;
+  onSubmit: (f: EmployeeForm) => void;
+  onClose: () => void;
+}) {
+  const f = form ?? { name: '', title: '', active: true };
+  const valid = f.name.trim().length > 0;
+
+  return (
+    <Modal visible={form != null} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.dialogTitle}>{form?.id ? 'Çalışanı Düzenle' : 'Yeni Çalışan'}</Text>
+          <Field
+            label="Ad Soyad"
+            value={f.name}
+            onChangeText={(v) => onChange({ ...f, name: v })}
+            icon="person-outline"
+            placeholder="Örn. Kemal Usta"
+          />
+          <Field
+            label="Ünvan (isteğe bağlı)"
+            value={f.title}
+            onChangeText={(v) => onChange({ ...f, title: v })}
+            icon="pricetag-outline"
+            placeholder="Berber, Uzman…"
+          />
+          {form?.id ? (
+            <View>
+              <Text style={styles.slotLabel}>Durum</Text>
+              <View style={styles.slotRow}>
+                {([true, false] as const).map((v) => {
+                  const active = f.active === v;
+                  return (
+                    <Pressable
+                      key={String(v)}
+                      onPress={() => onChange({ ...f, active: v })}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      style={[styles.slotChip, active && styles.slotChipActive]}
+                    >
+                      <Text style={[styles.slotChipText, active && styles.slotChipTextActive]}>
+                        {v ? 'Aktif' : 'Pasif'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
+          <View style={styles.dialogActions}>
+            <View style={{ flex: 1 }}>
+              <Button label="Vazgeç" variant="secondary" onPress={onClose} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Kaydet" loading={saving} disabled={!valid} onPress={() => onSubmit(f)} />
             </View>
           </View>
         </View>
