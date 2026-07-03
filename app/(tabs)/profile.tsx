@@ -14,10 +14,11 @@ import {
 import { Avatar, Button, Card, Field } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { isFirebaseEnabled } from '@/lib/firebase';
+import { PASSWORD_RULE, isValidPassword } from '@/lib/validators';
 import { centeredContent, colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
-  const { profile, signOut, updateProfile, deleteAccount } = useAuth();
+  const { profile, signOut, updateProfile, deleteAccount, changePassword } = useAuth();
   const router = useRouter();
 
   const roleMeta =
@@ -36,6 +37,14 @@ export default function ProfileScreen() {
   const [delPw, setDelPw] = useState('');
   const [delError, setDelError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [pwOpen, setPwOpen] = useState(false);
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwDone, setPwDone] = useState(false);
 
   async function onSignOut() {
     await signOut();
@@ -65,6 +74,53 @@ export default function ProfileScreen() {
       );
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function openChangePassword() {
+    setCurPw('');
+    setNewPw('');
+    setNewPw2('');
+    setPwError(null);
+    setPwDone(false);
+    setPwOpen(true);
+  }
+
+  async function confirmChangePassword() {
+    setPwError(null);
+    if (!curPw.trim()) {
+      setPwError('Mevcut şifreni gir.');
+      return;
+    }
+    if (!isValidPassword(newPw)) {
+      setPwError(PASSWORD_RULE);
+      return;
+    }
+    if (newPw !== newPw2) {
+      setPwError('Yeni şifreler eşleşmiyor.');
+      return;
+    }
+    if (newPw === curPw) {
+      setPwError('Yeni şifre mevcut şifreden farklı olmalı.');
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await changePassword(curPw, newPw);
+      setPwDone(true);
+    } catch (e: any) {
+      const code = e?.code as string | undefined;
+      setPwError(
+        code === 'auth/invalid-credential' || code === 'auth/wrong-password'
+          ? 'Mevcut şifre hatalı.'
+          : code === 'auth/requires-recent-login'
+            ? 'Güvenlik için tekrar giriş yapıp dene.'
+            : code === 'auth/weak-password'
+              ? PASSWORD_RULE
+              : 'Şifre değiştirilemedi. Lütfen tekrar dene.',
+      );
+    } finally {
+      setPwSaving(false);
     }
   }
 
@@ -161,6 +217,9 @@ export default function ProfileScreen() {
 
       <View style={styles.menu}>
         <MenuRow icon="heart-outline" label="Favorilerim" onPress={() => router.push('/favorites')} />
+        {isFirebaseEnabled ? (
+          <MenuRow icon="key-outline" label="Şifre Değiştir" onPress={openChangePassword} />
+        ) : null}
         <MenuRow icon="lock-closed-outline" label="Gizlilik Politikası" onPress={() => router.push('/legal/privacy')} />
         <MenuRow icon="document-text-outline" label="Kullanım Koşulları" onPress={() => router.push('/legal/terms')} />
         <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:ahmetdemirexhesap@gmail.com')} />
@@ -222,6 +281,66 @@ export default function ProfileScreen() {
                 <Button label="Sil" variant="danger" loading={deleting} onPress={confirmDelete} />
               </View>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={pwOpen} transparent animationType="fade" onRequestClose={() => setPwOpen(false)}>
+        <View style={[styles.overlay, { justifyContent: 'center', alignItems: 'center', padding: spacing.xl }]}>
+          <View style={styles.deleteDialog}>
+            {pwDone ? (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={30} color={colors.gold} />
+                <Text style={styles.sheetTitle}>Şifren güncellendi</Text>
+                <Text style={styles.deleteText}>
+                  Yeni şifren aktif. Bir sonraki girişte yeni şifreni kullan.
+                </Text>
+                <View style={{ width: '100%', marginTop: spacing.sm }}>
+                  <Button label="Tamam" onPress={() => setPwOpen(false)} />
+                </View>
+              </>
+            ) : (
+              <>
+                <Ionicons name="key-outline" size={28} color={colors.gold} />
+                <Text style={styles.sheetTitle}>Şifre Değiştir</Text>
+                <View style={{ width: '100%', gap: spacing.md, marginTop: spacing.sm }}>
+                  <Field
+                    label="Mevcut şifre"
+                    value={curPw}
+                    onChangeText={setCurPw}
+                    secureTextEntry
+                    icon="lock-closed-outline"
+                    placeholder="Mevcut şifren"
+                  />
+                  <Field
+                    label="Yeni şifre"
+                    value={newPw}
+                    onChangeText={setNewPw}
+                    secureTextEntry
+                    icon="lock-closed-outline"
+                    placeholder="En az 8 karakter"
+                  />
+                  <Field
+                    label="Yeni şifre (tekrar)"
+                    value={newPw2}
+                    onChangeText={setNewPw2}
+                    secureTextEntry
+                    icon="lock-closed-outline"
+                    placeholder="Yeni şifreyi tekrar gir"
+                  />
+                  <Text style={styles.pwHint}>{PASSWORD_RULE}</Text>
+                </View>
+                {pwError ? <Text style={styles.deleteError}>{pwError}</Text> : null}
+                <View style={styles.sheetActions}>
+                  <View style={{ flex: 1 }}>
+                    <Button label="Vazgeç" variant="secondary" onPress={() => setPwOpen(false)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button label="Güncelle" loading={pwSaving} onPress={confirmChangePassword} />
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -396,4 +515,5 @@ const styles = StyleSheet.create({
   },
   deleteText: { ...typography.caption, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
   deleteError: { ...typography.caption, color: colors.danger, marginTop: spacing.xs, textAlign: 'center' },
+  pwHint: { ...typography.caption, color: colors.textMuted, lineHeight: 18, marginLeft: spacing.xs },
 });

@@ -7,6 +7,7 @@ import {
   reauthenticateWithCredential,
   signInWithEmailAndPassword,
   signOut as fbSignOut,
+  updatePassword as fbUpdatePassword,
   updateProfile as fbUpdateProfile,
 } from 'firebase/auth';
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -44,6 +45,11 @@ interface AuthState {
    * requirement). Requires the current password to re-authenticate.
    */
   deleteAccount: (password: string) => Promise<void>;
+  /**
+   * Change the signed-in user's password. Requires the current password to
+   * re-authenticate (Firebase demands a recent login). Mock mode is a no-op.
+   */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   /** Switch the current account between customer and business mode. */
   setRole: (role: UserRole) => Promise<void>;
   /** Update editable profile fields (name / phone). */
@@ -201,6 +207,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         await persistMock(null);
+      },
+      async changePassword(currentPassword, newPassword) {
+        if (isFirebaseEnabled && auth) {
+          const user = auth.currentUser;
+          if (!user) throw new Error('no-current-user');
+          // Re-authenticate first (Firebase requires a recent login to change
+          // the password), then set the new one.
+          if (user.email) {
+            const cred = EmailAuthProvider.credential(user.email, currentPassword);
+            await reauthenticateWithCredential(user, cred);
+          }
+          await fbUpdatePassword(user, newPassword);
+          return;
+        }
+        // Mock mode: no real credential store — succeed silently.
       },
       async setRole(role) {
         if (!profile) return;
