@@ -63,6 +63,7 @@ export default function BusinessDetailScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState('');
+  const [viewer, setViewer] = useState<string | null>(null);
 
   if (isError) {
     return (
@@ -83,7 +84,7 @@ export default function BusinessDetailScreen() {
     );
   }
 
-  const cat = categoryStyle[business.category] ?? categoryStyle.erkek_berberi;
+  const cat = categoryStyle[business.category] ?? categoryStyle.berber;
   const open = isOpenToday(business);
   const initials = business.name
     .split(' ')
@@ -245,13 +246,19 @@ export default function BusinessDetailScreen() {
                 contentContainerStyle={{ gap: spacing.sm }}
               >
                 {business.photos.map((uri) => (
-                  <Image
+                  <Pressable
                     key={uri}
-                    source={{ uri }}
-                    style={styles.galleryImg}
-                    contentFit="cover"
-                    transition={200}
-                  />
+                    onPress={() => setViewer(uri)}
+                    accessibilityRole="imagebutton"
+                    accessibilityLabel="Fotoğrafı tam ekran gör"
+                  >
+                    <Image
+                      source={{ uri }}
+                      style={styles.galleryImg}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  </Pressable>
                 ))}
               </ScrollView>
             </View>
@@ -357,6 +364,18 @@ export default function BusinessDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Fullscreen photo viewer */}
+      <Modal visible={viewer != null} transparent animationType="fade" onRequestClose={() => setViewer(null)}>
+        <Pressable style={styles.viewerBackdrop} onPress={() => setViewer(null)}>
+          {viewer ? (
+            <Image source={{ uri: viewer }} style={styles.viewerImage} contentFit="contain" transition={150} />
+          ) : null}
+          <View style={styles.viewerClose}>
+            <Ionicons name="close" size={22} color="#fff" />
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Write review bottom sheet */}
       <Modal visible={reviewOpen} transparent animationType="slide" onRequestClose={() => setReviewOpen(false)}>
@@ -577,6 +596,24 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceAlt,
+  },
+  viewerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewerImage: { width: '100%', height: '80%' },
+  viewerClose: {
+    position: 'absolute',
+    top: spacing.xl,
+    right: spacing.lg,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { ...typography.heading, color: colors.text },

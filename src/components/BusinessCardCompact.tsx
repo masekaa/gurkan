@@ -14,7 +14,7 @@ export function BusinessCardCompact({
   business: Business;
   onPress?: () => void;
 }) {
-  const cat = categoryStyle[business.category] ?? categoryStyle.erkek_berberi;
+  const cat = categoryStyle[business.category] ?? categoryStyle.berber;
   return (
     <Pressable
       onPress={onPress}

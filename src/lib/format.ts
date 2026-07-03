@@ -69,10 +69,16 @@ export function formatDateTime(iso: string): string {
 }
 
 export const categoryLabels: Record<BusinessCategory, string> = {
-  erkek_berberi: 'Erkek Berberi',
-  kadin_kuaforu: 'Kadın Kuaförü',
+  // Canonical
+  berber: 'Berber',
+  kuafor: 'Kuaför',
   guzellik_merkezi: 'Güzellik Merkezi',
-  barber_shop: 'Barber Shop',
+  nail_art: 'Nail Art',
+  lazer_epilasyon: 'Lazer & Epilasyon',
+  // Legacy → mapped to the closest current label
+  erkek_berberi: 'Berber',
+  kadin_kuaforu: 'Kuaför',
+  barber_shop: 'Berber',
 };
 
 export const statusMeta: Record<

@@ -15,11 +15,33 @@ export interface Profile {
   favorites?: string[];
 }
 
+/**
+ * Business categories. The first five are the canonical, user-facing
+ * categories shown in pickers and filters. The trailing three are LEGACY keys
+ * retained only so businesses created before the category revamp still render
+ * (their labels/styles map to the closest current category). Never offer the
+ * legacy keys in new pickers.
+ */
 export type BusinessCategory =
+  // Canonical (current)
+  | 'berber'
+  | 'kuafor'
+  | 'guzellik_merkezi'
+  | 'nail_art'
+  | 'lazer_epilasyon'
+  // Legacy (backward-compat display only)
   | 'erkek_berberi'
   | 'kadin_kuaforu'
-  | 'guzellik_merkezi'
   | 'barber_shop';
+
+/** The current, user-facing categories (order shown in pickers/filters). */
+export const CATEGORY_KEYS: BusinessCategory[] = [
+  'berber',
+  'kuafor',
+  'guzellik_merkezi',
+  'nail_art',
+  'lazer_epilasyon',
+];
 
 export interface Business {
   id: string;

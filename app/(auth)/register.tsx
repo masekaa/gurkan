@@ -17,15 +17,10 @@ import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
 import { PASSWORD_RULE, isValidEmail, isValidPassword, isValidPhone } from '@/lib/validators';
 import { colors, radius, spacing, typography } from '@/theme';
-import type { BusinessCategory, UserRole } from '@/types';
+import { CATEGORY_KEYS, type BusinessCategory, type UserRole } from '@/types';
 import { humanizeAuthError } from './login';
 
-const CATEGORIES: BusinessCategory[] = [
-  'erkek_berberi',
-  'kadin_kuaforu',
-  'guzellik_merkezi',
-  'barber_shop',
-];
+const CATEGORIES: BusinessCategory[] = CATEGORY_KEYS;
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
@@ -36,7 +31,7 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [businessName, setBusinessName] = useState('');
-  const [businessCategory, setBusinessCategory] = useState<BusinessCategory>('erkek_berberi');
+  const [businessCategory, setBusinessCategory] = useState<BusinessCategory>('berber');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

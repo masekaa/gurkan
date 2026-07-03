@@ -103,10 +103,16 @@ export const categoryStyle: Record<
   string,
   { gradient: readonly [string, string]; icon: string }
 > = {
+  // Canonical
+  berber: { gradient: ['#2C3A8E', '#161E45'], icon: 'cut' },
+  kuafor: { gradient: ['#7E2E6E', '#3A1633'], icon: 'sparkles' },
+  guzellik_merkezi: { gradient: ['#A8527A', '#46203A'], icon: 'flower' },
+  nail_art: { gradient: ['#C25E86', '#5A2440'], icon: 'color-palette' },
+  lazer_epilasyon: { gradient: ['#1F5A52', '#0F2A26'], icon: 'flash' },
+  // Legacy → reuse the closest current style
   erkek_berberi: { gradient: ['#2C3A8E', '#161E45'], icon: 'cut' },
   kadin_kuaforu: { gradient: ['#7E2E6E', '#3A1633'], icon: 'sparkles' },
-  guzellik_merkezi: { gradient: ['#A8527A', '#46203A'], icon: 'flower' },
-  barber_shop: { gradient: ['#1F5A52', '#0F2A26'], icon: 'cut' },
+  barber_shop: { gradient: ['#2C3A8E', '#161E45'], icon: 'cut' },
 };
 
 /** Layout constraints — keeps content readable on wide (web) viewports. */

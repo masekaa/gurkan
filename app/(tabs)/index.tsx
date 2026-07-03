@@ -39,14 +39,9 @@ import {
   spacing,
   typography,
 } from '@/theme';
-import type { Business, BusinessCategory } from '@/types';
+import { CATEGORY_KEYS, type Business, type BusinessCategory } from '@/types';
 
-const CATEGORIES: BusinessCategory[] = [
-  'erkek_berberi',
-  'kadin_kuaforu',
-  'guzellik_merkezi',
-  'barber_shop',
-];
+const CATEGORIES: BusinessCategory[] = CATEGORY_KEYS;
 
 const PROMOS: {
   title: string;
@@ -55,7 +50,7 @@ const PROMOS: {
   gradient: readonly [string, string];
 }[] = [
   { title: 'Online randevu, sıfır bekleme', subtitle: 'Saniyeler içinde yerini ayır', icon: 'flash', gradient: ['#2C3A8E', '#161E45'] },
-  { title: 'Sadakat puanı kazan', subtitle: '10 randevu = 1 ücretsiz hizmet', icon: 'gift', gradient: ['#7E2E6E', '#3A1633'] },
+  { title: 'Favori salonlarını keşfet', subtitle: 'Beğendiklerini favorilere ekle', icon: 'heart', gradient: ['#7E2E6E', '#3A1633'] },
   { title: 'Bursa Nilüfer pilotu', subtitle: 'Bölgenin en iyi salonları', icon: 'sparkles', gradient: ['#1F5A52', '#0F2A26'] },
 ];
 
@@ -150,7 +145,16 @@ export default function DiscoverScreen() {
               Merhaba{profile ? `, ${profile.name.split(' ')[0]}` : ''} 👋
             </Text>
           </View>
-          {profile ? <Avatar name={profile.name} size={42} /> : null}
+          {profile ? (
+            <Pressable
+              onPress={() => router.push('/(tabs)/profile')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Profilime git"
+            >
+              <Avatar name={profile.name} size={42} />
+            </Pressable>
+          ) : null}
         </View>
         <Field
           icon="search-outline"

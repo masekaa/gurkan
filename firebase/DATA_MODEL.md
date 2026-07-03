@@ -21,7 +21,7 @@ The document id is the Firebase Auth UID.
 | Field | Type | Notes |
 |---|---|---|
 | `name` | string | |
-| `category` | `erkek_berberi \| kadin_kuaforu \| guzellik_merkezi \| barber_shop` | |
+| `category` | `berber \| kuafor \| guzellik_merkezi \| nail_art \| lazer_epilasyon` (legacy: `erkek_berberi \| kadin_kuaforu \| barber_shop`) | |
 | `about` | string | |
 | `address` / `district` | string | |
 | `phone` | string | |

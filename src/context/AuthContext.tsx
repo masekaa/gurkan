@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ? await createBusiness({
                   ownerId: uid,
                   name: businessName!.trim(),
-                  category: businessCategory ?? 'erkek_berberi',
+                  category: businessCategory ?? 'berber',
                   phone,
                 })
               : null;
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ? await createBusiness({
                 ownerId: MOCK_USER_ID,
                 name: businessName!.trim(),
-                category: businessCategory ?? 'erkek_berberi',
+                category: businessCategory ?? 'berber',
                 phone,
               })
             : null;

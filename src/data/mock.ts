@@ -25,7 +25,7 @@ export const businesses: Business[] = [
   {
     id: 'b1',
     name: 'Nilüfer Barber House',
-    category: 'barber_shop',
+    category: 'berber',
     about:
       'Nilüfer’in kalbinde modern erkek bakım deneyimi. Klasik tıraş ve saç tasarımı.',
     address: 'İhsaniye Mah. Kar Cad. No:12',
@@ -45,7 +45,7 @@ export const businesses: Business[] = [
   {
     id: 'b2',
     name: 'Altın Makas Erkek Kuaförü',
-    category: 'erkek_berberi',
+    category: 'berber',
     about: 'Mahallenin güvenilir berberi. Sıcak havlu sakak tıraşı uzmanı.',
     address: 'Beşevler Mah. Çiçek Sok. No:4',
     district: 'Nilüfer / Bursa',
@@ -83,7 +83,7 @@ export const businesses: Business[] = [
   {
     id: 'b4',
     name: 'Lina Kadın Kuaförü',
-    category: 'kadin_kuaforu',
+    category: 'kuafor',
     about: 'Saç boyama, ombre ve özel gün saç tasarımı.',
     address: 'Konak Mah. Lale Cad. No:21',
     district: 'Nilüfer / Bursa',

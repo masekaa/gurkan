@@ -49,9 +49,11 @@ service cloud.firestore {
       // The owner may edit their business but CANNOT self-approve, transfer
       // ownership, or change their subscription (approved/ownerId/subscription*
       // are admin/webhook-only). Subscription = paid listing access.
-      // The owner may queue photos for review (pendingPhotos) but may NOT touch
-      // the public `photos` array — only an admin moves a photo into `photos`,
-      // so businesses can't self-publish unmoderated images.
+      // The owner may queue photos for review (pendingPhotos) and may REMOVE a
+      // published photo, but may NOT add to the public `photos` array — only an
+      // admin moves a photo into `photos`, so businesses can't self-publish
+      // unmoderated images. The subset check (old photos hasAll new photos)
+      // permits removals only, never additions.
       allow update: if isAdmin() || (
         isSignedIn() && resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerId == request.auth.uid
@@ -60,7 +62,8 @@ service cloud.firestore {
              == resource.data.get('subscriptionStatus', 'none')
         && request.resource.data.get('subscriptionEnd', null)
              == resource.data.get('subscriptionEnd', null)
-        && request.resource.data.get('photos', []) == resource.data.get('photos', [])
+        && resource.data.get('photos', [])
+             .hasAll(request.resource.data.get('photos', []))
       );
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.ownerId == request.auth.uid);

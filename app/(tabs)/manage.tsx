@@ -3,7 +3,9 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,6 +23,7 @@ import {
   useBusiness,
   useCreateService,
   useDeleteService,
+  useRemoveApprovedPhoto,
   useRemovePendingPhoto,
   useServices,
   useUpdateBusiness,
@@ -289,7 +292,12 @@ function PhotoManager({
 }) {
   const addPhoto = useAddBusinessPhoto(businessId);
   const removePending = useRemovePendingPhoto(businessId);
+  const removeApproved = useRemoveApprovedPhoto();
   const [error, setError] = useState<string | null>(null);
+  // Fullscreen preview of a tapped photo.
+  const [viewer, setViewer] = useState<string | null>(null);
+  // A live (published) photo pending the owner's delete confirmation.
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   async function pick() {
     setError(null);
@@ -339,7 +347,9 @@ function PhotoManager({
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
           {pendingPhotos.map((uri) => (
             <View key={uri} style={styles.photoWrap}>
-              <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              <Pressable onPress={() => setViewer(uri)} accessibilityRole="imagebutton" accessibilityLabel="Fotoğrafı tam ekran gör">
+                <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              </Pressable>
               <View style={styles.photoStatePending}>
                 <Ionicons name="time-outline" size={11} color="#fff" />
                 <Text style={styles.photoStateText}>Onay bekliyor</Text>
@@ -357,11 +367,22 @@ function PhotoManager({
           ))}
           {photos.map((uri) => (
             <View key={uri} style={styles.photoWrap}>
-              <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              <Pressable onPress={() => setViewer(uri)} accessibilityRole="imagebutton" accessibilityLabel="Fotoğrafı tam ekran gör">
+                <Image source={{ uri }} style={styles.photoThumb} contentFit="cover" transition={150} />
+              </Pressable>
               <View style={styles.photoStateLive}>
                 <Ionicons name="checkmark-circle" size={11} color="#fff" />
                 <Text style={styles.photoStateText}>Yayında</Text>
               </View>
+              <Pressable
+                onPress={() => setConfirmRemove(uri)}
+                style={styles.photoRemove}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Yayındaki fotoğrafı sil"
+              >
+                <Ionicons name="close" size={14} color="#fff" />
+              </Pressable>
             </View>
           ))}
         </ScrollView>
@@ -383,6 +404,53 @@ function PhotoManager({
         loading={addPhoto.isPending}
         onPress={pick}
       />
+
+      {/* Fullscreen photo viewer */}
+      <Modal visible={viewer != null} transparent animationType="fade" onRequestClose={() => setViewer(null)}>
+        <Pressable style={styles.viewerBackdrop} onPress={() => setViewer(null)}>
+          {viewer ? (
+            <Image source={{ uri: viewer }} style={styles.viewerImage} contentFit="contain" transition={150} />
+          ) : null}
+          <View style={styles.viewerClose}>
+            <Ionicons name="close" size={22} color="#fff" />
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Confirm deletion of a published photo */}
+      <Modal
+        visible={confirmRemove != null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmRemove(null)}
+      >
+        <View style={styles.overlayCenter}>
+          <View style={styles.dialog}>
+            <Ionicons name="trash-outline" size={28} color={colors.danger} />
+            <Text style={styles.dialogTitle}>Fotoğrafı sil?</Text>
+            <Text style={styles.dialogText}>Bu fotoğraf galeriden kalıcı olarak kaldırılacak.</Text>
+            <View style={styles.dialogActions}>
+              <View style={{ flex: 1 }}>
+                <Button label="Vazgeç" variant="secondary" onPress={() => setConfirmRemove(null)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Sil"
+                  variant="danger"
+                  loading={removeApproved.isPending}
+                  onPress={() => {
+                    if (confirmRemove)
+                      removeApproved.mutate(
+                        { businessId, url: confirmRemove },
+                        { onSuccess: () => setConfirmRemove(null) },
+                      );
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -652,7 +720,10 @@ function ServiceFormModal({
 
   return (
     <Modal visible={form != null} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <View style={styles.sheet}>
           <View style={styles.sheetHandle} />
           <Text style={styles.dialogTitle}>{form?.id ? 'Hizmeti Düzenle' : 'Yeni Hizmet'}</Text>
@@ -697,7 +768,7 @@ function ServiceFormModal({
             </View>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -795,6 +866,24 @@ const styles = StyleSheet.create({
     borderColor: colors.gold + '40',
   },
   locateBtnText: { ...typography.caption, color: colors.gold, fontWeight: '700' },
+  viewerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewerImage: { width: '100%', height: '80%' },
+  viewerClose: {
+    position: 'absolute',
+    top: spacing.xl,
+    right: spacing.lg,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   photoWrap: { position: 'relative' },
   photoThumb: {
     width: 120,

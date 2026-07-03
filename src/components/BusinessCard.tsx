@@ -26,7 +26,7 @@ export function BusinessCard({
   onPress?: () => void;
   distanceKm?: number | null;
 }) {
-  const cat = categoryStyle[business.category] ?? categoryStyle.erkek_berberi;
+  const cat = categoryStyle[business.category] ?? categoryStyle.berber;
   const open = isOpenToday(business);
   const initials = business.name
     .split(' ')
