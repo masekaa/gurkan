@@ -120,6 +120,7 @@ export function useUpdateAppointmentStatus() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['appointments'] });
       qc.invalidateQueries({ queryKey: ['businessAppointments'] });
+      qc.invalidateQueries({ queryKey: ['employeeAppointments'] });
       qc.invalidateQueries({ queryKey: ['loyalty'] });
       qc.invalidateQueries({ queryKey: ['takenSlots'] });
     },
@@ -134,6 +135,7 @@ export function useRevertAppointment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['appointments'] });
       qc.invalidateQueries({ queryKey: ['businessAppointments'] });
+      qc.invalidateQueries({ queryKey: ['employeeAppointments'] });
       qc.invalidateQueries({ queryKey: ['takenSlots'] });
     },
   });
@@ -172,6 +174,47 @@ export function useDeleteEmployee(businessId: string) {
   return useMutation({
     mutationFn: (id: string) => repo.deleteEmployee(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['employees', businessId] }),
+  });
+}
+
+/** A single employee record (e.g. an employee account checking its approval). */
+export function useEmployeeById(id?: string | null) {
+  return useQuery({
+    queryKey: ['employee', id],
+    queryFn: () => repo.getEmployee(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+/** Business approves/rejects a self-registered employee join request. */
+export function useApproveEmployee(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.approveEmployee(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['employees', businessId] });
+      qc.invalidateQueries({ queryKey: ['employee'] });
+    },
+  });
+}
+
+export function useRejectEmployee(businessId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.rejectEmployee(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['employees', businessId] });
+      qc.invalidateQueries({ queryKey: ['employee'] });
+    },
+  });
+}
+
+/** Appointments assigned to the signed-in employee account. */
+export function useEmployeeAppointments(employeeUserId?: string | null) {
+  return useQuery({
+    queryKey: ['employeeAppointments', employeeUserId],
+    queryFn: () => repo.listEmployeeAppointments(employeeUserId as string),
+    enabled: Boolean(employeeUserId),
   });
 }
 

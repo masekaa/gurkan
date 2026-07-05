@@ -41,10 +41,11 @@ const ROLE_META: Record<
 > = {
   admin: { label: 'Admin', color: colors.gold, icon: 'shield-checkmark-outline' },
   business: { label: 'İşletme', color: colors.approved, icon: 'storefront-outline' },
+  employee: { label: 'Çalışan', color: colors.pending, icon: 'people-outline' },
   user: { label: 'Müşteri', color: colors.completed, icon: 'person-outline' },
 };
 
-const ROLE_ORDER: UserRole[] = ['user', 'business', 'admin'];
+const ROLE_ORDER: UserRole[] = ['user', 'business', 'employee', 'admin'];
 
 export default function AdminScreen() {
   const [tab, setTab] = useState<Tab>('businesses');

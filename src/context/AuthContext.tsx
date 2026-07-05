@@ -22,7 +22,7 @@ import {
 } from 'react';
 
 import { auth, db, isFirebaseEnabled } from '@/lib/firebase';
-import { createBusiness } from '@/data/repository';
+import { createBusiness, createEmployeeForAccount } from '@/data/repository';
 import { DEMO_BUSINESS_ID, MOCK_USER_ID } from '@/data/mock';
 import type { BusinessCategory, Profile, UserRole } from '@/types';
 
@@ -38,6 +38,8 @@ interface AuthState {
     accountType?: UserRole;
     businessName?: string;
     businessCategory?: BusinessCategory;
+    /** For employee accounts: the business the employee is joining. */
+    employerBusinessId?: string;
   }) => Promise<void>;
   signOut: () => Promise<void>;
   /**
@@ -124,8 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         await persistMock(mockProfile({ email, name: email.split('@')[0] }));
       },
-      async signUp({ name, email, phone, password, accountType, businessName, businessCategory }) {
+      async signUp({ name, email, phone, password, accountType, businessName, businessCategory, employerBusinessId }) {
         const isBiz = accountType === 'business' && !!businessName?.trim();
+        const isEmployee = accountType === 'employee' && !!employerBusinessId;
+        const role: UserRole = isBiz ? 'business' : isEmployee ? 'employee' : 'user';
         signingUp.current = true;
         try {
           if (isFirebaseEnabled && auth && db) {
@@ -139,6 +143,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   category: businessCategory ?? 'berber',
                   phone,
                 })
+              : isEmployee
+                ? employerBusinessId!
+                : null;
+            // For an employee, create their pending staff record at the business.
+            const employeeId = isEmployee
+              ? await createEmployeeForAccount({
+                  businessId: employerBusinessId!,
+                  name: name.trim(),
+                  userId: uid,
+                })
               : null;
             // Write the full profile explicitly (the auth listener is suppressed
             // via signingUp so it can't race and create a default 'user' doc).
@@ -147,9 +161,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               name,
               email,
               phone: phone || null,
-              role: isBiz ? 'business' : 'user',
+              role,
               createdAt: new Date().toISOString(),
               businessId,
+              employeeId,
             };
             const { id, ...data } = profile;
             await setDoc(doc(db, 'profiles', uid), data);
@@ -164,14 +179,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 category: businessCategory ?? 'berber',
                 phone,
               })
+            : isEmployee
+              ? employerBusinessId!
+              : null;
+          const employeeId = isEmployee
+            ? await createEmployeeForAccount({
+                businessId: employerBusinessId!,
+                name: name.trim(),
+                userId: MOCK_USER_ID,
+              })
             : null;
           await persistMock(
             mockProfile({
               name,
               email,
               phone,
-              role: isBiz ? 'business' : 'user',
+              role,
               businessId,
+              employeeId,
             }),
           );
         } finally {
@@ -299,6 +324,7 @@ function mockProfile(seed: {
   phone?: string | null;
   role?: UserRole;
   businessId?: string | null;
+  employeeId?: string | null;
 }): Profile {
   return {
     id: MOCK_USER_ID,
@@ -308,6 +334,7 @@ function mockProfile(seed: {
     role: seed.role ?? 'user',
     createdAt: new Date().toISOString(),
     businessId: seed.businessId ?? null,
+    employeeId: seed.employeeId ?? null,
   };
 }
 

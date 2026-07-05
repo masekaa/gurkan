@@ -131,8 +131,9 @@ export default function DiscoverScreen() {
     [all],
   );
 
-  // Business accounts use the order inbox instead of the customer discover feed.
-  if (profile?.role === 'business') return <Redirect href="/(tabs)/orders" />;
+  // Business + employee accounts use the order inbox, not the customer feed.
+  if (profile?.role === 'business' || profile?.role === 'employee')
+    return <Redirect href="/(tabs)/orders" />;
 
   return (
     <Screen>

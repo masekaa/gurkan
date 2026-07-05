@@ -19,17 +19,19 @@ service cloud.firestore {
     // A user reads only their own profile; admins read all.
     match /profiles/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      // Self-registration may only create a customer or business profile —
+      // Self-registration may create a customer, business, or employee profile —
       // never an admin (admins are granted out-of-band / by another admin).
       allow create: if isOwner(userId)
-        && request.resource.data.role in ['user', 'business'];
-      // Users edit their own profile but CANNOT change role or businessId
-      // (no self-promotion to admin/business); admins may change anything.
+        && request.resource.data.role in ['user', 'business', 'employee'];
+      // Users edit their own profile but CANNOT change role, businessId or
+      // employeeId (no self-promotion / re-linking); admins may change anything.
       allow update: if isAdmin() || (
         isOwner(userId)
         && request.resource.data.role == resource.data.role
         && request.resource.data.get('businessId', null)
              == resource.data.get('businessId', null)
+        && request.resource.data.get('employeeId', null)
+             == resource.data.get('employeeId', null)
         // A user cannot lift their own suspension — only an admin toggles it.
         && request.resource.data.get('suspended', false)
              == resource.data.get('suspended', false)
@@ -85,10 +87,17 @@ service cloud.firestore {
     }
 
     // Employees (staff) are public for reading (customers pick one when
-    // booking); only the owning business / admin writes.
+    // booking). The owning business / admin writes; additionally a signed-in
+    // user may self-register as a PENDING employee for themselves (unapproved
+    // and inactive), which the business then approves via update.
     match /employees/{employeeId} {
       allow read: if true;
-      allow create: if isAdmin() || ownsBusiness(request.resource.data.businessId);
+      allow create: if isAdmin()
+        || ownsBusiness(request.resource.data.businessId)
+        || (isSignedIn()
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.approved == false
+            && request.resource.data.active == false);
       allow update, delete: if isAdmin() || ownsBusiness(resource.data.businessId);
     }
 
@@ -99,6 +108,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.customerId == request.auth.uid
         || resource.data.businessOwnerId == request.auth.uid
+        || resource.data.get('employeeUserId', null) == request.auth.uid
         || isAdmin()
       );
       // Customer books for themselves; the stamped businessOwnerId must match
@@ -107,11 +117,13 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.businessOwnerId ==
            get(/databases/$(database)/documents/businesses/$(request.resource.data.businessId)).data.ownerId;
-      // The owning business / admin may set any status; the customer may only
-      // CANCEL their own appointment (not self-approve or self-complete).
+      // The owning business, the assigned employee, or an admin may set any
+      // status; the customer may only CANCEL their own appointment (not
+      // self-approve or self-complete).
       allow update: if isSignedIn() && (
         isAdmin()
         || resource.data.businessOwnerId == request.auth.uid
+        || resource.data.get('employeeUserId', null) == request.auth.uid
         || (resource.data.customerId == request.auth.uid
             && request.resource.data.status == 'cancelled')
       );
@@ -136,13 +148,16 @@ service cloud.firestore {
       allow create: if (
         isOwner(request.resource.data.customerId)
         || request.resource.data.businessOwnerId == request.auth.uid
+        || request.resource.data.get('employeeUserId', null) == request.auth.uid
         || isAdmin()
       ) && request.resource.data.businessOwnerId ==
            get(/databases/$(database)/documents/businesses/$(request.resource.data.businessId)).data.ownerId;
-      // Freed by the booking customer (cancel) or the owning business (reject).
+      // Freed by the booking customer (cancel), the owning business or the
+      // assigned employee (reject/no-show), or an admin.
       allow delete: if isSignedIn() && (
         resource.data.customerId == request.auth.uid
         || resource.data.businessOwnerId == request.auth.uid
+        || resource.data.get('employeeUserId', null) == request.auth.uid
         || isAdmin()
       );
     }

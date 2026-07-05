@@ -496,6 +496,15 @@ export async function listEmployees(businessId: string): Promise<Employee[]> {
     .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 }
 
+export async function getEmployee(id: string): Promise<Employee | null> {
+  if (!id) return null;
+  if (isFirebaseEnabled) {
+    const snap = await getDoc(doc(requireDb(), 'employees', id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Employee) : null;
+  }
+  return mock.employees.find((e) => e.id === id) ?? null;
+}
+
 export async function createEmployee(input: {
   businessId: string;
   name: string;
@@ -506,6 +515,8 @@ export async function createEmployee(input: {
     name: input.name,
     title: input.title ?? '',
     active: true,
+    approved: true,
+    userId: null as string | null,
   };
   if (isFirebaseEnabled) {
     const ref = await addDoc(collection(requireDb(), 'employees'), data);
@@ -514,6 +525,44 @@ export async function createEmployee(input: {
   const employee: Employee = { id: uid('e'), ...data };
   mock.employees.push(employee);
   return employee;
+}
+
+/**
+ * Self-registration: an employee account creates its OWN staff record at a
+ * business, pending the business's approval (approved=false, active=false so it
+ * stays out of booking until accepted). Returns the new record id.
+ */
+export async function createEmployeeForAccount(input: {
+  businessId: string;
+  name: string;
+  userId: string;
+  title?: string;
+}): Promise<string> {
+  const data = {
+    businessId: input.businessId,
+    name: input.name,
+    title: input.title ?? '',
+    active: false,
+    approved: false,
+    userId: input.userId,
+  };
+  if (isFirebaseEnabled) {
+    const ref = await addDoc(collection(requireDb(), 'employees'), data);
+    return ref.id;
+  }
+  const id = uid('e');
+  mock.employees.push({ id, ...data });
+  return id;
+}
+
+/** Business approves a self-registered employee join request. */
+export async function approveEmployee(id: string): Promise<void> {
+  return updateEmployee(id, { approved: true, active: true });
+}
+
+/** Business rejects a join request — removes the pending staff record. */
+export async function rejectEmployee(id: string): Promise<void> {
+  return deleteEmployee(id);
 }
 
 export async function updateEmployee(
@@ -595,6 +644,30 @@ export async function listBusinessAppointments(
     .map(hydrate);
 }
 
+/** Appointments assigned to an employee account (their own inbox). */
+export async function listEmployeeAppointments(
+  employeeUserId: string,
+): Promise<Appointment[]> {
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(
+      query(
+        collection(requireDb(), 'appointments'),
+        where('employeeUserId', '==', employeeUserId),
+      ),
+    );
+    const rows = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Appointment)
+      .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+    return Promise.all(
+      rows.map(async (a) => ({ ...a, service: await getService(a.serviceId) })),
+    );
+  }
+  return mock.appointments
+    .filter((a) => a.employeeUserId === employeeUserId)
+    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1))
+    .map(hydrate);
+}
+
 export async function createAppointment(input: {
   customerId: string;
   businessId: string;
@@ -610,10 +683,14 @@ export async function createAppointment(input: {
   // Denormalise the business owner so the owner can query their inbox under
   // strict rules (read allowed when businessOwnerId == auth.uid).
   const business = await getBusiness(input.businessId);
+  // Denormalise the chosen employee's linked account uid (if any) so that
+  // employee can query/manage their own appointments under strict rules.
+  const employeeUserId = employeeId ? (await getEmployee(employeeId))?.userId ?? null : null;
   const base = {
     ...appointmentFields,
     employeeId,
     employeeName,
+    employeeUserId,
     businessOwnerId: business?.ownerId ?? null,
     status: 'pending' as AppointmentStatus,
     createdAt: new Date().toISOString(),
@@ -635,6 +712,7 @@ export async function createAppointment(input: {
         businessId: input.businessId,
         datetime: input.datetime,
         employeeId,
+        employeeUserId,
         customerId: input.customerId,
         businessOwnerId: business?.ownerId ?? null,
         appointmentId: apptRef.id,
@@ -751,6 +829,7 @@ export async function revertAppointmentToPending(id: string): Promise<void> {
           businessId: a.businessId,
           datetime: a.datetime,
           employeeId: a.employeeId ?? null,
+          employeeUserId: a.employeeUserId ?? null,
           customerId: a.customerId,
           businessOwnerId: a.businessOwnerId ?? null,
           appointmentId: id,

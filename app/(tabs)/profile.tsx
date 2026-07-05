@@ -26,7 +26,9 @@ export default function ProfileScreen() {
       ? { label: 'Admin', icon: 'shield-checkmark-outline' as const }
       : profile?.role === 'business'
         ? { label: 'İşletme', icon: 'storefront-outline' as const }
-        : { label: 'Müşteri', icon: 'person-outline' as const };
+        : profile?.role === 'employee'
+          ? { label: 'Çalışan', icon: 'people-outline' as const }
+          : { label: 'Müşteri', icon: 'person-outline' as const };
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');

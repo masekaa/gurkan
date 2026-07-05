@@ -21,11 +21,13 @@ import { useUserLocation } from '@/context/LocationContext';
 import {
   useAddBusinessPhoto,
   useBusiness,
+  useApproveEmployee,
   useCreateEmployee,
   useCreateService,
   useDeleteEmployee,
   useDeleteService,
   useEmployees,
+  useRejectEmployee,
   useRemoveApprovedPhoto,
   useRemovePendingPhoto,
   useServices,
@@ -792,13 +794,61 @@ function EmployeesSection({ businessId }: { businessId: string }) {
   const createEmp = useCreateEmployee(businessId);
   const updateEmp = useUpdateEmployee(businessId);
   const deleteEmp = useDeleteEmployee(businessId);
+  const approveEmp = useApproveEmployee(businessId);
+  const rejectEmp = useRejectEmployee(businessId);
   const [form, setForm] = useState<EmployeeForm | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const list = employees ?? [];
+  const all = employees ?? [];
+  // Self-registered accounts awaiting approval vs. the active roster.
+  const pending = all.filter((e) => !!e.userId && e.approved === false);
+  const list = all.filter((e) => !(e.userId && e.approved === false));
 
   return (
     <>
+      {pending.length > 0 ? (
+        <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
+          <View style={styles.cardHead}>
+            <Text style={styles.cardTitle}>Katılım İstekleri</Text>
+            <Badge label={`${pending.length}`} color={colors.pending} />
+          </View>
+          <Text style={styles.subDesc}>
+            Bu kişiler işletmene çalışan olarak katılmak istiyor. Onaylarsan sana
+            atanan randevuları görüp yönetebilirler.
+          </Text>
+          {pending.map((e) => (
+            <View key={e.id} style={styles.joinRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.serviceName}>{e.name}</Text>
+                <Text style={styles.serviceMeta}>Onay bekliyor</Text>
+              </View>
+              <Pressable
+                onPress={() => approveEmp.mutate(e.id)}
+                disabled={approveEmp.isPending || rejectEmp.isPending}
+                hitSlop={6}
+                style={[styles.joinBtn, styles.joinApprove]}
+                accessibilityRole="button"
+                accessibilityLabel={`${e.name} katılım isteğini onayla`}
+              >
+                <Ionicons name="checkmark" size={18} color={colors.approved} />
+                <Text style={[styles.joinBtnText, { color: colors.approved }]}>Onayla</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => rejectEmp.mutate(e.id)}
+                disabled={approveEmp.isPending || rejectEmp.isPending}
+                hitSlop={6}
+                style={[styles.joinBtn, styles.joinReject]}
+                accessibilityRole="button"
+                accessibilityLabel={`${e.name} katılım isteğini reddet`}
+              >
+                <Ionicons name="close" size={18} color={colors.danger} />
+                <Text style={[styles.joinBtnText, { color: colors.danger }]}>Reddet</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       <View style={styles.sectionHead}>
         <Text style={styles.sectionTitle}>Çalışanlar</Text>
         <Pressable
@@ -1026,6 +1076,19 @@ const styles = StyleSheet.create({
   },
   serviceName: { ...typography.bodyStrong, color: colors.text },
   serviceMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  joinRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  joinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  joinApprove: { backgroundColor: colors.approved + '14', borderColor: colors.approved + '55' },
+  joinReject: { backgroundColor: colors.danger + '12', borderColor: colors.danger + '44' },
+  joinBtnText: { ...typography.caption, fontWeight: '700' },
   iconBtn: { padding: 4 },
   hourRow: { flexDirection: 'row', gap: spacing.md },
   dayHourRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

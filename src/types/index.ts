@@ -1,6 +1,6 @@
 /** Domain model shared across the app, mirroring the Supabase schema. */
 
-export type UserRole = 'user' | 'business' | 'admin';
+export type UserRole = 'user' | 'business' | 'employee' | 'admin';
 
 export interface Profile {
   id: string;
@@ -9,8 +9,13 @@ export interface Profile {
   phone: string | null;
   role: UserRole;
   createdAt: string;
-  /** For business accounts: the business this account manages. */
+  /**
+   * For business accounts: the business this account manages.
+   * For employee accounts: the business this account works at.
+   */
   businessId?: string | null;
+  /** For employee accounts: their `employees/{id}` record. */
+  employeeId?: string | null;
   /** Favorited business ids (customer). */
   favorites?: string[];
   /**
@@ -121,6 +126,17 @@ export interface Employee {
   title?: string;
   /** Inactive employees are hidden from booking but kept for history. */
   active: boolean;
+  /**
+   * Linked employee account uid, when the staff member self-registered (vs.
+   * being created by the business). Lets that account manage its own bookings.
+   */
+  userId?: string | null;
+  /**
+   * Business approval of a self-registered join request. Business-created staff
+   * are implicitly approved (field absent/true); a self-registered employee
+   * starts `false` and stays hidden from booking until the business approves.
+   */
+  approved?: boolean;
 }
 
 export type AppointmentStatus =
@@ -143,6 +159,11 @@ export interface Appointment {
   employeeId?: string | null;
   /** Denormalised employee name for the business/customer-side lists. */
   employeeName?: string | null;
+  /**
+   * Denormalised uid of the chosen employee's linked account (if any), so the
+   * employee can query/manage their own appointments under strict rules.
+   */
+  employeeUserId?: string | null;
   datetime: string; // ISO 8601
   status: AppointmentStatus;
   createdAt: string;

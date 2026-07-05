@@ -11,7 +11,8 @@ export default function TabsLayout() {
   const role = profile?.role;
   const isBusiness = role === 'business';
   const isAdmin = role === 'admin';
-  const isUser = !isBusiness && !isAdmin;
+  const isEmployee = role === 'employee';
+  const isUser = !isBusiness && !isAdmin && !isEmployee;
   const isCustomer = isUser && !!profile;
   // Hidden tabs use `href: null` so the screen stays routable but the button
   // is removed for the irrelevant role.
@@ -68,12 +69,12 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Business tabs */}
+      {/* Business + employee inbox */}
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Randevular',
-          ...(isBusiness ? {} : hide),
+          title: isEmployee ? 'Randevularım' : 'Randevular',
+          ...(isBusiness || isEmployee ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="albums-outline" size={size} color={color} />
           ),

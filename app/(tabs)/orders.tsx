@@ -14,6 +14,8 @@ import { useAuth } from '@/context/AuthContext';
 import {
   SlotTakenError,
   useBusinessAppointments,
+  useEmployeeAppointments,
+  useEmployeeById,
   useRevertAppointment,
   useUpdateAppointmentStatus,
 } from '@/hooks/queries';
@@ -31,8 +33,16 @@ const FILTERS: Record<Tab, AppointmentStatus[]> = {
 
 export default function OrdersScreen() {
   const { profile } = useAuth();
+  const isEmployee = profile?.role === 'employee';
   const [tab, setTab] = useState<Tab>('pending');
-  const { data, isLoading, isError, refetch } = useBusinessAppointments(profile?.id);
+  // Business owner reads their inbox by businessOwnerId; an employee reads only
+  // the appointments assigned to them (employeeUserId == their uid).
+  const businessData = useBusinessAppointments(isEmployee ? null : profile?.id);
+  const employeeData = useEmployeeAppointments(isEmployee ? profile?.id : null);
+  const { data, isLoading, isError, refetch } = isEmployee ? employeeData : businessData;
+  const { data: myEmployee, isLoading: empLoading } = useEmployeeById(
+    isEmployee ? profile?.employeeId : null,
+  );
   const update = useUpdateAppointmentStatus();
   const revert = useRevertAppointment();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -64,10 +74,39 @@ export default function OrdersScreen() {
     });
   }
 
+  // Employee approval gate: no inbox until the business accepts the join request.
+  if (isEmployee) {
+    if (empLoading) {
+      return (
+        <Screen>
+          <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.xxl }} />
+        </Screen>
+      );
+    }
+    if (!myEmployee) {
+      return (
+        <EmployeeGate
+          icon="close-circle-outline"
+          title="İşletmeye ekli değilsin"
+          text="Katılım isteğin işletme tarafından kaldırılmış görünüyor. İşletme yöneticisiyle iletişime geçebilirsin."
+        />
+      );
+    }
+    if (myEmployee.approved !== true) {
+      return (
+        <EmployeeGate
+          icon="hourglass-outline"
+          title="Onay bekleniyor"
+          text="İşletmeye katılım isteğin gönderildi. İşletme seni onayladıktan sonra sana atanan randevuları burada görüp yönetebileceksin."
+        />
+      );
+    }
+  }
+
   return (
     <Screen>
       <View style={styles.header}>
-        <Text style={styles.title}>Gelen Randevular</Text>
+        <Text style={styles.title}>{isEmployee ? 'Randevularım' : 'Gelen Randevular'}</Text>
         <View style={styles.segment}>
           {(['pending', 'approved', 'history'] as Tab[]).map((t) => (
             <Pressable
@@ -126,6 +165,25 @@ export default function OrdersScreen() {
           }
         />
       )}
+    </Screen>
+  );
+}
+
+function EmployeeGate({
+  icon,
+  title,
+  text,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  text: string;
+}) {
+  return (
+    <Screen>
+      <View style={styles.header}>
+        <Text style={styles.title}>Randevularım</Text>
+      </View>
+      <EmptyState icon={icon} title={title} subtitle={text} />
     </Screen>
   );
 }

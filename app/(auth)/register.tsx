@@ -13,6 +13,7 @@ import {
 
 import { Button, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
+import { useBusinesses } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { categoryLabels } from '@/lib/format';
 import { PASSWORD_RULE, isValidEmail, isValidPassword, isValidPhone } from '@/lib/validators';
@@ -32,10 +33,14 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessCategory, setBusinessCategory] = useState<BusinessCategory>('berber');
+  const [employerSearch, setEmployerSearch] = useState('');
+  const [employerId, setEmployerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isBusiness = accountType === 'business';
+  const isEmployee = accountType === 'employee';
+  const { data: employerResults } = useBusinesses(employerSearch);
 
   async function onSubmit() {
     setError(null);
@@ -45,6 +50,10 @@ export default function RegisterScreen() {
     }
     if (isBusiness && !businessName.trim()) {
       setError('İşletme adı gereklidir.');
+      return;
+    }
+    if (isEmployee && !employerId) {
+      setError('Çalıştığın işletmeyi seç.');
       return;
     }
     if (!isValidEmail(email)) {
@@ -69,6 +78,7 @@ export default function RegisterScreen() {
         accountType,
         businessName: businessName.trim(),
         businessCategory,
+        employerBusinessId: employerId ?? undefined,
       });
       router.replace('/(tabs)');
     } catch (e: any) {
@@ -111,6 +121,7 @@ export default function RegisterScreen() {
                 [
                   { key: 'user', label: 'Müşteri', icon: 'person-outline' },
                   { key: 'business', label: 'İşletme', icon: 'storefront-outline' },
+                  { key: 'employee', label: 'Çalışan', icon: 'people-outline' },
                 ] as const
               ).map((t) => {
                 const active = accountType === t.key;
@@ -169,6 +180,61 @@ export default function RegisterScreen() {
               </>
             ) : null}
 
+            {isEmployee ? (
+              <>
+                <Field
+                  label="Çalıştığın işletme"
+                  icon="search-outline"
+                  placeholder="İşletme adı ara"
+                  autoCapitalize="none"
+                  value={employerSearch}
+                  onChangeText={(v) => {
+                    setEmployerSearch(v);
+                    setEmployerId(null);
+                  }}
+                />
+                <View style={styles.employerList}>
+                  {(employerResults ?? []).slice(0, 6).map((b) => {
+                    const selected = employerId === b.id;
+                    return (
+                      <Pressable
+                        key={b.id}
+                        onPress={() => {
+                          setEmployerId(b.id);
+                          setEmployerSearch(b.name);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        style={[styles.employerRow, selected && styles.employerRowActive]}
+                      >
+                        <Ionicons
+                          name={selected ? 'checkmark-circle' : 'storefront-outline'}
+                          size={18}
+                          color={selected ? colors.gold : colors.textMuted}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.employerName}>{b.name}</Text>
+                          {b.district ? <Text style={styles.employerSub}>{b.district}</Text> : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                  {employerSearch.trim() && (employerResults ?? []).length === 0 ? (
+                    <Text style={styles.employerEmpty}>
+                      İşletme bulunamadı. İşletmenin Keşfet'te yayında olduğundan emin ol.
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.bizNote}>
+                  <Ionicons name="information-circle-outline" size={15} color={colors.gold} />
+                  <Text style={styles.bizNoteText}>
+                    Kaydından sonra işletmenin onayına düşersin. İşletme seni onayladıktan
+                    sonra sana atanan randevuları görüp yönetebilirsin.
+                  </Text>
+                </View>
+              </>
+            ) : null}
+
             <Field
               label="Ad Soyad"
               icon="person-outline"
@@ -204,7 +270,7 @@ export default function RegisterScreen() {
             <Text style={styles.hint}>{PASSWORD_RULE}</Text>
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Button
-              label={isBusiness ? 'İşletme Hesabı Oluştur' : 'Kayıt Ol'}
+              label={isBusiness ? 'İşletme Hesabı Oluştur' : isEmployee ? 'Çalışan Olarak Kayıt Ol' : 'Kayıt Ol'}
               onPress={onSubmit}
               loading={loading}
             />
@@ -297,6 +363,21 @@ const styles = StyleSheet.create({
   catChipTextActive: { color: colors.onGold, fontWeight: '700' },
   bizNote: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   bizNoteText: { ...typography.caption, color: colors.textMuted, flex: 1, lineHeight: 18 },
+  employerList: { gap: spacing.xs },
+  employerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  employerRowActive: { borderColor: colors.gold, backgroundColor: colors.gold + '12' },
+  employerName: { ...typography.bodyStrong, color: colors.text },
+  employerSub: { ...typography.caption, color: colors.textMuted, marginTop: 1 },
+  employerEmpty: { ...typography.caption, color: colors.textFaint, padding: spacing.sm },
   hint: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs, marginTop: -spacing.xs, lineHeight: 18 },
   error: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
