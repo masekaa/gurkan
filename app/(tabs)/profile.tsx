@@ -13,13 +13,16 @@ import {
 
 import { Avatar, Button, Card, Field } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
+import { useConfirmContactChange, useRequestContactChange } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
 import { PASSWORD_RULE, isValidPassword } from '@/lib/validators';
 import { centeredContent, colors, radius, spacing, typography } from '@/theme';
 
 export default function ProfileScreen() {
-  const { profile, signOut, updateProfile, deleteAccount, changePassword } = useAuth();
+  const { profile, signOut, updateProfile, deleteAccount, changePassword, refreshProfile } = useAuth();
   const router = useRouter();
+  const requestCC = useRequestContactChange();
+  const confirmCC = useConfirmContactChange();
 
   const roleMeta =
     profile?.role === 'admin'
@@ -47,6 +50,16 @@ export default function ProfileScreen() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSaving, setPwSaving] = useState(false);
   const [pwDone, setPwDone] = useState(false);
+
+  // Email/phone change with cross-channel OTP.
+  const [ccField, setCcField] = useState<'email' | 'phone' | null>(null);
+  const [ccStep, setCcStep] = useState<'input' | 'code'>('input');
+  const [ccValue, setCcValue] = useState('');
+  const [ccCode, setCcCode] = useState('');
+  const [ccSentTo, setCcSentTo] = useState<string | null>(null);
+  const [ccError, setCcError] = useState<string | null>(null);
+  const [ccBusy, setCcBusy] = useState(false);
+  const [ccDone, setCcDone] = useState(false);
 
   async function onSignOut() {
     await signOut();
@@ -123,6 +136,53 @@ export default function ProfileScreen() {
       );
     } finally {
       setPwSaving(false);
+    }
+  }
+
+  function openContact(field: 'email' | 'phone') {
+    setCcField(field);
+    setCcStep('input');
+    setCcValue('');
+    setCcCode('');
+    setCcSentTo(null);
+    setCcError(null);
+    setCcDone(false);
+  }
+
+  async function ccRequest() {
+    if (!ccField) return;
+    setCcError(null);
+    if (!ccValue.trim()) {
+      setCcError('Yeni değeri gir.');
+      return;
+    }
+    setCcBusy(true);
+    try {
+      const res = await requestCC.mutateAsync({ field: ccField, newValue: ccValue.trim() });
+      setCcSentTo(res.target);
+      setCcStep('code');
+    } catch (e: any) {
+      setCcError(e?.message ?? 'Kod gönderilemedi. Lütfen tekrar dene.');
+    } finally {
+      setCcBusy(false);
+    }
+  }
+
+  async function ccConfirm() {
+    setCcError(null);
+    if (!/^\d{6}$/.test(ccCode.trim())) {
+      setCcError('6 haneli kodu gir.');
+      return;
+    }
+    setCcBusy(true);
+    try {
+      await confirmCC.mutateAsync(ccCode.trim());
+      await refreshProfile();
+      setCcDone(true);
+    } catch (e: any) {
+      setCcError(e?.message ?? 'Doğrulanamadı. Lütfen tekrar dene.');
+    } finally {
+      setCcBusy(false);
     }
   }
 
@@ -222,7 +282,11 @@ export default function ProfileScreen() {
           <MenuRow icon="heart-outline" label="Favorilerim" onPress={() => router.push('/favorites')} />
         ) : null}
         {isFirebaseEnabled ? (
-          <MenuRow icon="key-outline" label="Şifre Değiştir" onPress={openChangePassword} />
+          <>
+            <MenuRow icon="mail-outline" label="E-posta Değiştir" onPress={() => openContact('email')} />
+            <MenuRow icon="call-outline" label="Telefon Değiştir" onPress={() => openContact('phone')} />
+            <MenuRow icon="key-outline" label="Şifre Değiştir" onPress={openChangePassword} />
+          </>
         ) : null}
         <MenuRow icon="lock-closed-outline" label="Gizlilik Politikası" onPress={() => router.push('/legal/privacy')} />
         <MenuRow icon="document-text-outline" label="Kullanım Koşulları" onPress={() => router.push('/legal/terms')} />
@@ -285,6 +349,82 @@ export default function ProfileScreen() {
                 <Button label="Sil" variant="danger" loading={deleting} onPress={confirmDelete} />
               </View>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={ccField != null} transparent animationType="fade" onRequestClose={() => setCcField(null)}>
+        <View style={[styles.overlay, { justifyContent: 'center', alignItems: 'center', padding: spacing.xl }]}>
+          <View style={styles.deleteDialog}>
+            {ccDone ? (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={30} color={colors.gold} />
+                <Text style={styles.sheetTitle}>
+                  {ccField === 'email' ? 'E-posta güncellendi' : 'Telefon güncellendi'}
+                </Text>
+                <Text style={styles.deleteText}>Bilgin başarıyla değiştirildi.</Text>
+                <View style={{ width: '100%', marginTop: spacing.sm }}>
+                  <Button label="Tamam" onPress={() => setCcField(null)} />
+                </View>
+              </>
+            ) : ccStep === 'input' ? (
+              <>
+                <Ionicons name={ccField === 'email' ? 'mail-outline' : 'call-outline'} size={28} color={colors.gold} />
+                <Text style={styles.sheetTitle}>
+                  {ccField === 'email' ? 'E-posta Değiştir' : 'Telefon Değiştir'}
+                </Text>
+                <Text style={styles.deleteText}>
+                  {ccField === 'email'
+                    ? 'Yeni e-postanı gir. Doğrulama kodu kayıtlı telefonuna SMS ile gelecek.'
+                    : 'Yeni telefonunu gir. Doğrulama kodu kayıtlı e-postana gelecek.'}
+                </Text>
+                <View style={{ width: '100%', marginTop: spacing.sm }}>
+                  <Field
+                    value={ccValue}
+                    onChangeText={setCcValue}
+                    icon={ccField === 'email' ? 'mail-outline' : 'call-outline'}
+                    autoCapitalize="none"
+                    keyboardType={ccField === 'email' ? 'email-address' : 'phone-pad'}
+                    placeholder={ccField === 'email' ? 'ornek@eposta.com' : '+90 5xx xxx xx xx'}
+                  />
+                </View>
+                {ccError ? <Text style={styles.deleteError}>{ccError}</Text> : null}
+                <View style={styles.sheetActions}>
+                  <View style={{ flex: 1 }}>
+                    <Button label="Vazgeç" variant="secondary" onPress={() => setCcField(null)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button label="Kod Gönder" loading={ccBusy} onPress={ccRequest} />
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                <Ionicons name="shield-checkmark-outline" size={28} color={colors.gold} />
+                <Text style={styles.sheetTitle}>Doğrulama Kodu</Text>
+                <Text style={styles.deleteText}>
+                  {ccSentTo} adresine gönderilen 6 haneli kodu gir.
+                </Text>
+                <View style={{ width: '100%', marginTop: spacing.sm }}>
+                  <Field
+                    value={ccCode}
+                    onChangeText={(v) => setCcCode(v.replace(/[^0-9]/g, '').slice(0, 6))}
+                    icon="keypad-outline"
+                    keyboardType="number-pad"
+                    placeholder="123456"
+                  />
+                </View>
+                {ccError ? <Text style={styles.deleteError}>{ccError}</Text> : null}
+                <View style={styles.sheetActions}>
+                  <View style={{ flex: 1 }}>
+                    <Button label="Geri" variant="secondary" onPress={() => { setCcStep('input'); setCcError(null); }} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button label="Doğrula" loading={ccBusy} onPress={ccConfirm} />
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>

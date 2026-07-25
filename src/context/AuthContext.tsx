@@ -56,6 +56,8 @@ interface AuthState {
   setRole: (role: UserRole) => Promise<void>;
   /** Update editable profile fields (name / phone). */
   updateProfile: (patch: { name?: string; phone?: string | null }) => Promise<void>;
+  /** Re-read the profile doc from Firestore (e.g. after a verified email/phone change). */
+  refreshProfile: () => Promise<void>;
   /** Add/remove a business from the user's favorites. */
   toggleFavorite: (businessId: string) => Promise<void>;
 }
@@ -272,6 +274,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         await persistMock(next);
+      },
+      async refreshProfile() {
+        if (isFirebaseEnabled && db && auth?.currentUser) {
+          const snap = await getDoc(doc(db, 'profiles', auth.currentUser.uid));
+          if (snap.exists()) {
+            setProfile({ id: auth.currentUser.uid, ...(snap.data() as Omit<Profile, 'id'>) });
+          }
+        }
       },
       async toggleFavorite(businessId) {
         if (!profile) return;

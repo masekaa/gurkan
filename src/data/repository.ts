@@ -214,6 +214,33 @@ export async function adminSetUserPassword(
   await httpsCallable(functions, 'adminSetPassword')({ uid, newPassword });
 }
 
+/**
+ * Request a verification code to change the signed-in user's email or phone.
+ * The code is delivered cross-channel (email change -> SMS; phone change ->
+ * email) by the `requestContactChange` Cloud Function. Returns a masked hint.
+ */
+export async function requestContactChange(
+  field: 'email' | 'phone',
+  newValue: string,
+): Promise<{ channel: 'sms' | 'email'; target: string }> {
+  if (!isFirebaseEnabled || !functions) {
+    throw new Error('Bu işlem yalnızca Firebase + Cloud Functions ile çalışır.');
+  }
+  const res = await httpsCallable(functions, 'requestContactChange')({ field, newValue });
+  return res.data as { channel: 'sms' | 'email'; target: string };
+}
+
+/** Confirm the verification code and apply the pending email/phone change. */
+export async function confirmContactChange(
+  code: string,
+): Promise<{ field: 'email' | 'phone'; newValue: string }> {
+  if (!isFirebaseEnabled || !functions) {
+    throw new Error('Bu işlem yalnızca Firebase + Cloud Functions ile çalışır.');
+  }
+  const res = await httpsCallable(functions, 'confirmContactChange')({ code });
+  return res.data as { field: 'email' | 'phone'; newValue: string };
+}
+
 /** Admin-only: set a user's role (e.g. promote to admin). */
 export async function setUserRole(userId: string, role: UserRole): Promise<void> {
   if (isFirebaseEnabled) {

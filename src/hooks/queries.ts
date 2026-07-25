@@ -395,6 +395,21 @@ export function useAdminSetPassword() {
   });
 }
 
+// --- Contact change (email/phone) with cross-channel OTP ---------------------
+
+export function useRequestContactChange() {
+  return useMutation({
+    mutationFn: ({ field, newValue }: { field: 'email' | 'phone'; newValue: string }) =>
+      repo.requestContactChange(field, newValue),
+  });
+}
+
+export function useConfirmContactChange() {
+  return useMutation({
+    mutationFn: (code: string) => repo.confirmContactChange(code),
+  });
+}
+
 export function useSetUserRole() {
   const qc = useQueryClient();
   return useMutation({
