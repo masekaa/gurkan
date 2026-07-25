@@ -68,6 +68,20 @@ export function formatDateTime(iso: string): string {
   return `${formatDate(iso)} · ${formatTime(iso)}`;
 }
 
+/**
+ * Map a stored category (possibly a legacy key) to its current canonical key,
+ * so filtering/searching by a current category also matches older businesses.
+ */
+const LEGACY_CATEGORY: Record<string, BusinessCategory> = {
+  erkek_berberi: 'berber',
+  barber_shop: 'berber',
+  kadin_kuaforu: 'kuafor',
+};
+
+export function normalizeCategory(c: string): BusinessCategory {
+  return (LEGACY_CATEGORY[c] ?? c) as BusinessCategory;
+}
+
 export const categoryLabels: Record<BusinessCategory, string> = {
   // Canonical
   berber: 'Berber',

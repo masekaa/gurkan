@@ -218,7 +218,9 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menu}>
-        <MenuRow icon="heart-outline" label="Favorilerim" onPress={() => router.push('/favorites')} />
+        {profile.role === 'user' ? (
+          <MenuRow icon="heart-outline" label="Favorilerim" onPress={() => router.push('/favorites')} />
+        ) : null}
         {isFirebaseEnabled ? (
           <MenuRow icon="key-outline" label="Şifre Değiştir" onPress={openChangePassword} />
         ) : null}

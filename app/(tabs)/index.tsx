@@ -27,7 +27,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useUserLocation } from '@/context/LocationContext';
 import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
 import { isFirebaseEnabled } from '@/lib/firebase';
-import { categoryLabels } from '@/lib/format';
+import { categoryLabels, normalizeCategory } from '@/lib/format';
 import { hasLocation, haversineKm, type LatLng } from '@/lib/geo';
 import { isOpenToday } from '@/lib/hours';
 import {
@@ -107,7 +107,7 @@ export default function DiscoverScreen() {
   const businesses = useMemo(
     () =>
       all
-        .filter((b) => filter === 'all' || b.category === filter)
+        .filter((b) => filter === 'all' || normalizeCategory(b.category) === filter)
         .filter((b) => !openOnly || isOpenToday(b))
         .sort((a, b) => {
           if (sort === 'reviews') return b.reviewCount - a.reviewCount;
