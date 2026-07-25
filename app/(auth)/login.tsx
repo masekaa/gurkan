@@ -62,7 +62,7 @@ export default function LoginScreen() {
               style={styles.brandLogo}
               contentFit="contain"
             />
-            <Text style={styles.title}>Altın100</Text>
+            <Text style={styles.title}>İyiKiRandevu</Text>
             <Text style={styles.subtitle}>
               Berber & güzellik randevunu saniyeler içinde al.
             </Text>

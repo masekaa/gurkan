@@ -4,9 +4,9 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '1. Hizmet',
     body:
-      'Altın100, berber, kuaför ve güzellik merkezlerini keşfetmeni ve bu işletmelerden ' +
+      'İyiKiRandevu, berber, kuaför ve güzellik merkezlerini keşfetmeni ve bu işletmelerden ' +
       'randevu almanı sağlayan bir platformdur. Randevu hizmetini işletmeler sunar; ' +
-      'Altın100 işletme ile müşteriyi buluşturan aracıdır.',
+      'İyiKiRandevu işletme ile müşteriyi buluşturan aracıdır.',
   },
   {
     heading: '2. Hesap',
@@ -37,7 +37,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '6. Sorumluluk Reddi',
     body:
-      'Altın100, işletmelerin sunduğu hizmetlerin kalitesi konusunda garanti vermez. ' +
+      'İyiKiRandevu, işletmelerin sunduğu hizmetlerin kalitesi konusunda garanti vermez. ' +
       'Uygulama "olduğu gibi" sunulur; kesintisiz veya hatasız olacağı garanti edilmez.',
   },
   {
@@ -57,7 +57,7 @@ export default function TermsScreen() {
     <LegalDoc
       title="Kullanım Koşulları"
       updated="14 Haziran 2026"
-      intro="Altın100’u kullanarak aşağıdaki koşulları kabul etmiş olursun."
+      intro="İyiKiRandevu’yu kullanarak aşağıdaki koşulları kabul etmiş olursun."
       sections={SECTIONS}
     />
   );

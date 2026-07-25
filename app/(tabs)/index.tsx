@@ -141,7 +141,7 @@ export default function DiscoverScreen() {
       <View style={styles.topHeader}>
         <View style={styles.greetingRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>ALTIN100 · BURSA</Text>
+            <Text style={styles.eyebrow}>İYİKİRANDEVU · BURSA</Text>
             <Text style={styles.hello}>
               Merhaba{profile ? `, ${profile.name.split(' ')[0]}` : ''} 👋
             </Text>

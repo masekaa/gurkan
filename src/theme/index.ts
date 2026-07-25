@@ -1,5 +1,5 @@
 /**
- * Altın100 design tokens.
+ * İyiKiRandevu design tokens.
  *
  * The brand leans on a dark "charcoal" surface with a warm gold accent
  * (altın = gold), which reads as premium for the barber / beauty segment.

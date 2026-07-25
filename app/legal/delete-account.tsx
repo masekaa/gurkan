@@ -4,7 +4,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '1. Uygulama içinden silme (anında)',
     body:
-      'Altın100 uygulamasında: Profil sekmesi → "Hesabımı Sil" → şifreni doğrula → onayla. ' +
+      'İyiKiRandevu uygulamasında: Profil sekmesi → "Hesabımı Sil" → şifreni doğrula → onayla. ' +
       'Hesabın ve profil bilgilerin anında ve kalıcı olarak silinir.',
   },
   {
@@ -35,7 +35,7 @@ export default function DeleteAccountScreen() {
     <LegalDoc
       title="Hesap Silme"
       updated="14 Haziran 2026"
-      intro="Altın100 hesabını ve verilerini istediğin zaman silebilirsin. İki yol vardır:"
+      intro="İyiKiRandevu hesabını ve verilerini istediğin zaman silebilirsin. İki yol vardır:"
       sections={SECTIONS}
     />
   );

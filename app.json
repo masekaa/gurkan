@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Altın100",
+    "name": "İyiKiRandevu",
     "slug": "altin100",
     "scheme": "altin100",
     "version": "1.0.1",
@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0E0E12"
+      "backgroundColor": "#D9A521"
     },
     "ios": {
       "supportsTablet": true,
@@ -24,7 +24,7 @@
     "android": {
       "package": "com.altin100.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0E0E12",
+        "backgroundColor": "#D9A521",
         "foregroundImage": "./assets/icon.png"
       },
       "predictiveBackGestureEnabled": false,

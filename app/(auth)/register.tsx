@@ -107,7 +107,7 @@ export default function RegisterScreen() {
               <Ionicons name="person-add" size={26} color={colors.onGold} />
             </View>
             <Text style={styles.title}>Hesap Oluştur</Text>
-            <Text style={styles.subtitle}>Birkaç adımda Altın100 ailesine katıl.</Text>
+            <Text style={styles.subtitle}>Birkaç adımda İyiKiRandevu ailesine katıl.</Text>
           </View>
 
           {!isFirebaseEnabled ? (

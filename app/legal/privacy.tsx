@@ -60,7 +60,7 @@ export default function PrivacyScreen() {
     <LegalDoc
       title="Gizlilik Politikası"
       updated="14 Haziran 2026"
-      intro="Altın100 olarak gizliliğine önem veriyoruz. Bu politika, hangi verileri neden topladığımızı ve nasıl koruduğumuzu açıklar."
+      intro="İyiKiRandevu olarak gizliliğine önem veriyoruz. Bu politika, hangi verileri neden topladığımızı ve nasıl koruduğumuzu açıklar."
       sections={SECTIONS}
     />
   );
