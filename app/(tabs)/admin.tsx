@@ -501,6 +501,9 @@ function AdminUserRow({
         <View style={{ flex: 1 }}>
           <Text style={styles.cardTitle} numberOfLines={1}>{user.name || 'İsimsiz'}</Text>
           <Text style={styles.cardSub} numberOfLines={1}>{user.email}</Text>
+          <Text style={styles.cardSub} numberOfLines={1}>
+            {user.phone ? user.phone : 'Telefon yok'}
+          </Text>
         </View>
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
           <Badge label={isSelf ? 'Sen' : meta.label} color={meta.color} />
