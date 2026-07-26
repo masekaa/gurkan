@@ -4,7 +4,9 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '1. Topladığımız Veriler',
     body:
-      'Hesap bilgileri: ad soyad, e-posta adresi ve (isteğe bağlı) telefon numarası. ' +
+      'Hesap bilgileri: ad soyad, e-posta adresi ve telefon numarası. Telefon ' +
+      'numarası yalnızca randevu almak için hesap oluşturmayı seçtiğinde istenir; ' +
+      'uygulamayı hesapsız (misafir) olarak gezmek için gerekmez. ' +
       'Randevu bilgileri: seçtiğin işletme, hizmet, tarih ve saat. ' +
       'Konum: yalnızca uygulama açıkken ve izin verdiğinde, sana yakın işletmeleri ve uzaklığı göstermek için. ' +
       'İşletme hesapları için: işletme adı, adresi, çalışma saatleri ve yüklenen galeri fotoğrafları.',
@@ -14,7 +16,10 @@ const SECTIONS: LegalSection[] = [
     body:
       'Hesabını oluşturmak ve oturumunu sürdürmek, randevularını yönetmek, sana yakın ' +
       'işletmeleri ve mesafeyi göstermek, işletmeleri listelemek ve uygulamayı ' +
-      'güvenli tutmak için. Verilerini sana reklam göstermek için satmıyoruz.',
+      'güvenli tutmak için. Telefon numaran, işletmelerin randevu onayı, değişiklik ve ' +
+      'hatırlatma için sana ulaşabilmesi amacıyla kullanılır. E-posta ve telefonunu ' +
+      'değiştirmek istediğinde, doğrulama kodu göndermek için e-posta/SMS kullanılır. ' +
+      'Verilerini sana reklam göstermek için satmıyoruz.',
   },
   {
     heading: '3. Konum İzni',
@@ -27,8 +32,9 @@ const SECTIONS: LegalSection[] = [
     heading: '4. Üçüncü Taraf Hizmetler',
     body:
       'Verilerin Google Firebase altyapısında (Kimlik Doğrulama, Firestore veritabanı ve ' +
-      'Cloud Storage) saklanır ve işlenir. Harita görüntüleri OpenStreetMap üzerinden gelir. ' +
-      'Bu sağlayıcıların kendi gizlilik politikaları geçerlidir.',
+      'Cloud Storage) saklanır ve işlenir. Doğrulama kodları için SMS gönderiminde Twilio, ' +
+      'e-posta gönderiminde Google (Gmail SMTP) kullanılır. Harita görüntüleri OpenStreetMap ' +
+      'üzerinden gelir. Bu sağlayıcıların kendi gizlilik politikaları geçerlidir.',
   },
   {
     heading: '5. Fotoğraflar ve İçerik Denetimi',
@@ -59,7 +65,7 @@ export default function PrivacyScreen() {
   return (
     <LegalDoc
       title="Gizlilik Politikası"
-      updated="14 Haziran 2026"
+      updated="26 Temmuz 2026"
       intro="İyiKiRandevu olarak gizliliğine önem veriyoruz. Bu politika, hangi verileri neden topladığımızı ve nasıl koruduğumuzu açıklar."
       sections={SECTIONS}
     />

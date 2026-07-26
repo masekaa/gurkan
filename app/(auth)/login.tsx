@@ -83,7 +83,7 @@ export default function LoginScreen() {
               icon="mail-outline"
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholder="ornek@altin100.com"
+              placeholder="ornek@eposta.com"
               value={email}
               onChangeText={setEmail}
             />

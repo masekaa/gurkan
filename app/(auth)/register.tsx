@@ -251,7 +251,7 @@ export default function RegisterScreen() {
               icon="mail-outline"
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholder="ornek@altin100.com"
+              placeholder="ornek@eposta.com"
               value={email}
               onChangeText={setEmail}
             />
@@ -263,6 +263,10 @@ export default function RegisterScreen() {
               value={phone}
               onChangeText={setPhone}
             />
+            <Text style={styles.hint}>
+              Telefonun, işletmelerin randevu onayı, değişiklik ve hatırlatma için
+              sana ulaşabilmesi amacıyla gereklidir.
+            </Text>
             <Field
               label="Şifre"
               icon="lock-closed-outline"
