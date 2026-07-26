@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ErrorState, ListSkeleton, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
-import { useBusiness, useBusinessAppointments } from '@/hooks/queries';
+import { useBusiness, useBusinessAppointments, useEmployeeAppointments } from '@/hooks/queries';
 import { formatPrice } from '@/lib/format';
 import { centeredContent, colors, elevation, gradients, radius, spacing, typography } from '@/theme';
 import type { Business } from '@/types';
@@ -20,16 +20,31 @@ function dailySlotCount(b?: Business | null): number {
 
 export default function DashboardScreen() {
   const { profile } = useAuth();
+  const isEmployee = profile?.role === 'employee';
   const businessId = profile?.businessId;
   const { data: business } = useBusiness(businessId ?? '');
-  const { data, isLoading, isError, refetch } = useBusinessAppointments(profile?.id);
+  const businessData = useBusinessAppointments(isEmployee ? null : profile?.id);
+  const employeeData = useEmployeeAppointments(isEmployee ? profile?.id : null);
+  const { data, isLoading, isError, refetch } = isEmployee ? employeeData : businessData;
 
   const stats = useMemo(() => {
     const appts = data ?? [];
     const now = new Date();
+    const startOfWeek = (() => {
+      const x = new Date(now);
+      x.setHours(0, 0, 0, 0);
+      x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // Mon-based
+      return x;
+    })();
+    const weekEnd = new Date(startOfWeek);
+    weekEnd.setDate(weekEnd.getDate() + 7);
     const sameDay = (iso: string) => {
       const d = new Date(iso);
       return d.toDateString() === now.toDateString();
+    };
+    const sameWeek = (iso: string) => {
+      const d = new Date(iso);
+      return d >= startOfWeek && d < weekEnd;
     };
     const sameMonth = (iso: string) => {
       const d = new Date(iso);
@@ -39,6 +54,7 @@ export default function DashboardScreen() {
 
     const completed = appts.filter((a) => a.status === 'completed');
     const daily = completed.filter((a) => sameDay(a.datetime)).reduce((s, a) => s + price(a), 0);
+    const weekly = completed.filter((a) => sameWeek(a.datetime)).reduce((s, a) => s + price(a), 0);
     const monthly = completed.filter((a) => sameMonth(a.datetime)).reduce((s, a) => s + price(a), 0);
     const pending = appts.filter((a) => a.status === 'pending').length;
 
@@ -54,7 +70,7 @@ export default function DashboardScreen() {
     ).length;
     const noShowRate = past.length ? Math.round((noShows / past.length) * 100) : 0;
 
-    return { daily, monthly, total: appts.length, pending, occupancy, noShowRate };
+    return { daily, weekly, monthly, total: appts.length, pending, occupancy, noShowRate };
   }, [data, business]);
 
   if (isLoading) {
@@ -78,8 +94,12 @@ export default function DashboardScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View>
           <Text style={styles.eyebrow}>PANEL</Text>
-          <Text style={styles.hello}>{business?.name ?? 'İşletmem'}</Text>
-          <Text style={styles.subtitle}>Bugünün özeti</Text>
+          <Text style={styles.hello}>
+            {isEmployee ? profile?.name ?? 'Panelim' : business?.name ?? 'İşletmem'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isEmployee ? 'Kazanç özetin' : 'Bugünün özeti'}
+          </Text>
         </View>
 
         <LinearGradient
@@ -93,7 +113,9 @@ export default function DashboardScreen() {
           <Text style={styles.earnValue}>{formatPrice(stats.monthly)}</Text>
           <View style={styles.earnSub}>
             <Ionicons name="cash-outline" size={15} color="rgba(23,17,9,0.75)" />
-            <Text style={styles.earnSubText}>Bugün {formatPrice(stats.daily)}</Text>
+            <Text style={styles.earnSubText}>
+              Bugün {formatPrice(stats.daily)} · Bu hafta {formatPrice(stats.weekly)}
+            </Text>
           </View>
         </LinearGradient>
 
@@ -102,19 +124,23 @@ export default function DashboardScreen() {
           <StatCard icon="hourglass-outline" label="Bekleyen" value={String(stats.pending)} highlight={stats.pending > 0} />
         </View>
 
-        <RateCard
-          icon="speedometer-outline"
-          label="Bugünkü Doluluk Oranı"
-          percent={stats.occupancy}
-          color={colors.approved}
-        />
-        <RateCard
-          icon="alert-circle-outline"
-          label="Gelmeme & İptal Oranı"
-          percent={stats.noShowRate}
-          color={stats.noShowRate > 15 ? colors.danger : colors.pending}
-          hint={stats.noShowRate > 15 ? 'Hedefin (%15) üzerinde' : 'Hedef aralığında'}
-        />
+        {!isEmployee ? (
+          <>
+            <RateCard
+              icon="speedometer-outline"
+              label="Bugünkü Doluluk Oranı"
+              percent={stats.occupancy}
+              color={colors.approved}
+            />
+            <RateCard
+              icon="alert-circle-outline"
+              label="Gelmeme & İptal Oranı"
+              percent={stats.noShowRate}
+              color={stats.noShowRate > 15 ? colors.danger : colors.pending}
+              hint={stats.noShowRate > 15 ? 'Hedefin (%15) üzerinde' : 'Hedef aralığında'}
+            />
+          </>
+        ) : null}
       </ScrollView>
     </Screen>
   );

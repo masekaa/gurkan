@@ -84,7 +84,7 @@ export default function TabsLayout() {
         name="dashboard"
         options={{
           title: 'Panel',
-          ...(isBusiness ? {} : hide),
+          ...(isBusiness || isEmployee ? {} : hide),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="stats-chart-outline" size={size} color={color} />
           ),
