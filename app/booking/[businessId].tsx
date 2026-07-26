@@ -10,9 +10,10 @@ import {
   View,
 } from 'react-native';
 
-import { Button, Screen } from '@/components/ui';
+import { Button, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import {
+  BookingLimitError,
   SlotTakenError,
   useBusiness,
   useCreateAppointment,
@@ -91,6 +92,7 @@ export default function BookingScreen() {
   const days = useMemo(() => nextDays(14), []);
   const [selectedDay, setSelectedDay] = useState(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [note, setNote] = useState('');
   const [done, setDone] = useState(false);
 
   const [slotError, setSlotError] = useState<string | null>(null);
@@ -176,6 +178,7 @@ export default function BookingScreen() {
         datetime: date.toISOString(),
         employeeId: employee?.id ?? null,
         employeeName: employee?.name ?? null,
+        note: note.trim() || null,
         durationMin: service.durationMin,
       });
       notifySuccess();
@@ -193,6 +196,8 @@ export default function BookingScreen() {
         setSlotError('Bu saat az önce doldu. Lütfen başka bir saat seç.');
         setSelectedTime(null);
         refetchTaken();
+      } else if (e instanceof BookingLimitError) {
+        setSlotError(e.message);
       } else {
         setSlotError('Randevu oluşturulamadı. Lütfen tekrar dene.');
       }
@@ -375,6 +380,14 @@ export default function BookingScreen() {
             );
           })}
         </View>
+
+        <Text style={styles.label}>İşletmeye not (isteğe bağlı)</Text>
+        <Field
+          placeholder="Örn. istediğin model, özel bir not…"
+          value={note}
+          onChangeText={setNote}
+          multiline
+        />
       </ScrollView>
 
       <View style={styles.footer}>

@@ -63,6 +63,32 @@ export class SlotTakenError extends Error {
   }
 }
 
+/** Thrown when a customer exceeds the per-business booking limits. */
+export class BookingLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BookingLimitError';
+  }
+}
+
+/** Per-business booking caps for a single customer. */
+export const MAX_PER_DAY = 2;
+export const MAX_PER_WEEK = 4;
+
+/** Monday-based start-of-week for a given date (local time). */
+function startOfWeek(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = (x.getDay() + 6) % 7; // Mon=0 … Sun=6
+  x.setDate(x.getDate() - day);
+  return x;
+}
+
+const sameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
 /** Appointment statuses that occupy a slot (others free it for re-booking). */
 const ACTIVE_STATUSES: AppointmentStatus[] = ['pending', 'approved', 'completed'];
 const isActiveStatus = (s: AppointmentStatus) => ACTIVE_STATUSES.includes(s);
@@ -671,6 +697,56 @@ export async function listBusinessAppointments(
     .map(hydrate);
 }
 
+/**
+ * Throw a BookingLimitError if the customer already has MAX_PER_DAY bookings at
+ * this business on the target day, or MAX_PER_WEEK in the target's week. Only
+ * slot-occupying statuses count (pending/approved/completed); cancelled/rejected
+ * /no-show do not.
+ */
+async function assertWithinBookingLimits(
+  customerId: string,
+  businessId: string,
+  datetimeIso: string,
+): Promise<void> {
+  const target = new Date(datetimeIso);
+  const weekStart = startOfWeek(target);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  let rows: { datetime: string; status: AppointmentStatus }[] = [];
+  if (isFirebaseEnabled) {
+    const snap = await getDocs(
+      query(
+        collection(requireDb(), 'appointments'),
+        where('customerId', '==', customerId),
+        where('businessId', '==', businessId),
+      ),
+    );
+    rows = snap.docs.map((d) => d.data() as { datetime: string; status: AppointmentStatus });
+  } else {
+    rows = mock.appointments.filter(
+      (a) => a.customerId === customerId && a.businessId === businessId,
+    );
+  }
+
+  const active = rows.filter((a) => isActiveStatus(a.status));
+  const dayCount = active.filter((a) => sameDay(new Date(a.datetime), target)).length;
+  if (dayCount >= MAX_PER_DAY) {
+    throw new BookingLimitError(
+      `Bu işletmeden aynı gün en fazla ${MAX_PER_DAY} randevu alabilirsin.`,
+    );
+  }
+  const weekCount = active.filter((a) => {
+    const d = new Date(a.datetime);
+    return d >= weekStart && d < weekEnd;
+  }).length;
+  if (weekCount >= MAX_PER_WEEK) {
+    throw new BookingLimitError(
+      `Bu işletmeden bir haftada en fazla ${MAX_PER_WEEK} randevu alabilirsin.`,
+    );
+  }
+}
+
 /** Appointments assigned to an employee account (their own inbox). */
 export async function listEmployeeAppointments(
   employeeUserId: string,
@@ -703,10 +779,20 @@ export async function createAppointment(input: {
   /** Chosen employee (when the business has staff); null = business-level. */
   employeeId?: string | null;
   employeeName?: string | null;
+  /** Optional note from the customer to the business. */
+  note?: string | null;
   /** Service length in minutes; stored on the lock for overlap-aware availability. */
   durationMin?: number;
 }): Promise<Appointment> {
-  const { durationMin = 30, employeeId = null, employeeName = null, ...appointmentFields } = input;
+  const {
+    durationMin = 30,
+    employeeId = null,
+    employeeName = null,
+    note = null,
+    ...appointmentFields
+  } = input;
+  // Enforce per-customer, per-business booking caps (day/week).
+  await assertWithinBookingLimits(input.customerId, input.businessId, input.datetime);
   // Denormalise the business owner so the owner can query their inbox under
   // strict rules (read allowed when businessOwnerId == auth.uid).
   const business = await getBusiness(input.businessId);
@@ -718,6 +804,7 @@ export async function createAppointment(input: {
     employeeId,
     employeeName,
     employeeUserId,
+    note,
     businessOwnerId: business?.ownerId ?? null,
     status: 'pending' as AppointmentStatus,
     createdAt: new Date().toISOString(),

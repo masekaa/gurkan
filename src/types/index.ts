@@ -167,6 +167,8 @@ export interface Appointment {
   datetime: string; // ISO 8601
   status: AppointmentStatus;
   createdAt: string;
+  /** Optional note the customer leaves for the business at booking time. */
+  note?: string | null;
   /** Denormalised customer name for the business-side list. */
   customerName?: string;
   // Convenience joins (populated by the repository for display).

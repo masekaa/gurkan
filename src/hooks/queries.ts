@@ -6,13 +6,13 @@ import {
 
 import { useAuth } from '@/context/AuthContext';
 import * as repo from '@/data/repository';
-import { SlotTakenError } from '@/data/repository';
+import { BookingLimitError, SlotTakenError } from '@/data/repository';
 import { MOCK_USER_ID } from '@/data/mock';
 import type { AppointmentStatus, Business, UserRole } from '@/types';
 
-// Re-exported so screens can detect double-booking without importing the data
-// layer directly (screens depend on the hooks/repository boundary only).
-export { SlotTakenError };
+// Re-exported so screens can detect double-booking / limit errors without
+// importing the data layer directly (screens depend on the hooks boundary).
+export { BookingLimitError, SlotTakenError };
 
 /** Falls back to the mock user id so screens work before sign-in too. */
 function useUserId() {
@@ -85,6 +85,7 @@ export function useCreateAppointment() {
       datetime: string;
       employeeId?: string | null;
       employeeName?: string | null;
+      note?: string | null;
       durationMin?: number;
     }) => repo.createAppointment({ customerId: userId, ...input }),
     onSuccess: (appt) => {

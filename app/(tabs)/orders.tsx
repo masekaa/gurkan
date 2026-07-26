@@ -199,7 +199,7 @@ function OrderCard({
   onRevert: () => void;
   busy: boolean;
 }) {
-  const { customerName, service, status, datetime, employeeName } = appointment;
+  const { customerName, service, status, datetime, employeeName, note } = appointment;
   const meta = statusMeta[status];
   const initial = (customerName ?? 'M').trim().charAt(0).toUpperCase();
 
@@ -229,6 +229,13 @@ function OrderCard({
           <View style={styles.timeRow}>
             <Ionicons name="person-outline" size={14} color={colors.textFaint} />
             <Text style={styles.time}>{employeeName}</Text>
+          </View>
+        ) : null}
+
+        {note ? (
+          <View style={styles.noteBox}>
+            <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.gold} />
+            <Text style={styles.noteText}>{note}</Text>
           </View>
         ) : null}
 
@@ -346,5 +353,14 @@ const styles = StyleSheet.create({
   service: { ...typography.caption, color: colors.gold, marginTop: 2 },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   time: { ...typography.caption, color: colors.textMuted },
+  noteBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: colors.gold + '12',
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
+  noteText: { ...typography.caption, color: colors.text, flex: 1, lineHeight: 18 },
   actions: { flexDirection: 'row', gap: spacing.md },
 });
