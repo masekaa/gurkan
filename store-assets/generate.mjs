@@ -79,7 +79,7 @@ const discover = `
 <div class="gold-head" style="padding-top:1vh;">
   <div class="row" style="justify-content:space-between;">
     <div><div style="color:rgba(255,255,255,.8);font-size:1.5vh;font-weight:600;">Merhaba 👋</div>
-      <div style="color:#fff;font-weight:800;font-size:2.9vh;">Altın100</div></div>
+      <div style="color:#fff;font-weight:800;font-size:2.9vh;">İyiKiRandevu</div></div>
     <div style="width:5vh;height:5vh;border-radius:50%;background:rgba(255,255,255,.18);"></div>
   </div>
   <div class="row" style="background:#fff;border-radius:1.8vh;padding:1.4vh 1.6vh;margin-top:1.8vh;gap:1vh;">
@@ -88,13 +88,13 @@ const discover = `
 </div>
 <div class="body" style="padding:2vh 5% 0;">
   <div class="row" style="gap:1vh;overflow:hidden;margin-bottom:1.8vh;">
-    ${chip('Tümü',false)}${chip('Erkek Berberi',true)}${chip('Kadın Kuaförü',false)}${chip('Güzellik',false)}
+    ${chip('Tümü',false)}${chip('Berber',true)}${chip('Kuaför',false)}${chip('Güzellik',false)}${chip('Nail Art',false)}
   </div>
   <div class="row" style="gap:1vh;margin-bottom:2vh;">
     ${chip('🧭 Yakınımda',true)}${chip('★ Puan',false)}${chip('⏰ Açık',false)}
   </div>
-  ${bizCard('Nilüfer Barber House','Berber Shop','💈',['#3B7DD8','#1B3A6B'],'4.8','214','1.2 km')}
-  ${bizCard('Altın Makas','Erkek Berberi','✂️',[C.gold,C.goldDeep],'4.6','98','2.4 km')}
+  ${bizCard('Nilüfer Barber House','Berber','💈',['#3B7DD8','#1B3A6B'],'4.8','214','1.2 km')}
+  ${bizCard('Altın Makas','Berber','✂️',[C.gold,C.goldDeep],'4.6','98','2.4 km')}
   ${bizCard('Belle Güzellik','Güzellik Merkezi','💅',['#C16B8E','#7B2E52'],'4.9','167','3.1 km')}
 </div>`;
 
@@ -106,7 +106,7 @@ const detail = `
     <div style="width:8vh;height:8vh;border-radius:2.4vh;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:3.4vh;font-weight:800;color:#fff;">NB</div>
     <div style="color:#fff;font-weight:800;font-size:2.6vh;margin-top:1.2vh;">Nilüfer Barber House</div>
     <div class="row" style="gap:1vh;color:#fff;font-size:1.6vh;margin-top:0.8vh;">
-      <span style="color:${C.goldSoft};">★ 4.8</span><span style="opacity:.7;">(214)</span><span>·</span><span>Berber Shop</span><span>·</span><span style="color:#7BE3A0;">Açık</span>
+      <span style="color:${C.goldSoft};">★ 4.8</span><span style="opacity:.7;">(214)</span><span>·</span><span>Berber</span><span>·</span><span style="color:#7BE3A0;">Açık</span>
     </div>
   </div>
 </div>
@@ -179,7 +179,7 @@ const profile = `
   <div class="card row" style="padding:2vh;gap:1.6vh;margin-bottom:2vh;">
     <div style="width:8vh;height:8vh;border-radius:50%;background:linear-gradient(135deg,${C.gold},${C.goldDeep});display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:3vh;">A</div>
     <div style="flex:1;"><div style="font-weight:800;color:${C.text};font-size:2.1vh;">Ahmet Demir</div>
-      <div class="muted" style="font-size:1.5vh;margin-top:0.3vh;">ahmet@altin100.com</div>
+      <div class="muted" style="font-size:1.5vh;margin-top:0.3vh;">ahmet@iyikirandevu.com</div>
       <div class="muted" style="font-size:1.5vh;">+90 5xx xxx xx xx</div></div>
     <span class="gold" style="font-size:2vh;">✎</span>
   </div>
