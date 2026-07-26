@@ -224,7 +224,7 @@ export default function ProfileScreen() {
         <View style={styles.menu}>
           <MenuRow icon="lock-closed-outline" label="Gizlilik Politikası" onPress={() => router.push('/legal/privacy')} />
           <MenuRow icon="document-text-outline" label="Kullanım Koşulları" onPress={() => router.push('/legal/terms')} />
-          <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:ahmetdemirexhesap@gmail.com')} />
+          <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:iyikirandevu@gmail.com')} />
         </View>
 
         <View style={styles.backendNote}>
@@ -290,7 +290,7 @@ export default function ProfileScreen() {
         ) : null}
         <MenuRow icon="lock-closed-outline" label="Gizlilik Politikası" onPress={() => router.push('/legal/privacy')} />
         <MenuRow icon="document-text-outline" label="Kullanım Koşulları" onPress={() => router.push('/legal/terms')} />
-        <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:ahmetdemirexhesap@gmail.com')} />
+        <MenuRow icon="help-circle-outline" label="Yardım & Destek" onPress={() => Linking.openURL('mailto:iyikirandevu@gmail.com')} />
       </View>
 
       <View style={styles.backendNote}>

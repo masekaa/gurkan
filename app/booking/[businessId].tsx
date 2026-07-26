@@ -277,7 +277,7 @@ export default function BookingScreen() {
             <Ionicons name="lock-closed" size={18} color={colors.danger} />
             <Text style={styles.suspendText}>
               Hesabın askıya alındı; şu an randevu oluşturamazsın. İtiraz için:
-              ahmetdemirexhesap@gmail.com
+              iyikirandevu@gmail.com
             </Text>
           </View>
         ) : null}

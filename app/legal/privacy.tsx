@@ -57,7 +57,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '8. İletişim',
     body:
-      'Gizlilikle ilgili sorular için bizimle iletişime geçebilirsin: ahmetdemirexhesap@gmail.com',
+      'Gizlilikle ilgili sorular için bizimle iletişime geçebilirsin: iyikirandevu@gmail.com',
   },
 ];
 

@@ -11,7 +11,7 @@ const SECTIONS: LegalSection[] = [
     heading: '2. E-posta ile talep',
     body:
       'Uygulamaya erişemiyorsan, hesabını silmek için kayıtlı e-posta adresinle ' +
-      'ahmetdemirexhesap@gmail.com adresine "Hesap silme talebi" konulu bir e-posta gönder. ' +
+      'iyikirandevu@gmail.com adresine "Hesap silme talebi" konulu bir e-posta gönder. ' +
       'Talebini en geç 30 gün içinde işleme alır ve hesabını sileriz.',
   },
   {

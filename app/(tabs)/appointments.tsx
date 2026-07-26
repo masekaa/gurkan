@@ -111,7 +111,7 @@ export default function AppointmentsScreen() {
             <Ionicons name="lock-closed" size={18} color={colors.danger} />
             <Text style={styles.bannerText}>
               Hesabın askıya alındı; yeni randevu oluşturamazsın. Randevularına
-              düzenli gelmediğin için uygulandı. İtiraz için: ahmetdemirexhesap@gmail.com
+              düzenli gelmediğin için uygulandı. İtiraz için: iyikirandevu@gmail.com
             </Text>
           </View>
         ) : noShowCount > 0 ? (

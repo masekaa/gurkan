@@ -9,7 +9,7 @@ Web sürümü Vercel'de yayında olduğundan bu sayfalar gerçek URL'dir:
 
 - **Gizlilik Politikası:** https://gurkan-theta.vercel.app/legal/privacy
 - **Kullanım Koşulları:** https://gurkan-theta.vercel.app/legal/terms
-- **Destek e-postası:** ahmetdemirexhesap@gmail.com
+- **Destek e-postası:** iyikirandevu@gmail.com
 - **Pazarlama/Destek URL'si:** https://gurkan-theta.vercel.app
 
 > Not: Bu sayfalar uygulama içinde de açılır (Profil → Gizlilik Politikası / Kullanım Koşulları). Mağaza son commit'i Vercel'e deploy olunca URL'ler canlanır.
