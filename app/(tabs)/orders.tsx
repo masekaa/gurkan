@@ -3,25 +3,32 @@ import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
-import { Badge, Button, EmptyState, ErrorState, Screen } from '@/components/ui';
+import { Badge, Button, EmptyState, ErrorState, Field, Screen } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import {
   SlotTakenError,
   useBusinessAppointments,
+  useCreateManualAppointment,
   useEmployeeAppointments,
   useEmployeeById,
   useRevertAppointment,
+  useServices,
   useUpdateAppointmentStatus,
 } from '@/hooks/queries';
-import { formatDate, formatTime, statusMeta } from '@/lib/format';
+import { formatDate, formatDuration, formatPrice, formatTime, statusMeta } from '@/lib/format';
 import { colors, elevation, radius, spacing, typography } from '@/theme';
-import type { Appointment, AppointmentStatus } from '@/types';
+import type { Appointment, AppointmentStatus, Service } from '@/types';
 
 type Tab = 'pending' | 'approved' | 'history';
 
@@ -46,6 +53,12 @@ export default function OrdersScreen() {
   const update = useUpdateAppointmentStatus();
   const revert = useRevertAppointment();
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Business-only: manual (walk-in) appointment entry.
+  const businessId = profile?.businessId ?? '';
+  const { data: services } = useServices(!isEmployee ? businessId : '');
+  const createManual = useCreateManualAppointment();
+  const [manualOpen, setManualOpen] = useState(false);
 
   const items = useMemo(
     () => (data ?? []).filter((a) => FILTERS[tab].includes(a.status)),
@@ -106,7 +119,21 @@ export default function OrdersScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <Text style={styles.title}>{isEmployee ? 'Randevularım' : 'Gelen Randevular'}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{isEmployee ? 'Randevularım' : 'Gelen Randevular'}</Text>
+          {!isEmployee ? (
+            <Pressable
+              onPress={() => setManualOpen(true)}
+              hitSlop={8}
+              style={styles.manualBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Manuel randevu ekle"
+            >
+              <Ionicons name="add" size={18} color={colors.onGold} />
+              <Text style={styles.manualBtnText}>Manuel</Text>
+            </Pressable>
+          ) : null}
+        </View>
         <View style={styles.segment}>
           {(['pending', 'approved', 'history'] as Tab[]).map((t) => (
             <Pressable
@@ -165,7 +192,168 @@ export default function OrdersScreen() {
           }
         />
       )}
+
+      {!isEmployee ? (
+        <ManualAppointmentModal
+          visible={manualOpen}
+          services={services ?? []}
+          saving={createManual.isPending}
+          onClose={() => setManualOpen(false)}
+          onSubmit={(form) => {
+            createManual.mutate(
+              {
+                businessId,
+                businessOwnerId: profile?.id ?? '',
+                datetime: form.datetime,
+                customerName: form.customerName,
+                serviceId: form.service?.id ?? null,
+                note: form.note || null,
+                durationMin: form.service?.durationMin ?? 30,
+              },
+              {
+                onSuccess: () => setManualOpen(false),
+                onError: (e) =>
+                  setActionError(
+                    e instanceof SlotTakenError
+                      ? 'Bu saat dolu, başka bir saat seç.'
+                      : 'Randevu eklenemedi. Lütfen tekrar dene.',
+                  ),
+              },
+            );
+          }}
+        />
+      ) : null}
     </Screen>
+  );
+}
+
+function ManualAppointmentModal({
+  visible,
+  services,
+  saving,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  services: Service[];
+  saving: boolean;
+  onClose: () => void;
+  onSubmit: (form: { customerName: string; datetime: string; service: Service | null; note: string }) => void;
+}) {
+  const [name, setName] = useState('');
+  const [dayIdx, setDayIdx] = useState(0);
+  const [time, setTime] = useState('10:00');
+  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [note, setNote] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const days = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return d;
+    });
+  }, []);
+  const dayFmt = useMemo(() => new Intl.DateTimeFormat('tr-TR', { weekday: 'short', day: 'numeric' }), []);
+
+  function submit() {
+    setError(null);
+    if (!name.trim()) {
+      setError('Müşteri adı gerekli.');
+      return;
+    }
+    const [h, m] = time.split(':').map((n) => parseInt(n, 10));
+    if (isNaN(h) || isNaN(m) || h > 23 || m > 59) {
+      setError('Saati HH:MM biçiminde gir.');
+      return;
+    }
+    const d = new Date(days[dayIdx]);
+    d.setHours(h, m, 0, 0);
+    onSubmit({
+      customerName: name.trim(),
+      datetime: d.toISOString(),
+      service: services.find((s) => s.id === serviceId) ?? null,
+      note: note.trim(),
+    });
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Manuel Randevu</Text>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: spacing.md }}>
+            <Field label="Müşteri adı" value={name} onChangeText={setName} icon="person-outline" placeholder="Ad Soyad" />
+
+            <Text style={styles.formLabel}>Gün</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+              {days.map((d, i) => {
+                const active = i === dayIdx;
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={() => setDayIdx(i)}
+                    style={[styles.pickChip, active && styles.pickChipActive]}
+                  >
+                    <Text style={[styles.pickChipText, active && styles.pickChipTextActive]}>{dayFmt.format(d)}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-end' }}>
+              <View style={{ width: 110 }}>
+                <Text style={styles.formLabel}>Saat</Text>
+                <TextInput
+                  value={time}
+                  onChangeText={setTime}
+                  placeholder="10:00"
+                  placeholderTextColor={colors.textFaint}
+                  style={styles.timeInput}
+                  maxLength={5}
+                />
+              </View>
+            </View>
+
+            {services.length > 0 ? (
+              <View>
+                <Text style={styles.formLabel}>Hizmet (isteğe bağlı)</Text>
+                <View style={styles.svcWrap}>
+                  {services.map((s) => {
+                    const active = serviceId === s.id;
+                    return (
+                      <Pressable
+                        key={s.id}
+                        onPress={() => setServiceId(active ? null : s.id)}
+                        style={[styles.pickChip, active && styles.pickChipActive]}
+                      >
+                        <Text style={[styles.pickChipText, active && styles.pickChipTextActive]}>
+                          {s.name} · {formatDuration(s.durationMin)} · {formatPrice(s.price)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+
+            <Field label="Not (isteğe bağlı)" value={note} onChangeText={setNote} icon="chatbubble-ellipses-outline" multiline />
+            {error ? <Text style={styles.formError}>{error}</Text> : null}
+          </ScrollView>
+          <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm }}>
+            <View style={{ flex: 1 }}>
+              <Button label="Vazgeç" variant="secondary" onPress={onClose} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Ekle" loading={saving} onPress={submit} />
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -285,7 +473,54 @@ function OrderCard({
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.title, color: colors.text },
+  manualBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: colors.gold,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  manualBtnText: { ...typography.caption, color: colors.onGold, fontWeight: '700' },
+  overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+    gap: spacing.md,
+    maxHeight: '88%',
+  },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center' },
+  sheetTitle: { ...typography.heading, color: colors.text, textAlign: 'center' },
+  formLabel: { ...typography.caption, color: colors.textMuted, marginLeft: spacing.xs },
+  pickChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  pickChipActive: { backgroundColor: colors.gold, borderColor: colors.gold },
+  pickChipText: { ...typography.caption, color: colors.textMuted },
+  pickChipTextActive: { color: colors.onGold, fontWeight: '700' },
+  timeInput: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    color: colors.text,
+    ...typography.body,
+  },
+  svcWrap: { gap: spacing.sm, marginTop: spacing.xs },
+  formError: { ...typography.caption, color: colors.danger, marginLeft: spacing.xs },
   segment: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceAlt,

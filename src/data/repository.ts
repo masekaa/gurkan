@@ -851,6 +851,76 @@ export async function createAppointment(input: {
   return hydrate(appt);
 }
 
+/**
+ * Business owner adds a manual (walk-in) appointment to their own schedule.
+ * No customer account is involved (customerId is empty); the slot is still
+ * locked so it can't be double-booked. Defaults to an 'approved' status.
+ */
+export async function createManualAppointment(input: {
+  businessId: string;
+  businessOwnerId: string;
+  datetime: string;
+  customerName: string;
+  serviceId?: string | null;
+  employeeId?: string | null;
+  employeeName?: string | null;
+  note?: string | null;
+  durationMin?: number;
+  status?: AppointmentStatus;
+}): Promise<Appointment> {
+  const base = {
+    customerId: '',
+    customerName: input.customerName,
+    businessId: input.businessId,
+    businessOwnerId: input.businessOwnerId,
+    serviceId: input.serviceId ?? '',
+    employeeId: input.employeeId ?? null,
+    employeeName: input.employeeName ?? null,
+    employeeUserId: input.employeeId ? (await getEmployee(input.employeeId))?.userId ?? null : null,
+    note: input.note ?? null,
+    datetime: input.datetime,
+    status: input.status ?? ('approved' as AppointmentStatus),
+    createdAt: new Date().toISOString(),
+  };
+  const durationMin = input.durationMin ?? 30;
+  if (isFirebaseEnabled) {
+    const database = requireDb();
+    const lockRef = doc(
+      database,
+      'slots',
+      slotId(input.businessId, input.datetime, base.employeeId),
+    );
+    const apptRef = doc(collection(database, 'appointments'));
+    await runTransaction(database, async (tx) => {
+      const existing = await tx.get(lockRef);
+      if (existing.exists()) throw new SlotTakenError();
+      tx.set(lockRef, {
+        businessId: input.businessId,
+        datetime: input.datetime,
+        employeeId: base.employeeId,
+        employeeUserId: base.employeeUserId,
+        customerId: '',
+        businessOwnerId: input.businessOwnerId,
+        appointmentId: apptRef.id,
+        durationMin,
+      });
+      tx.set(apptRef, base);
+    });
+    return { id: apptRef.id, ...base };
+  }
+  const taken = mock.appointments.some(
+    (a) =>
+      a.businessId === input.businessId &&
+      a.datetime === input.datetime &&
+      (a.employeeId ?? null) === base.employeeId &&
+      isActiveStatus(a.status),
+  );
+  if (taken) throw new SlotTakenError();
+  const appt: Appointment = { id: uid('a'), ...base };
+  mock.appointments.unshift(appt);
+  return hydrate(appt);
+}
+
 /** Booked slot datetimes (ISO) for a business, used to disable taken times. */
 export type TakenSlot = {
   datetime: string;
@@ -1059,6 +1129,7 @@ export async function createReview(input: {
 // ---------------------------------------------------------------------------
 
 async function getService(id: string): Promise<Service | undefined> {
+  if (!id) return undefined;
   if (isFirebaseEnabled) {
     const snap = await getDoc(doc(requireDb(), 'services', id));
     return snap.exists() ? ({ id: snap.id, ...snap.data() } as Service) : undefined;

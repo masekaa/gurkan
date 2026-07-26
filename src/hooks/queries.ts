@@ -96,6 +96,29 @@ export function useCreateAppointment() {
   });
 }
 
+/** Business owner adds a manual (walk-in) appointment to their schedule. */
+export function useCreateManualAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      businessId: string;
+      businessOwnerId: string;
+      datetime: string;
+      customerName: string;
+      serviceId?: string | null;
+      employeeId?: string | null;
+      employeeName?: string | null;
+      note?: string | null;
+      durationMin?: number;
+    }) => repo.createManualAppointment(input),
+    onSuccess: (appt) => {
+      qc.invalidateQueries({ queryKey: ['businessAppointments'] });
+      qc.invalidateQueries({ queryKey: ['employeeAppointments'] });
+      qc.invalidateQueries({ queryKey: ['takenSlots', appt.businessId] });
+    },
+  });
+}
+
 /** Booked slot datetimes (ISO) for a business, to disable taken times. */
 export function useTakenSlots(businessId: string) {
   return useQuery({
