@@ -87,6 +87,11 @@ export interface Business {
   /** Hours before start within which a customer can no longer cancel. Default 2. */
   cancelWindowHours?: number;
   /**
+   * Temporary closures: time ranges during which the business takes no
+   * appointments (e.g. a break). Slots overlapping any range are unbookable.
+   */
+  closures?: BusinessClosure[];
+  /**
    * LEGACY / unused. Listing is now FREE — a business is LISTED in discovery
    * solely when approved === true. These fields are retained only for backward
    * compatibility with existing documents and are not read anywhere.
@@ -96,6 +101,12 @@ export interface Business {
 }
 
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'none';
+
+/** A temporary appointment closure window (ISO start/end). */
+export interface BusinessClosure {
+  start: string; // ISO 8601
+  end: string; // ISO 8601
+}
 
 /** One weekday's working hours. */
 export interface DayHours {

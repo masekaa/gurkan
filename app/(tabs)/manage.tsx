@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -36,7 +36,7 @@ import {
   useUpdateService,
 } from '@/hooks/queries';
 import { isStorageEnabled } from '@/lib/firebase';
-import { formatDate, formatDuration, formatPrice } from '@/lib/format';
+import { formatDate, formatDuration, formatPrice, formatTime } from '@/lib/format';
 import { DEFAULT_CENTER, hasLocation, type LatLng } from '@/lib/geo';
 import { notifyError, notifySuccess } from '@/lib/haptics';
 import { DAY_ORDER, DAY_SHORT, defaultHours, getDayHours } from '@/lib/hours';
@@ -222,6 +222,11 @@ export default function ManageScreen() {
 
         {/* Employees / staff */}
         <EmployeesSection businessId={businessId} />
+
+        {/* Temporary appointment closures */}
+        {business ? (
+          <ClosuresSection businessId={businessId} closures={business.closures ?? []} />
+        ) : null}
       </ScrollView>
 
       {/* Add / edit service modal */}
@@ -957,6 +962,146 @@ function EmployeesSection({ businessId }: { businessId: string }) {
   );
 }
 
+function ClosuresSection({
+  businessId,
+  closures,
+}: {
+  businessId: string;
+  closures: { start: string; end: string }[];
+}) {
+  const updateBusiness = useUpdateBusiness(businessId);
+  const [dayIdx, setDayIdx] = useState(0);
+  const [start, setStart] = useState('10:00');
+  const [end, setEnd] = useState('12:00');
+  const [error, setError] = useState<string | null>(null);
+
+  const days = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return d;
+    });
+  }, []);
+
+  const dayFmt = useMemo(() => new Intl.DateTimeFormat('tr-TR', { weekday: 'short', day: 'numeric' }), []);
+
+  function add() {
+    setError(null);
+    const mk = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map((n) => parseInt(n, 10));
+      const d = new Date(days[dayIdx]);
+      d.setHours(h || 0, m || 0, 0, 0);
+      return d;
+    };
+    const s = mk(start);
+    const e = mk(end);
+    if (!(e.getTime() > s.getTime())) {
+      setError('Bitiş saati başlangıçtan sonra olmalı.');
+      return;
+    }
+    const next = [...closures, { start: s.toISOString(), end: e.toISOString() }].sort((a, b) =>
+      a.start < b.start ? -1 : 1,
+    );
+    updateBusiness.mutate({ closures: next });
+  }
+
+  function remove(idx: number) {
+    updateBusiness.mutate({ closures: closures.filter((_, i) => i !== idx) });
+  }
+
+  const upcoming = closures.filter((c) => new Date(c.end).getTime() > Date.now());
+
+  return (
+    <View style={[styles.card, elevation.soft, { gap: spacing.sm }]}>
+      <Text style={styles.cardTitle}>Randevu Kapatma</Text>
+      <View style={styles.moderationNote}>
+        <Ionicons name="time-outline" size={15} color={colors.gold} />
+        <Text style={styles.storageNoteText}>
+          Geçici olarak randevuya kapatmak istediğin aralığı ekle (örn. Pzt
+          10:00–12:00). O saatler müşterilere kapalı görünür.
+        </Text>
+      </View>
+
+      <Text style={styles.slotLabel}>Gün</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+        {days.map((d, i) => {
+          const active = i === dayIdx;
+          return (
+            <Pressable
+              key={i}
+              onPress={() => setDayIdx(i)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              style={[styles.closureDay, active && styles.slotChipActive]}
+            >
+              <Text style={[styles.slotChipText, active && styles.slotChipTextActive]}>
+                {dayFmt.format(d)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <View style={styles.closureTimeRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.slotLabel}>Başlangıç</Text>
+          <TextInput
+            value={start}
+            onChangeText={setStart}
+            placeholder="10:00"
+            placeholderTextColor={colors.textFaint}
+            style={styles.dayTime}
+            maxLength={5}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.slotLabel}>Bitiş</Text>
+          <TextInput
+            value={end}
+            onChangeText={setEnd}
+            placeholder="12:00"
+            placeholderTextColor={colors.textFaint}
+            style={styles.dayTime}
+            maxLength={5}
+          />
+        </View>
+        <View style={{ justifyContent: 'flex-end' }}>
+          <Button label="Kapat" icon="add" loading={updateBusiness.isPending} onPress={add} />
+        </View>
+      </View>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+
+      {upcoming.length > 0 ? (
+        <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
+          {upcoming.map((c) => {
+            const idx = closures.indexOf(c);
+            return (
+              <View key={c.start} style={styles.closureRow}>
+                <Ionicons name="lock-closed-outline" size={15} color={colors.rejected} />
+                <Text style={styles.closureText}>
+                  {formatDate(c.start)} · {formatTime(c.start)}–{formatTime(c.end)}
+                </Text>
+                <Pressable
+                  onPress={() => remove(idx)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Kapatmayı kaldır"
+                >
+                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
+        <Text style={styles.subDesc}>Aktif kapatma yok.</Text>
+      )}
+    </View>
+  );
+}
+
 function EmployeeFormModal({
   form,
   saving,
@@ -1218,6 +1363,25 @@ const styles = StyleSheet.create({
   },
   photoStateText: { ...typography.micro, color: '#fff', fontWeight: '700' },
   slotRow: { flexDirection: 'row', gap: spacing.sm },
+  closureDay: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  closureTimeRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-end' },
+  closureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  closureText: { ...typography.caption, color: colors.text, flex: 1 },
   slotChip: {
     flex: 1,
     alignItems: 'center',

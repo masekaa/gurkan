@@ -125,19 +125,31 @@ export default function BookingScreen() {
     const closeMin = ch * 60 + cm;
     const nowMin = now.getHours() * 60 + now.getMinutes();
 
+    const onDay = (d: Date) =>
+      d.getFullYear() === day.getFullYear() &&
+      d.getMonth() === day.getMonth() &&
+      d.getDate() === day.getDate();
+
     const taken: [number, number][] = [];
     for (const slot of takenSlots ?? []) {
       // Only slots for the chosen scope block availability: the selected
       // employee's bookings, or business-level bookings when no staff.
       if ((slot.employeeId ?? null) !== (selectedEmployee ?? null)) continue;
       const d = new Date(slot.datetime);
-      if (
-        d.getFullYear() === day.getFullYear() &&
-        d.getMonth() === day.getMonth() &&
-        d.getDate() === day.getDate()
-      ) {
+      if (onDay(d)) {
         const start = d.getHours() * 60 + d.getMinutes();
         taken.push([start, start + slot.durationMin]);
+      }
+    }
+
+    // Business temporary closures overlapping this day also block their slots.
+    for (const c of business?.closures ?? []) {
+      const cs = new Date(c.start);
+      const ce = new Date(c.end);
+      if (onDay(cs) || onDay(ce)) {
+        const s = onDay(cs) ? cs.getHours() * 60 + cs.getMinutes() : 0;
+        const e = onDay(ce) ? ce.getHours() * 60 + ce.getMinutes() : 24 * 60;
+        taken.push([s, e]);
       }
     }
 
