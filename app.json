@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "İyiKiRandevu",
+    "name": "IyiKiRandevu",
     "slug": "altin100",
     "scheme": "altin100",
     "version": "1.0.2",
@@ -18,7 +18,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.altin100.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "İyiKiRandevu"
       }
     },
     "android": {
@@ -61,7 +62,8 @@
         }
       ],
       "expo-image",
-      "expo-font"
+      "expo-font",
+      "./plugins/withAndroidAppName"
     ],
     "experiments": {
       "typedRoutes": true
