@@ -16,7 +16,6 @@ import { BusinessCard } from '@/components/BusinessCard';
 import { BusinessCardCompact } from '@/components/BusinessCardCompact';
 import {
   Avatar,
-  Button,
   EmptyState,
   ErrorState,
   Field,
@@ -25,8 +24,7 @@ import {
 } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useUserLocation } from '@/context/LocationContext';
-import { useBusinesses, useSeedSampleData } from '@/hooks/queries';
-import { isFirebaseEnabled } from '@/lib/firebase';
+import { useBusinesses } from '@/hooks/queries';
 import { categoryLabels, normalizeCategory } from '@/lib/format';
 import { hasLocation, haversineKm, type LatLng } from '@/lib/geo';
 import { isOpenToday } from '@/lib/hours';
@@ -64,7 +62,6 @@ export default function DiscoverScreen() {
   const [openOnly, setOpenOnly] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { data, isLoading, isError, refetch } = useBusinesses(search);
-  const seed = useSeedSampleData();
   const { coords: userCoords, request: requestLocation } = useUserLocation();
 
   useEffect(() => {
@@ -86,8 +83,6 @@ export default function DiscoverScreen() {
     }
   }
 
-  const showSeed =
-    isFirebaseEnabled && !isLoading && !search && (data?.length ?? 0) === 0;
   const listMode = !!search.trim() || filter !== 'all' || viewAll;
 
   function selectCategory(f: 'all' | BusinessCategory) {
@@ -169,25 +164,6 @@ export default function DiscoverScreen() {
         <ListSkeleton kind="business" count={5} />
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
-      ) : showSeed ? (
-        <View style={styles.seedWrap}>
-          <EmptyState
-            icon="cloud-upload-outline"
-            title="Henüz işletme yok"
-            subtitle="Firebase'e bağlandın! Başlamak için örnek işletme ve hizmetleri tek dokunuşla yükleyebilirsin."
-          />
-          <Button
-            label="Örnek Verileri Yükle"
-            icon="sparkles-outline"
-            loading={seed.isPending}
-            onPress={() => seed.mutate()}
-          />
-          {seed.isError ? (
-            <Text style={styles.seedError}>
-              Yüklenemedi. Firestore kurallarının yayınlandığından emin ol.
-            </Text>
-          ) : null}
-        </View>
       ) : listMode ? (
         <FlatList
           data={businesses}
@@ -286,6 +262,16 @@ export default function DiscoverScreen() {
           {/* Carousels */}
           <Carousel title="Sana yakın" data={all} onItem={open} onSeeAll={() => setViewAll(true)} />
           <Carousel title="En yüksek puanlılar" data={topRated} onItem={open} onSeeAll={() => setViewAll(true)} />
+
+          {all.length === 0 ? (
+            <View style={{ marginTop: spacing.xl }}>
+              <EmptyState
+                icon="storefront-outline"
+                title="Bölgende henüz işletme yok"
+                subtitle="Yeni işletmeler katıldıkça burada göreceksin. İşletmeysen Profil'den işletme hesabı oluşturabilirsin."
+              />
+            </View>
+          ) : null}
         </ScrollView>
       )}
     </Screen>
@@ -421,8 +407,6 @@ const styles = StyleSheet.create({
   hello: { ...typography.title, color: colors.text },
   scroll: { paddingVertical: spacing.lg, paddingBottom: spacing.xxl, ...centeredContent },
   list: { padding: spacing.lg, gap: spacing.md, flexGrow: 1, ...centeredContent },
-  seedWrap: { gap: spacing.lg, padding: spacing.lg, ...centeredContent },
-  seedError: { ...typography.caption, color: colors.danger, textAlign: 'center' },
   hList: { paddingHorizontal: spacing.lg },
   promo: {
     width: 300,
